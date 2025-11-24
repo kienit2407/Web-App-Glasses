@@ -1,0 +1,211 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.paymentService = void 0;
+// src/service/payment.service.ts
+const mongoose_1 = require("mongoose");
+const crypto_1 = __importDefault(require("crypto"));
+const environment_1 = require("../../../config/environment");
+const orders_model_1 = require("../../../models/orders.model");
+const payments_model_1 = require("../../../models/payments.model");
+const vnpay_1 = require("../../../utils/vnpay");
+exports.paymentService = {
+    // helper: tạo txnRef, có thể dùng payment._id
+    generateTxnRef() {
+        return Date.now().toString() + Math.floor(Math.random() * 1000).toString();
+    },
+    signVnpParams(params) {
+        // 1. Sort key
+        const sortedKeys = Object.keys(params).sort();
+        // 2. Encode từng value giống PHP urlencode (space -> +)
+        const encoded = {};
+        for (const key of sortedKeys) {
+            const raw = params[key];
+            if (raw === undefined || raw === null || raw === "")
+                continue;
+            // encodeURIComponent rồi thay %20 -> +
+            encoded[key] = encodeURIComponent(raw)
+                .replace(/%20/g, "+")
+                .replace(/\(/g, "%28")
+                .replace(/\)/g, "%29"); // phòng xa, không bắt buộc nhưng an toàn
+        }
+        // 3. Ghép signData: key=encodedValue&key2=encodedValue2...
+        const signData = sortedKeys
+            .filter((k) => encoded[k] !== undefined)
+            .map((k) => `${k}=${encoded[k]}`)
+            .join("&");
+        const secret = environment_1.env.VNP_HASH_SECRET.trim();
+        const hmac = crypto_1.default.createHmac("sha512", secret);
+        const signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
+        console.log("VNP signData =", signData);
+        console.log("VNP signed =", signed);
+        // trả luôn object đã ENCODE, vì sẽ dùng để build URL
+        return { sorted: encoded, signed };
+    },
+    async createVnpPaymentUrl(payload) {
+        const { userId, orderId, returnUrl, clientIp } = payload;
+        if (!mongoose_1.Types.ObjectId.isValid(orderId)) {
+            throw new Error("Invalid order_id");
+        }
+        const order = await orders_model_1.Order.findOne({
+            _id: orderId,
+            user_id: userId,
+        });
+        if (!order) {
+            throw new Error("Order not found");
+        }
+        if (order.payment_status !== "pending") {
+            throw new Error("Order is not in pending payment status");
+        }
+        const amount = order.total_amount;
+        if (amount <= 0) {
+            throw new Error("Order total_amount must be greater than 0");
+        }
+        // tạo Payment record (pending)
+        const txnRef = this.generateTxnRef();
+        const payment = await payments_model_1.Payment.create({
+            user_id: userId,
+            order_id: order._id,
+            provider: "vnpay",
+            amount,
+            status: "pending",
+            vnp_txn_ref: txnRef,
+            metadata: {
+                returnUrlOverride: returnUrl || null,
+            },
+        });
+        // const createDate = new Date();
+        // const vnpCreateDate = createDate
+        //     .toISOString()
+        //     .replace(/[-T:\.Z]/g, "")
+        //     .slice(0, 14)
+        const paymentUrl = vnpay_1.vnpay.buildPaymentUrl({
+            vnp_Amount: amount, // 
+            vnp_IpAddr: clientIp || "127.0.0.1",
+            vnp_TxnRef: txnRef,
+            vnp_OrderInfo: `Thanh toan don hang ${order.order_number}`,
+            vnp_ReturnUrl: environment_1.env.VNP_RETURN_URL
+        });
+        // const { sorted, signed } = this.signVnpParams(vnpParams);
+        // const paymentUrl =
+        //     env.VNP_URL +
+        //     "?" +
+        //     qs.stringify(sorted, { encode: false }) +
+        //     `&vnp_SecureHash=${signed}`;
+        return {
+            paymentUrl,
+            paymentId: payment._id,
+            txnRef,
+        };
+    },
+    // /vnpay/return: xử lý kết quả khi user được redirect về (browser)
+    async handleVnpReturn(rawQuery) {
+        // rawQuery = req.query (Express đã decode sẵn)
+        const verify = vnpay_1.vnpay.verifyReturnUrl(rawQuery);
+        if (!verify.isSuccess) {
+            // Sai chữ ký hoặc giao dịch fail
+            throw new Error(verify.message || "Invalid VNPAY return");
+        }
+        const vnp_TxnRef = verify.vnp_TxnRef;
+        const vnp_ResponseCode = verify.vnp_ResponseCode;
+        const payment = await payments_model_1.Payment.findOne({ vnp_txn_ref: vnp_TxnRef });
+        if (!payment) {
+            throw new Error("Payment not found");
+        }
+        // Ở /return, thường không update trạng thái hardcore (đã có IPN),
+        // nhưng dev cho dễ, ta có thể mark tạm nếu IPN chưa tới
+        let status = payment.status;
+        if (vnp_ResponseCode === "00")
+            status = "success";
+        else
+            status = "failed";
+        // có thể chỉ trả kết quả, không sửa DB; hoặc update nhẹ:
+        return {
+            orderId: payment.order_id,
+            paymentId: payment._id,
+            responseCode: vnp_ResponseCode,
+            status,
+        };
+    },
+    // /vnpay/ipn: nơi VNPAY gọi server-to-server để confirm
+    async handleVnpIpn(rawQuery) {
+        const verify = vnpay_1.vnpay.verifyIpnCall(rawQuery);
+        if (!verify.isSuccess) {
+            return { RspCode: "97", Message: verify.message || "Invalid signature" };
+        }
+        const vnp_TxnRef = verify.vnp_TxnRef;
+        const vnp_ResponseCode = verify.vnp_ResponseCode;
+        const vnp_Amount = Number(verify.vnp_Amount || 0) / 100;
+        if (!vnp_TxnRef) {
+            return { RspCode: "01", Message: "Missing vnp_TxnRef" };
+        }
+        const payment = await payments_model_1.Payment.findOne({ vnp_txn_ref: vnp_TxnRef });
+        if (!payment) {
+            return { RspCode: "01", Message: "Payment not found" };
+        }
+        if (payment.amount !== vnp_Amount) {
+            return { RspCode: "04", Message: "Invalid amount" };
+        }
+        if (payment.status === "success") {
+            return { RspCode: "00", Message: "Payment already confirmed" };
+        }
+        // ✅ Chỉ decide payment status
+        let newStatus = "failed";
+        if (vnp_ResponseCode === "00") {
+            newStatus = "success";
+        }
+        payment.status = newStatus;
+        payment.vnp_bank_code = verify.vnp_BankCode ? String(verify.vnp_BankCode) : undefined;
+        payment.vnp_bank_tran_no = verify.vnp_BankTranNo ? String(verify.vnp_BankTranNo) : undefined;
+        payment.vnp_pay_date = verify.vnp_PayDate ? String(verify.vnp_PayDate) : undefined;
+        payment.vnp_response_code = verify.vnp_ResponseCode ? String(verify.vnp_ResponseCode) : undefined;
+        payment.vnp_transaction_no = verify.vnp_TransactionNo ? String(verify.vnp_TransactionNo) : undefined;
+        payment.vnp_secure_hash = verify.vnp_SecureHash ? String(verify.vnp_SecureHash) : undefined;
+        payment.paidAt = newStatus === "success" ? new Date() : undefined;
+        await payment.save();
+        // ✅ Update order.payment_status, nhưng KHÔNG TỰ Ý đổi order_status
+        const order = await orders_model_1.Order.findById(payment.order_id);
+        if (order) {
+            if (newStatus === "success") {
+                order.payment_status = "success";
+                // order.order_status vẫn "pending" -> admin sẽ xác nhận sau
+            }
+            else if (newStatus === "failed") {
+                order.payment_status = "failed";
+            }
+            await order.save();
+        }
+        return { RspCode: "00", Message: "Confirm success" };
+    },
+    // COD: confirm đặt hàng với phương thức COD
+    async codConfirm(userId, orderId) {
+        if (!mongoose_1.Types.ObjectId.isValid(orderId)) {
+            throw new Error("Invalid order_id");
+        }
+        const order = await orders_model_1.Order.findOne({
+            _id: orderId,
+            user_id: userId,
+        });
+        if (!order) {
+            throw new Error("Order not found");
+        }
+        if (order.payment_status !== "pending") {
+            throw new Error("Order is not in pending payment status");
+        }
+        const amount = order.total_amount;
+        const payment = await payments_model_1.Payment.create({
+            user_id: userId,
+            order_id: order._id,
+            provider: "cod",
+            amount,
+            status: "pending", // COD: chờ giao xong mới success
+        });
+        // ✅ KHÔNG ĐỤNG TỚI order_status Ở ĐÂY
+        // order.order_status vẫn là "pending" -> chờ admin duyệt
+        // payment_status cũng có thể giữ "pending" luôn, khỏi sửa
+        await order.save(); // nếu không sửa gì thì thậm chí có thể bỏ luôn dòng này
+        return payment;
+    }
+};

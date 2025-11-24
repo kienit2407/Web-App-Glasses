@@ -1,0 +1,126 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend_mobile/features/address/data/repository/address_repository.dart';
+import 'package:frontend_mobile/features/auth/data/models/user_model.dart';
+import 'package:frontend_mobile/features/cart/data/repository/cart_repository.dart';
+import 'package:frontend_mobile/features/cart/presentation/viewmodels/cart_controller.dart';
+import 'package:frontend_mobile/features/cart/presentation/viewmodels/cart_state.dart';
+import 'package:frontend_mobile/features/checkout/data/repository/checkout_repository.dart';
+import 'package:frontend_mobile/features/checkout/presentation/view/checkout_args.dart';
+import 'package:frontend_mobile/features/checkout/presentation/viewmodels/checkout_controller.dart';
+import 'package:frontend_mobile/features/checkout/presentation/viewmodels/checkout_state.dart';
+import 'package:frontend_mobile/features/home/data/repository/catalog_repository.dart';
+import 'package:frontend_mobile/features/home/presentation/viewmodels/catalog_controller.dart';
+import 'package:frontend_mobile/features/home/presentation/viewmodels/catalog_state.dart';
+import 'package:frontend_mobile/features/product_detail/data/repository/product_detail_repository.dart';
+import 'package:frontend_mobile/features/search/data/repository/search_repository.dart';
+import 'package:frontend_mobile/features/search/data/repository/search_result_repository.dart';
+import 'package:frontend_mobile/features/search/presentation/viewmodel/search_result_controller.dart';
+import 'package:frontend_mobile/features/search/presentation/viewmodel/search_result_state.dart';
+import 'package:frontend_mobile/features/search/presentation/viewmodel/search_state.dart';
+
+import '../network/dio_config.dart';
+import '../network/token_storage.dart';
+import '../../features/auth/data/repositories/auth_repository.dart';
+import '../../features/auth/presentation/viewmodels/auth_controller.dart';
+
+final dioClientProvider = Provider<DioClient>((ref) {
+  throw UnimplementedError('dioClientProvider chưa được override');
+});
+
+final tokenStorageProvider = Provider<TokenStorage>((ref) {
+  return TokenStorage();
+});
+
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  final dioClient = ref.read(dioClientProvider);
+  final tokenStorage = ref.read(tokenStorageProvider);
+
+  return AuthRepository(dioClient: dioClient, tokenStorage: tokenStorage);
+});
+
+final authControllerProvider =
+    StateNotifierProvider<AuthController, AsyncValue<UserModel?>>(
+      (ref) => AuthController(ref),
+    );
+
+////CATALOG
+final catalogRepositoryProvider = Provider<CatalogRepository>((ref) {
+  final dioClient = ref.read(dioClientProvider);
+  return CatalogRepository(dioClient: dioClient);
+});
+
+// CatalogController (state global cho home/catalog)
+final catalogControllerProvider =
+    StateNotifierProvider<CatalogController, CatalogState>((ref) {
+      final repo = ref.read(catalogRepositoryProvider);
+      return CatalogController(repo);
+    });
+
+final productDetailRepositoryProvider = Provider<ProductDetailRepository>((
+  ref,
+) {
+  final dioClient = ref.read(dioClientProvider);
+  return ProductDetailRepository(dioClient: dioClient);
+});
+
+final cartRepositoryProvider = Provider<CartRepository>((ref) {
+  final dioClient = ref.read(dioClientProvider);
+  return CartRepository(dioClient: dioClient);
+});
+
+final cartControllerProvider = StateNotifierProvider<CartController, CartState>(
+  (ref) {
+    final repo = ref.read(cartRepositoryProvider);
+    return CartController(repo);
+  },
+);
+
+final searchRepositoryProvider = Provider<SearchRepository>((ref) {
+  final dioClient = ref.read(dioClientProvider); // <-- dùng dioClientProvider
+  return SearchRepository(
+    dioClient: dioClient,
+  ); // <-- truyền vào đúng tên param
+});
+
+final searchControllerProvider =
+    StateNotifierProvider.autoDispose<SearchController, SearchState>((ref) {
+      final repo = ref.watch(searchRepositoryProvider);
+      return SearchController(repo);
+    });
+
+final searchResultRepositoryProvider = Provider<SearchResultRepository>((ref) {
+  final dioClient = ref.read(dioClientProvider);
+  return SearchResultRepository(dioClient);
+});
+
+final searchResultControllerProvider =
+    StateNotifierProvider.autoDispose<
+      SearchResultController,
+      SearchResultState
+    >((ref) {
+      final repo = ref.read(searchResultRepositoryProvider);
+      return SearchResultController(repo);
+    });
+
+final checkoutRepositoryProvider = Provider<CheckoutRepository>((ref) {
+  final dio = ref.watch(dioClientProvider);
+  return CheckoutRepository(dio);
+});
+
+final addressRepositoryProvider = Provider<AddressRepository>((ref) {
+  final dio = ref.watch(dioClientProvider);
+  return AddressRepository(dio);
+});
+
+final checkoutControllerProvider = StateNotifierProvider.autoDispose
+    .family<CheckoutController, CheckoutState, CheckoutArgs>((ref, args) {
+  final checkoutRepo = ref.read(checkoutRepositoryProvider);
+  final addressRepo = ref.read(addressRepositoryProvider);
+
+  return CheckoutController(
+    checkoutRepo,
+    addressRepo,
+    cartItemIds: args.cartItemIds,
+    directItem: args.directItem,
+  );
+});

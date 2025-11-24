@@ -1,0 +1,424 @@
+users [icon: user, color: blue] {
+  user_id string pk
+  email string @unique [required]
+  display_name string [required] // index để tìm kiếm trong admin
+  hashed_password string | null
+  auth_provider: {provider: string, provider_id: string}
+  avatar_url string @default null
+  avatar_id string @default null
+  phone: string | null — unique optional (để OTP/CSKH). -> cái này sẽ nâng cấp sau này như chưa cần
+  delivering_addresses [Address]
+  role ['user', 'admin'] [required] -> MẶC ĐỊNH LÀ USER
+  is_active boolean [default: true] 
+  last_login {device : string, atTime : Date} // default null
+  createdAt Date #default (now)
+  updatedAt Date #default (now)
+}
+Address { 
+  address_id: ObjectId, 
+  recipient_name: string,  
+  phone: string, 
+  province_code: string, 
+  district_code: string, 
+  ward_code: string, 
+  specific_address: string, 
+  is_default: boolean 
+}
+Products [color: green] {
+  product_id string pk
+  product_name string [required]
+  slug: string @unique [required] //index
+  selled_amount num default 0 // số lượng đã bán 
+  review_count: number default 0
+  description string [required]
+  tags: string[] default []
+  thumbnail_url : string 
+  thumbnail_id : string 
+  origin_country : string
+  category_id string ref[categories] [required] -> index // listing
+  brand_id string ref[brands] [required] -> index
+  is_active bool @default true // listing
+  createdAt Date #default (now)// listing
+  updatedAt Date #default (now)
+}
+ProductImage {
+  image_id ObjectId,
+  product_id: ObjectId - required unique
+  variant_id: ObjectId - null -> ảnh có thể cấp product
+  url : string - null
+  url_id : string - nulll
+  position:number - default 0 unique
+
+}
+ProductVariant [color: Orange] {
+  variant_id string pk 
+  product_id string ref[products] -> đánh index cái này
+  sku_variant string @unique [required] index 
+  frame_material string [required]
+  frame_color string [required]
+  frame_shape string [required]
+  lens_width string [required]
+  lens_height string [required]
+  temple_length string [required]
+  bridge_width string [required]
+  stock num [required]
+  has_uv_protection [required] @default false
+  price number [required] // giá bán cuối hiện tại // nếu người dùng tự giảm
+  original_price: number | null // giá gốc đầu tiên 
+  is_active: boolean — default true
+  createdAt Date #default (now)
+  updatedAt Date #default (now)
+}
+
+categories [color: Red] {
+  category_id string pk
+  category_name string [required]
+  slug string @unique [required]
+  description string @default null
+  parent_id: ObjectId | null — danh mục cha (nếu phân cấp).
+  is_active bool @default true
+  createdAt Date #default (now)
+  updatedAt Date #default (now)
+}
+
+brands [color: Yellow] {
+  brand_id string pk
+  brand_name string @unique [required]
+  description string @default null // hiện tại chưa cần 
+  logo_url string [required]
+  logo_id string [required]
+  is_active boolean default true
+  createdAt : Date
+  updatedAt: Date
+}
+
+orders [color: Purple] {
+  order_id string pk
+  order_number: string — unique (mã đơn hiển thị) index
+  user_id string ref [users] [required] index
+  order_status enum (pending, processing, shipping, delivered, cancelled, returned) @default pending
+  payment_status enum (pending, success, failed, refunded) [default: pending] index
+
+  subtotal number [required] // tổng trước khi giảm
+  discount_amount number [required] — số tiền đã giảm
+  shipping_fee: number — phí vận chuyển
+  total_amount number [required] -> tổng phải trả
+  coupon_code: string | null
+
+  note string @default null
+  shipping_address: AddressSnapshot — snapshot lúc đặt (type tương tự Address nhưng là object thuần)
+  createdAt Date #default (now)
+  updatedAt Date #default (now)
+}
+orderItems{
+  order_item_id : ObjectId
+  order_id : ObjectId -> index
+  product_id : ObjectId ref[Products]
+  variant_id: : ObjectId ref[ProductVariant] index
+  sku: string
+  attributes: any — snapshot thuộc tính (màu/size…)
+  name: string //tên sảng phẩm tại thời điểm mua (snapshot lại)
+  unit_price: number — giá 1 đơn vị tại thời điểm mua
+  quantity: number
+  total: number — unit_price * quantity
+  createdAt, updatedAt: Date
+}
+cart {
+  cart_id : ObjectId 
+  user_id : ObjectId index
+  createdAt Date #default (now)
+  updatedAt Date #default (now)
+}
+cartDetail {
+  cart_detail_id : ObjectId
+  cart_id :ObjectId ref [cart] index  unique
+  variant_id string ref [product_variants] [required]  ->  index unique (k cho 2 sản phẩm chung 1 variant)
+  price_at_add num [required] //giá đơn vị tại thời điểm thêm vào giỏ
+  quantity number [required] @default 1, condition >=1
+  createdAt Date #default (now)
+  updatedAt Date #default (now)
+}
+reviews {
+  review_id string pk 
+  user_id string ref[users] -> index
+  product_id string ref[products] -> index
+  rating number [required] limit 1 -> 5
+  rating_avg number
+  comment string [required]
+  createdAt Date #default (now)
+  updatedAt Date #default (now)
+}
+
+payment {
+  payment_id string pk
+  user_id string ref [users] [required]
+  order_id string ref [orders] [required] index
+  provider enum ('vnpay'|'momo'|'bank_transfer'|'cod') [required]
+  amount number [required] // tổng số tiền thanh toán
+  transaction_code string @default null
+  status enum (pending, success, failed, refunded) [default: pending] index
+
+  vnp_txn_ref: string
+  vnp_bank_code: string
+  vnp_bank_tran_no: string
+  vnp_pay_date: string (yyyyMMddHHmmss)
+  vnp_response_code: string
+  vnp_transaction_no: string
+  vnp_secure_hash: string
+  metadata: any
+
+  paidAt Date @default null 
+  createdAt Date #default (now)
+}
+coupons {
+  coupon_id : string
+  code : string @unique
+  type: 'percent' | 'fix'
+  value : number
+  max_discount : number | null
+  min_order : number : null
+  usage_limit: number | null — tổng số lần dùng toàn hệ thống
+  per_user_limit: number | null — mỗi user dùng tối đa
+  start_date: Date // thời điểm đặt
+  end_date: Date | null
+  is_active: boolean default true
+  createdAt, updatedAt: Date
+}
+user_coupons {
+  user_id string ref [users] [required] -> đánh index
+  coupon_id string ref [vouchers] [required] -> đánh index
+  saved_at datetime @default now
+  used_order_id : ObjectId
+  is_used bool @default false
+}
+
+
+promotions {
+  promotion_id string pk
+  title string [required]     
+  description string
+  banner_url string                    
+  start_date date [required]
+  end_date date [required]
+  is_active bool @default true
+  priority: number — mặc định 0 (giải quyết chồng khuyến mại)
+}
+
+
+promotion_coupons {
+  promotion_id string ref [promotions] [required]
+  coupon_id string ref [coupons] [required]
+}
+promotion_brands {
+  promotion_id string ref [promotions] [required]
+  brand_id string ref [brands] [required]
+}
+
+promotion_products {
+  promotion_id string ref [promotions] [required]
+  product_id string ref [products] [required]
+}
+
+// cấu trúc thiết kế routes
+/api/v1
+  ├─ auth
+  ├─ users
+  │   ├─ me
+  │   └─ addresses
+  ├─ catalog
+  │   ├─ categories
+  │   ├─ brands
+  │   └─ products
+  │       ├─ :id | :slug
+  │       ├─ :id/variants
+  │       └─ :id/images
+  ├─ reviews
+  ├─ cart
+  │   └─ items
+  ├─ coupons
+  ├─ orders
+  ├─ payments
+  ├─ geo           (GHN master-data cache)
+  └─ shipping      (tính phí GHN)
+
+# ADMIN (cần isAdmin)
+  /api/v1/admin
+    ├─ users
+    ├─ categories
+    ├─ brands
+    ├─ products
+    │   ├─ :id/variants
+    │   └─ :id/images
+    ├─ reviews
+    ├─ coupons
+    ├─ promotions
+    └─ orders
+
+
+
+
+    3. Roadmap đề xuất (theo feature, không theo layer)
+    
+Bước 1: Gắn FE user với BE — Product listing + detail
+
+Thay mockProducts bằng API:
+
+GET /products → filter/sort/search đúng cái UI bạn đã code.
+
+GET /products/:productId → detail + variants + images.
+
+Ở step này:
+
+Chỉ cần trong DB có vài products/variants/images là đủ.
+
+Bạn có thể:
+
+Insert trực tiếp bằng Compass
+
+Hoặc viết 1 file seed script tạo 10 cái kính fake.
+
+➡️ Sau step này: khách xem sản phẩm thật từ DB được.
+
+Bước 2: Auth + Profile + Address
+
+FE:
+
+Login / Register gọi:
+
+POST /auth/signin
+
+POST /auth/signup
+
+Lưu accessToken vào Zustand.
+
+/user/me hiển thị profile basic.
+
+/address dùng:
+
+GET /address
+
+POST/PATCH/DELETE /address
+
+BE:
+
+Đảm bảo middleware protectUserRoute hoạt động chuẩn.
+
+Địa chỉ sử dụng geo data từ DB (provinces/districts/wards).
+
+➡️ Sau step này: khách đăng ký → đăng nhập → thêm địa chỉ nhận hàng được.
+
+Bước 3: Cart flow
+
+FE:
+
+Nút “Add to cart” trên product detail gọi POST /cart/items.
+
+Trang Cart:
+
+GET /cart
+
+PATCH /cart/items/:itemId để đổi quantity
+
+DELETE /cart/items/:itemId để xóa.
+
+BE:
+
+Hoàn thiện cartService + cartController như mình và bạn đã bàn:
+
+Upsert, gộp variant, snapshot price_at_add.
+
+➡️ Sau step này: khách thêm/gỡ/sửa số lượng trong giỏ bằng data thật.
+
+Bước 4: Checkout preview
+
+FE:
+
+Từ page Cart: chọn item → bấm “Thanh toán”.
+
+Gửi POST /checkout/preview với:
+
+cart_item_ids
+
+address_id
+
+coupon_code?
+
+Hiển thị:
+
+Danh sách sản phẩm đã chọn
+
+Subtotal
+
+Giảm giá từ coupon
+
+Phí ship
+
+Tổng thanh toán.
+
+BE:
+
+Dùng calculatePricingFromCartSelection (như mình gợi ý) → gọi coupons + shippingService.
+
+➡️ Sau step này: khách thấy đúng số tiền phải trả trước khi đặt hàng, rất giống Shopee/Lazada.
+
+Bước 5: Tạo order (transaction)
+
+FE:
+
+Từ màn checkout preview → bấm “Đặt hàng”.
+
+Gửi POST /orders với payload giống preview (cùng set).
+
+Nếu phương thức thanh toán = COD → hiển thị “Đặt hàng thành công”.
+
+Nếu VNPAY/MOMO → redirect flow sau, có thể để tương lai.
+
+BE:
+
+Tạo orderService.createOrder dùng transaction như mình đã phân tích:
+
+Tính lại tiền
+
+Tạo order + order_items
+
+Trừ stock
+
+Xóa cart items đã chọn.
+
+➡️ Sau step này: luồng mua hàng cơ bản hoàn chỉnh (chưa cần thanh toán online).
+
+Bước 6: Order history + Order detail cho user
+
+FE:
+
+Trang “Đơn hàng của tôi”:
+
+GET /orders?status=&page=&limit=
+
+Trang chi tiết đơn hàng:
+
+GET /orders/:id.
+
+BE:
+
+order.listMy, order.detailMy, order.cancelMy.
+
+➡️ User xem lịch sử & hủy đơn pending được.
+
+Bước 7: Lúc này mới quay qua admin
+
+Khi user flow đã ổn, bạn quay lại làm admin UI theo mức độ cần thiết:
+
+Admin products (quan trọng nhất):
+
+CRUD brand, category, product, variant, image.
+
+Admin orders:
+
+Xem đơn và cập nhật trạng thái.
+
+Admin coupons & promotions (nếu cần):
+
+Tạo mã giảm giá, gán vào promotion.
+
+Ở giai đoạn này, vì bạn đã có BE admin + model + route gần như đầy đủ, FE admin chỉ là “bọc UI shadcn quanh API”.

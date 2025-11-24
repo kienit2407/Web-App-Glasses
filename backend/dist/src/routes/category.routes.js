@@ -1,0 +1,12 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CARTEGORY_ROUTES = void 0;
+const express_1 = __importDefault(require("express"));
+const category_controller_1 = require("../modules/client/controllers/category.controller");
+const router = express_1.default.Router();
+router.get("/", /*cat.list*/ category_controller_1.categoryController.listCategories); // ?tree=1, ?active=1
+// router.get("/:catId", /*cat.detail*/)
+exports.CARTEGORY_ROUTES = router;
