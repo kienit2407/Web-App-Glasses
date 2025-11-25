@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:frontend_mobile/features/address/data/models/address_model.dart';
-import 'package:frontend_mobile/features/checkout/model/checkout_models.dart';
+import 'package:frontend_mobile/features/checkout/data/model/checkout_models.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:frontend_mobile/features/checkout/presentation/view/checkout_args.dart';
 import 'package:frontend_mobile/features/checkout/presentation/viewmodels/checkout_controller.dart';
 import 'package:frontend_mobile/features/checkout/presentation/viewmodels/checkout_state.dart';
+import 'package:frontend_mobile/features/coupon/data/model/user_coupon_model.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iconsax/iconsax.dart';
 
 class CheckoutPage extends ConsumerWidget {
   const CheckoutPage({super.key, required this.args});
@@ -25,14 +27,20 @@ class CheckoutPage extends ConsumerWidget {
     // loading lần đầu
     if ((state.isInitLoading || state.isPreviewLoading) &&
         state.preview == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator.adaptive()),
+      );
     }
 
     // chưa có địa chỉ -> bắt user tạo
     if (state.selectedAddress == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Checkout'),
+          title: const Text(
+            'Checkout',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          foregroundColor: Colors.white,
           backgroundColor: AppColor.buttonprimaryCol,
         ),
         body: Center(
@@ -68,7 +76,11 @@ class CheckoutPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: const Color(0xfffafafa),
       appBar: AppBar(
-        title: const Text('Checkout'),
+        title: const Text(
+          'Checkout',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        foregroundColor: Colors.white,
         backgroundColor: AppColor.buttonprimaryCol,
         elevation: 0,
       ),
@@ -100,8 +112,7 @@ class CheckoutPage extends ConsumerWidget {
                   onOpenCouponList: () {
                     _showCouponBottomSheet(
                       context: context,
-                      preview: preview,
-                      state: state,
+                      subtotal: preview.subtotal,
                       controller: controller,
                       formatPrice: _formatPrice,
                     );
@@ -160,8 +171,6 @@ class CheckoutPage extends ConsumerWidget {
   }
 }
 
-/// CARD ĐỊA CHỈ
-
 class _AddressCard extends StatelessWidget {
   const _AddressCard({required this.address, required this.onChange});
 
@@ -171,51 +180,134 @@ class _AddressCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(Icons.location_on_outlined, color: Colors.redAccent),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${address.recipientName} (${address.phone})',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    address.specificAddress,
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                  if (address.isDefault)
-                    Container(
-                      margin: const EdgeInsets.only(top: 4),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.redAccent),
-                      ),
-                      child: const Text(
-                        'Default',
-                        style: TextStyle(fontSize: 10, color: Colors.redAccent),
+      color: Colors.white,
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      // 1. Cắt hiệu ứng InkWell theo góc bo của Card
+      clipBehavior: Clip.hardEdge,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: InkWell(
+        // 2. Đưa sự kiện onTap ra ngoài cùng để bấm đâu cũng ăn
+        onTap: onChange,
+        // Hiệu ứng màu khi bấm (tuỳ chọn)
+        splashColor: Colors.redAccent.withOpacity(0.1),
+        highlightColor: Colors.grey.withOpacity(0.1),
+
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            // 3. Row cha: Căn giữa theo chiều dọc -> Để Icon Arrow nằm giữa
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // --- KHỐI NỘI DUNG BÊN TRÁI (ICON LOCATION + TEXT) ---
+              Expanded(
+                child: Row(
+                  // Row con: Căn lên trên -> Để Icon Location ngang hàng với dòng chữ đầu
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(
+                        top: 2,
+                      ), // Chỉnh nhẹ để icon cân với text
+                      child: Icon(
+                        Icons.location_on,
+                        color: Colors.redAccent,
+                        size: 20,
                       ),
                     ),
-                ],
+                    const SizedBox(width: 10),
+
+                    // Cột Text
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          RichText(
+                            text: TextSpan(
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontSize: 14,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: address.recipientName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const TextSpan(text: ' '),
+                                TextSpan(
+                                  text: '(${address.phone})',
+                                  style: TextStyle(color: Colors.grey.shade600),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            address.specificAddress,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade700,
+                              height: 1.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2), // Bỏ bớt khoảng cách nếu thấy rời rạc
+                          Text(
+                            '${address.fullAddress}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade700,
+                              height: 1.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (address.isDefault)
+                            Container(
+                              margin: const EdgeInsets.only(top: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                  color: Colors.redAccent,
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: const Text(
+                                'Mặc định',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.redAccent,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            TextButton(onPressed: onChange, child: const Text('Change')),
-          ],
+
+              const SizedBox(width: 8),
+
+              // --- KHỐI BÊN PHẢI (ICON ARROW) ---
+              // Icon này sẽ tự động nằm giữa nhờ Row cha có CrossAxisAlignment.center
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: Colors.grey.shade400,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -233,6 +325,7 @@ class _ItemsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.only(bottom: 8),
@@ -258,6 +351,7 @@ class _ItemsCard extends StatelessWidget {
                   formatPrice(item.total),
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
+                    fontSize: 13,
                     color: Colors.red,
                   ),
                 ),
@@ -294,6 +388,7 @@ class _VoucherCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -309,28 +404,57 @@ class _VoucherCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: TextField(
+                    cursorColor: AppColor.buttonprimaryCol,
                     decoration: const InputDecoration(
                       hintText: 'Nhập mã giảm giá',
                       isDense: true,
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                        borderSide: BorderSide(
+                          color: AppColor.buttonprimaryCol,
+                        ),
+                      ),
                     ),
                     onChanged: onCouponChanged,
                   ),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: AppColor.buttonprimaryCol,
+                  ),
                   onPressed: onApply,
-                  child: const Text('Áp dụng'),
+                  child: const Text(
+                    'Áp dụng',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColor.buttonprimaryCol,
+                    iconColor: AppColor.buttonprimaryCol,
+                  ),
                   onPressed: onOpenCouponList,
-                  child: const Text('Chọn voucher của bạn'),
+                  child: Row(
+                    spacing: 4,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text('Chọn voucher của bạn'),
+                      Icon(Iconsax.arrow_right_1, size: 16),
+                    ],
+                  ),
                 ),
+
                 if (state.appliedCoupon != null)
                   TextButton(onPressed: onClear, child: const Text('Xoá')),
               ],
@@ -409,6 +533,7 @@ class _NoteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -421,11 +546,18 @@ class _NoteCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             TextField(
+              cursorColor: AppColor.buttonprimaryCol,
               maxLines: 2,
               decoration: const InputDecoration(
                 hintText: 'Ghi chú (không bắt buộc)',
                 isDense: true,
-                border: OutlineInputBorder(),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                  borderSide: BorderSide(color: AppColor.buttonprimaryCol),
+                ),
               ),
               onChanged: onChanged,
             ),
@@ -447,6 +579,7 @@ class _PaymentMethodCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -458,6 +591,9 @@ class _PaymentMethodCard extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             RadioListTile<PaymentMethodMobile>(
+              selectedTileColor: AppColor.buttonprimaryCol,
+
+              activeColor: AppColor.buttonprimaryCol,
               value: PaymentMethodMobile.cod,
               groupValue: method,
               onChanged: (val) {
@@ -467,6 +603,8 @@ class _PaymentMethodCard extends StatelessWidget {
             ),
             RadioListTile<PaymentMethodMobile>(
               value: PaymentMethodMobile.vnpay,
+              activeColor: AppColor.buttonprimaryCol,
+              selectedTileColor: AppColor.buttonprimaryCol,
               groupValue: method,
               onChanged: (val) {
                 if (val != null) onChange(val);
@@ -501,6 +639,7 @@ class _PriceSummaryCard extends StatelessWidget {
     }
 
     return Card(
+      color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -511,7 +650,7 @@ class _PriceSummaryCard extends StatelessWidget {
             _row(
               'Giảm giá',
               '-${formatPrice(preview.discountAmount)}',
-              valueColor: Colors.green,
+              valueColor: AppColor.buttomSecondCol,
             ),
             if (preview.discountAmount > 0)
               Padding(
@@ -523,6 +662,7 @@ class _PriceSummaryCard extends StatelessWidget {
             const Divider(height: 16),
             _row(
               'Tổng thanh toán',
+              valueColor: AppColor.buttomThirdCol,
               formatPrice(preview.totalAmount),
               isTotal: true,
             ),
@@ -611,6 +751,7 @@ class _BottomSummaryBar extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: isPlacing ? null : onPlaceOrder,
                   style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
                     backgroundColor: AppColor.buttonprimaryCol,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999),
@@ -625,7 +766,10 @@ class _BottomSummaryBar extends StatelessWidget {
                             color: Colors.white,
                           ),
                         )
-                      : const Text('Place Order'),
+                      : const Text(
+                          'Đặt hàng',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
                 ),
               ),
             ),
@@ -637,57 +781,12 @@ class _BottomSummaryBar extends StatelessWidget {
 }
 // ======= BOTTOM SHEET CHỌN VOUCHER =======
 
-class _DummyUserCoupon {
-  final String code;
-  final String type; // percent | fixed
-  final int value;
-  final int? minOrder;
-  final int? missingAmount;
-  final bool canUse;
-  final bool isExpired;
-
-  _DummyUserCoupon({
-    required this.code,
-    required this.type,
-    required this.value,
-    this.minOrder,
-    this.missingAmount,
-    this.canUse = true,
-    this.isExpired = false,
-  });
-}
-
-// TODO: thay bằng gọi API thật, trả về list coupon
-List<_DummyUserCoupon> _mockCoupons(int subtotal) {
-  return [
-    _DummyUserCoupon(
-      code: 'SALE10',
-      type: 'percent',
-      value: 10,
-      minOrder: 200000,
-      missingAmount: subtotal >= 200000 ? 0 : (200000 - subtotal),
-      canUse: subtotal >= 200000,
-    ),
-    _DummyUserCoupon(
-      code: 'GIAM50K',
-      type: 'fixed',
-      value: 50000,
-      minOrder: 300000,
-      missingAmount: subtotal >= 300000 ? 0 : (300000 - subtotal),
-      canUse: subtotal >= 300000,
-    ),
-  ];
-}
-
 void _showCouponBottomSheet({
   required BuildContext context,
-  required CheckoutPreview preview,
-  required CheckoutState state,
+  required int subtotal,
   required CheckoutController controller,
   required String Function(int) formatPrice,
 }) {
-  final coupons = _mockCoupons(preview.subtotal);
-
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -695,6 +794,7 @@ void _showCouponBottomSheet({
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
     builder: (ctx) {
+      // Dùng Consumer để lấy ref trong bottom sheet
       return Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(ctx).viewInsets.bottom,
@@ -702,129 +802,168 @@ void _showCouponBottomSheet({
           right: 16,
           top: 12,
         ),
-        child: SizedBox(
-          height: MediaQuery.of(ctx).size.height * 0.7,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Center(
-                child: SizedBox(width: 40, child: Divider(thickness: 3)),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Voucher của bạn',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: ListView.separated(
-                  itemCount: coupons.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final c = coupons[index];
-                    final canUse = c.canUse && !c.isExpired;
-                    final missing = c.missingAmount ?? 0;
+        child: Consumer(
+          builder: (context, ref, _) {
+            final state = ref.watch(userCouponControllerProvider(subtotal));
 
-                    return Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: canUse
-                              ? Colors.deepPurple
-                              : Colors.grey.shade300,
-                        ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  c.type == 'percent'
-                                      ? 'Giảm ${c.value}%'
-                                      : 'Giảm ${formatPrice(c.value)}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Đơn tối thiểu: ${c.minOrder != null ? formatPrice(c.minOrder!) : '0đ'}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                if (missing > 0)
-                                  Text(
-                                    'Mua thêm ${formatPrice(missing)} để dùng voucher này',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.redAccent,
-                                    ),
-                                  ),
-                                if (c.isExpired)
-                                  const Text(
-                                    'Voucher đã hết hạn',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.redAccent,
-                                    ),
-                                  ),
-                              ],
+            if (state.isLoading && state.coupons.isEmpty) {
+              return const SizedBox(
+                height: 260,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            if (state.errorMessage != null && state.coupons.isEmpty) {
+              return SizedBox(
+                height: 260,
+                child: Center(
+                  child: Text(
+                    state.errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              );
+            }
+
+            final coupons = state.coupons;
+            if (coupons.isEmpty) {
+              return const SizedBox(
+                height: 260,
+                child: Center(
+                  child: Text(
+                    'Bạn chưa có voucher nào.',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ),
+              );
+            }
+
+            return SizedBox(
+              height: MediaQuery.of(ctx).size.height * 0.7,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(
+                    child: SizedBox(width: 40, child: Divider(thickness: 3)),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Voucher của bạn',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: coupons.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final c = coupons[index];
+                        final canUse = c.canUse && !c.isExpired;
+                        final missing = c.missingAmount ?? 0;
+
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: canUse
+                                  ? Colors.deepPurple
+                                  : Colors.grey.shade300,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(4),
-                                  color: Colors.blue.shade50,
-                                ),
-                                child: Text(
-                                  c.code,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.blue,
-                                  ),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      c.type == 'percent'
+                                          ? 'Giảm ${c.value}%'
+                                          : 'Giảm ${formatPrice(c.value)}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Đơn tối thiểu: ${c.minOrder != null ? formatPrice(c.minOrder!) : '0đ'}',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    if (missing > 0)
+                                      Text(
+                                        'Mua thêm ${formatPrice(missing)} để dùng voucher này',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.redAccent,
+                                        ),
+                                      ),
+                                    if (c.isExpired)
+                                      const Text(
+                                        'Voucher đã hết hạn',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.redAccent,
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              ElevatedButton(
-                                onPressed: canUse
-                                    ? () async {
-                                        controller.changeCouponInput(c.code);
-                                        await controller.applyCoupon();
-                                        if (context.mounted) {
-                                          Navigator.pop(ctx);
-                                        }
-                                      }
-                                    : null,
-                                child: Text(
-                                  canUse ? 'Dùng' : 'Không đủ điều kiện',
-                                  style: const TextStyle(fontSize: 12),
-                                ),
+                              const SizedBox(width: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(4),
+                                      color: Colors.blue.shade50,
+                                    ),
+                                    child: Text(
+                                      c.code,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.blue,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ElevatedButton(
+                                    onPressed: canUse
+                                        ? () async {
+                                            controller.changeCouponInput(
+                                              c.code,
+                                            );
+                                            await controller.applyCoupon();
+                                            Navigator.pop(ctx);
+                                          }
+                                        : null,
+                                    child: Text(
+                                      canUse ? 'Dùng' : 'Không đủ điều kiện',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       );
     },

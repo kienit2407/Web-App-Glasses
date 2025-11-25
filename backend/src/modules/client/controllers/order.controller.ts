@@ -4,7 +4,7 @@ import { TryCatch } from "../../../utils/try_catch"
 import {
     BadRequestException,
 } from "../../../utils/app_errol"
-import { orderService } from "../services/order.service"
+import { orderService, PaymentMethod } from "../services/order.service"
 
 // POST /orders
 export const create = TryCatch(async (req: Request, res: Response) => {
@@ -18,12 +18,14 @@ export const create = TryCatch(async (req: Request, res: Response) => {
         address_id,
         note,
         coupon_code,
+        payment_method
     } = req.body as {
         cart_item_ids?: string[]
         items?: { variant_id: string; quantity: number }[]
         address_id?: string
         note?: string
         coupon_code?: string
+        payment_method?: PaymentMethod
     }
 
     if (!address_id) {
@@ -39,6 +41,7 @@ export const create = TryCatch(async (req: Request, res: Response) => {
             address_id,
             note,
             coupon_code,
+            payment_method
         })
 
         return res.status(201).json({ data: result })
@@ -51,6 +54,7 @@ export const create = TryCatch(async (req: Request, res: Response) => {
             address_id,
             note,
             coupon_code,
+            payment_method
         })
 
         return res.status(201).json({ data: result })

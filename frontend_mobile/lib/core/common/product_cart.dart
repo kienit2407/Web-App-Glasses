@@ -43,13 +43,13 @@ class ProductCard extends StatelessWidget {
               Container(
                 height: 32,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                alignment: Alignment.centerLeft,
+                alignment: Alignment.center,
                 child:
                     product.brandLogoUrl != null &&
                         product.brandLogoUrl!.isNotEmpty
                     ? Image.network(
                         product.brandLogoUrl!,
-                        height: 20,
+                        height: 30,
                         fit: BoxFit.contain,
                       )
                     : Text(

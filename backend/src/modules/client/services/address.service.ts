@@ -1,6 +1,7 @@
 // src/service/address.service.ts
 import { Types } from "mongoose"
 import { User, IUser, IAddress } from "../../../models/user.model"
+import { geoService } from "./geo.service"
 
 interface CreateAddressPayload {
     recipient_name: string
@@ -24,16 +25,33 @@ interface UpdateAddressPayload {
 
 export const addressService = {
     async listMyAddresses(userId: Types.ObjectId) {
-        const user = await User.findById(userId).lean()
-        if (!user) throw new Error("User not found")
+        const user = await User.findById(userId).lean();
+        if (!user) throw new Error("User not found");
 
-        const addresses = user.delivering_addresses || []
+        const rawAddresses = user.delivering_addresses || [];
+
+        // Xử lý map dữ liệu: Biến đổi Code -> Text
+        const enrichedAddresses = await Promise.all(rawAddresses.map(async (addr: any) => {
+            // Gọi Geo Service để lấy tên Phường, Quận, Tỉnh
+            const geoDetails = await geoService.getAddressDetails(
+                addr.province_code,
+                addr.district_code,
+                addr.ward_code
+            );
+
+            return {
+                ...addr, 
+                province_name: geoDetails.province_name,
+                district_name: geoDetails.district_name,
+                ward_name: geoDetails.ward_name,
+                full_address: geoDetails.full_location 
+            };
+        }));
 
         return {
-            addresses,
-            default_address_id:
-                addresses.find((a) => a.is_default)?.["_id"] ?? null,
-        }
+            addresses: enrichedAddresses,
+            default_address_id: rawAddresses.find((a: any) => a.is_default)?.["_id"] ?? null,
+        };
     },
 
     async createMyAddress(

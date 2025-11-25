@@ -23,13 +23,14 @@ import { SEND_EVENT_TO_ADMINS, SEND_EVENT_TO_USER } from "../../../config/socket
 import { Payment } from "../../../models/payments.model"
 import { Notification } from "../../../models/notification.model"
 import { getOrderThumbnail } from "../../../utils/get-order-thumbnail"
-
+export type PaymentMethod = "cod" | "vnpay"
 // ====== PAYLOAD TỪ CART (luồng giỏ hàng) ======
 interface CartSelectionPayload {
     cart_item_ids: string[]
     address_id: string
     note?: string | null
     coupon_code?: string | null
+    payment_method?: PaymentMethod
 }
 
 // ====== PAYLOAD TRỰC TIẾP (luồng Mua ngay) ======
@@ -43,6 +44,7 @@ interface DirectSelectionPayload {
     address_id: string
     note?: string | null
     coupon_code?: string | null
+    payment_method?: PaymentMethod   //
 }
 
 interface AppliedCoupon {
@@ -734,7 +736,7 @@ async function createOrder(
         applied_coupon,
     } = pricing
 
-    const { note } = payload
+    const { note, payment_method } = payload
     const order_number = generateOrderNumber()
 
     const [order] = await Order.create([
@@ -755,6 +757,21 @@ async function createOrder(
             shipping_address,
         },
     ])
+    const provider: "cod" | "vnpay" =
+        payment_method === "vnpay" ? "vnpay" : "cod"
+
+    let payment = await Payment.findOne({ order_id: order._id })
+
+    if (!payment) {
+        payment = await Payment.create({
+            user_id: userId,
+            order_id: order._id,
+            provider,              // 'cod' | 'vnpay'
+            amount: total_amount,
+            status: "pending",     // mới tạo => pending
+            paidAt: null,
+        })
+    }
 
     const orderItemsWithOrderId = orderItemsData.map((item) => ({
         ...item,
@@ -879,7 +896,7 @@ async function createOrderFromDirect(
         applied_coupon,
     } = pricing
 
-    const { note } = payload
+    const { note, payment_method } = payload
     const order_number = generateOrderNumber()
 
     const [order] = await Order.create([
@@ -900,7 +917,21 @@ async function createOrderFromDirect(
             shipping_address,
         },
     ])
+    const provider: "cod" | "vnpay" =
+        payment_method === "vnpay" ? "vnpay" : "cod"
 
+    let payment = await Payment.findOne({ order_id: order._id })
+
+    if (!payment) {
+        payment = await Payment.create({
+            user_id: userId,
+            order_id: order._id,
+            provider,
+            amount: total_amount,
+            status: "pending",
+            paidAt: null,
+        })
+    }
     const orderItemsWithOrderId = orderItemsData.map((item) => ({
         ...item,
         order_id: order._id,
@@ -1295,30 +1326,45 @@ async function confirmDeliveredMyOrder(userId: Types.ObjectId, orderId: string) 
 
     const payment = await Payment.findOne({ order_id: orderId })
     if (!payment) {
+        // Với thiết kế mới, case này là data lỗi
         throw new NotFoundException("Payment not found")
     }
 
     if (payment.provider === "cod") {
+        // COD: đến lúc user bấm "Đã nhận hàng" mới coi là thanh toán thành công
         if (payment.status !== "pending") {
             throw new ForbiddenException("COD payment must be pending to confirm")
         }
 
         payment.status = "success"
         payment.paidAt = new Date()
-
         order.payment_status = "success"
     } else {
+        // Online: yêu cầu trước đó đã được VNPay/… set success
         if (payment.status !== "success") {
             throw new ForbiddenException("Online payment is not completed yet")
         }
     }
-    
+
 
     order.order_status = "delivered"
 
     await payment.save()
     await order.save()
 
+    // Lấy tất cả order_items của đơn này
+    const items = await OrderItem.find({ order_id: order._id }).lean()
+
+    if (items.length > 0) {
+        const bulkOps = items.map((it) => ({
+            updateOne: {
+                filter: { _id: it.product_id },
+                update: { $inc: { selled_amount: it.quantity } },
+            },
+        }))
+
+        await Product.bulkWrite(bulkOps)
+    }
     return order.toObject()
 }
 

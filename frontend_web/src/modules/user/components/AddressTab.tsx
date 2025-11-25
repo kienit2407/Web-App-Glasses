@@ -19,16 +19,20 @@ import { toast } from "sonner"
 
 const { Title, Text } = Typography
 
-interface Address {
-    _id: string
-    recipient_name: string
-    phone: string
-    province_code: string
-    district_code: string
-    ward_code: string
-    specific_address: string
-    is_default: boolean
-}
+type Address = {
+    _id: string;
+    recipient_name: string;
+    phone: string;
+    province_code: string;
+    district_code: string;
+    ward_code: string;
+    specific_address: string;
+    is_default?: boolean;
+    province_name: string,
+    district_name: string,
+    ward_name: string,
+    full_address: string
+};
 
 interface SimpleGeo {
     code: string
@@ -176,9 +180,9 @@ export const AddressTab = () => {
                                 </span>
                                 {addr.is_default && <Tag color="red">Mặc định</Tag>}
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                                {addr.specific_address}
-                                {/* nếu muốn bạn call API thêm để hiển thị tên tỉnh/huyện/xã */}
+                            <div className="text-sm text-muted-foreground flex flex-col">
+                                <div>{addr.specific_address} </div>
+                                {addr.full_address}
                             </div>
                         </div>
 

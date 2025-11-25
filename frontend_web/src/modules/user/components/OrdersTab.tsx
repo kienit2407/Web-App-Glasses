@@ -205,7 +205,7 @@ export const OrdersTab = () => {
         const baseDetailBtn = (
             <Button
                 size={isMobile ? "small" : "middle"}
-                onClick={() => navigate(`/orders/${order._id}/${order.code}`)}
+                onClick={() => navigate(`/orders/${order._id}`)}
             >
                 Xem chi tiết
             </Button>

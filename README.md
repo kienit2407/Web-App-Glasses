@@ -103,11 +103,11 @@ yarn install
 ```bash
 npm install
 ```
-# Navigate to the backend directory
+### Navigate to the backend directory
 ```bash
 cd Web-App-Glasses/backend
 ```
-# Navigate to the frontend_web directory
+### Navigate to the frontend_web directory
 ```bash
 cd Web-App-Glasses/frontend_web
 ```

@@ -1,5 +1,3 @@
-// lib/features/address/data/models/address_model.dart
-
 class Address {
   final String id;              // dùng cho address list
   final String recipientName;
@@ -10,6 +8,11 @@ class Address {
   final String specificAddress;
   final bool isDefault;
 
+  final String? provinceName;
+  final String? districtName;
+  final String? wardName;
+  final String? fullAddress;
+
   Address({
     required this.id,
     required this.recipientName,
@@ -19,6 +22,10 @@ class Address {
     required this.wardCode,
     required this.specificAddress,
     required this.isDefault,
+    this.provinceName,
+    this.districtName,
+    this.wardName,
+    this.fullAddress,
   });
 
   factory Address.fromJson(Map<String, dynamic> json) {
@@ -33,6 +40,12 @@ class Address {
       specificAddress: json['specific_address'] as String? ?? '',
       // trong shipping_address không có is_default -> false
       isDefault: json['is_default'] as bool? ?? false,
+
+      // đọc thêm các field mới
+      provinceName: json['province_name'] as String?,
+      districtName: json['district_name'] as String?,
+      wardName: json['ward_name'] as String?,
+      fullAddress: json['full_address'] as String?,
     );
   }
 
@@ -46,6 +59,8 @@ class Address {
       'ward_code': wardCode,
       'specific_address': specificAddress,
       'is_default': isDefault,
+      // KHÔNG cần gửi province_name / full_address lên BE
+      // vì BE tự derive ra từ code + specific_address
     };
   }
 }

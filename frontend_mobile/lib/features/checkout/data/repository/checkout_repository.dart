@@ -1,6 +1,6 @@
 // lib/features/checkout/data/checkout_repository.dart
 import 'package:frontend_mobile/core/network/dio_config.dart';
-import 'package:frontend_mobile/features/checkout/model/checkout_models.dart';
+import 'package:frontend_mobile/features/checkout/data/model/checkout_models.dart';
 
 class CheckoutRepository {
   final DioClient dioClient;

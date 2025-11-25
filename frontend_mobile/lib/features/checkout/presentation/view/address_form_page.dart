@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:frontend_mobile/features/address/data/models/address_model.dart';
 import 'package:frontend_mobile/features/address/data/repository/address_repository.dart';
-import 'package:frontend_mobile/features/checkout/presentation/view/region_select_page.dart';
+import 'package:frontend_mobile/features/checkout/presentation/viewmodels/region_select_page.dart';
 
 class AddressFormPage extends ConsumerStatefulWidget {
   const AddressFormPage({super.key, this.existing});

@@ -8,6 +8,10 @@ import 'package:frontend_mobile/features/checkout/data/repository/checkout_repos
 import 'package:frontend_mobile/features/checkout/presentation/view/checkout_args.dart';
 import 'package:frontend_mobile/features/checkout/presentation/viewmodels/checkout_controller.dart';
 import 'package:frontend_mobile/features/checkout/presentation/viewmodels/checkout_state.dart';
+import 'package:frontend_mobile/features/coupon/data/model/user_coupon_model.dart';
+import 'package:frontend_mobile/features/coupon/data/repository/coupon_repository.dart';
+import 'package:frontend_mobile/features/coupon/presentation/viewmodels/user_coupon_controller.dart';
+import 'package:frontend_mobile/features/coupon/presentation/viewmodels/user_coupon_state.dart';
 import 'package:frontend_mobile/features/home/data/repository/catalog_repository.dart';
 import 'package:frontend_mobile/features/home/presentation/viewmodels/catalog_controller.dart';
 import 'package:frontend_mobile/features/home/presentation/viewmodels/catalog_state.dart';
@@ -124,3 +128,17 @@ final checkoutControllerProvider = StateNotifierProvider.autoDispose
     directItem: args.directItem,
   );
 });
+
+final couponRepositoryProvider = Provider<CouponRepository>((ref) {
+  final dioClient = ref.watch(dioClientProvider); // Giả sử bạn có dioClientProvider
+  return CouponRepository(dioClient);
+});
+
+// 2. KHAI BÁO CONTROLLER DÙNG FAMILY (Quan trọng)
+// Tham số thứ 3 là kiểu dữ liệu của tham số truyền vào (int: subtotal)
+final userCouponControllerProvider = StateNotifierProvider.family<UserCouponController, UserCouponState, int>(
+  (ref, subtotal) {
+    final repo = ref.watch(couponRepositoryProvider);
+    return UserCouponController(repo, subtotal: subtotal);
+  },
+);

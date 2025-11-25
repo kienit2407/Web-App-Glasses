@@ -43,6 +43,10 @@ type Address = {
     ward_code: string;
     specific_address: string;
     is_default?: boolean;
+    province_name: string,
+    district_name: string,
+    ward_name: string,
+    full_address: string
 };
 type UserCouponItem = {
     _id: string;
@@ -191,6 +195,7 @@ const Checkout = () => {
         if (!preview) return;
         await fetchMyCoupons({ subtotal: preview.subtotal });
         setVoucherModalOpen(true);
+        console.log(myCoupons)
     };
 
     const handleUseVoucher = async (coupon: UserCouponItem) => {
@@ -282,7 +287,7 @@ const Checkout = () => {
 
         runPreview();
     }, [selectedAddressId, appliedCouponCode]);
-    
+
     const fetchProvinces = async () => {
         try {
             const res = await API.get("/geo/provinces");
@@ -420,6 +425,7 @@ const Checkout = () => {
                 address_id: selectedAddressId,
                 note: note || null,
                 coupon_code: appliedCouponCode || null,
+                payment_method: paymentMethod, 
             };
 
             if (isCartMode) {
@@ -533,7 +539,7 @@ const Checkout = () => {
                                     <div className="space-y-1 text-sm">
                                         <div className="font-medium">{addressLine1}</div>
                                         <div className="text-gray-600">{addressLine2}</div>
-                                        <div className="text-gray-600">{wardName}, {districtName}, {provinceName}</div>
+                                        <div className="text-gray-600">{selectedAddress.full_address}</div>
                                     </div>
                                 </div>
 

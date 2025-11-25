@@ -83,28 +83,42 @@ export const paymentService = {
         if (amount <= 0) {
             throw new Error("Order total_amount must be greater than 0");
         }
-
-        // tạo Payment record (pending)
-        const txnRef = this.generateTxnRef();
-
-        const payment = await Payment.create({
-            user_id: userId,
+        // 🔹 LẤY PAYMENT ĐÃ TẠO TRƯỚC ĐÓ
+        const payment = await Payment.findOne({
             order_id: order._id,
             provider: "vnpay",
-            amount,
-            status: "pending",
-            vnp_txn_ref: txnRef,
-            metadata: {
-                returnUrlOverride: returnUrl || null,
-            },
         });
+
+        if (!payment) {
+            throw new Error("Payment not found for this order");
+        }
+        // tạo Payment record (pending)
+        // Nếu chưa có txn_ref thì generate, nếu có rồi thì reuse
+        const txnRef = payment.vnp_txn_ref || this.generateTxnRef();
+
+        // const payment = await Payment.create({
+        //     user_id: userId,
+        //     order_id: order._id,
+        //     provider: "vnpay",
+        //     amount,
+        //     status: "pending",
+        //     vnp_txn_ref: txnRef,
+        //     metadata: {
+        //         returnUrlOverride: returnUrl || null,
+        //     },
+        // });
 
         // const createDate = new Date();
         // const vnpCreateDate = createDate
         //     .toISOString()
         //     .replace(/[-T:\.Z]/g, "")
         //     .slice(0, 14)
-
+        payment.vnp_txn_ref = txnRef;
+        payment.metadata = {
+            ...(payment.metadata || {}),
+            returnUrlOverride: returnUrl || null,
+        };
+        await payment.save();
         const paymentUrl = vnpay.buildPaymentUrl({
             vnp_Amount: amount, // 
             vnp_IpAddr: clientIp || "127.0.0.1",

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -64,12 +66,18 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.search, size: 18, color: Colors.grey),
-                        SizedBox(width: 8),
-                        Text(
-                          'Tìm kiếm',
-                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                      children: [
+                        const Icon(Icons.search, size: 18, color: Colors.grey),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: _SearchHintTyper(
+                            hints: [
+                              'Tìm kính mát nam',
+                              'Kính cận chống ánh xanh',
+                              'Kính mát nữ đi biển',
+                              'Gọng titan siêu nhẹ',
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -604,6 +612,86 @@ class _ProductCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SearchHintTyper extends StatefulWidget {
+  const _SearchHintTyper({
+    required this.hints,
+    this.textStyle,
+    this.typingSpeed = const Duration(milliseconds: 120),
+    this.pauseDuration = const Duration(milliseconds: 1200),
+  });
+
+  final List<String> hints;
+  final TextStyle? textStyle;
+  final Duration typingSpeed;
+  final Duration pauseDuration;
+
+  @override
+  State<_SearchHintTyper> createState() => _SearchHintTyperState();
+}
+
+class _SearchHintTyperState extends State<_SearchHintTyper> {
+  late String _currentHint;
+  int _hintIndex = 0;
+  int _charIndex = 0;
+  bool _isDeleting = false;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentHint = widget.hints[_hintIndex];
+    _startTyping();
+  }
+
+  void _startTyping() {
+    _timer?.cancel();
+    _timer = Timer.periodic(widget.typingSpeed, (timer) {
+      setState(() {
+        if (!_isDeleting) {
+          // Đang gõ
+          if (_charIndex < _currentHint.length) {
+            _charIndex++;
+          } else {
+            // Gõ xong -> pause rồi bắt đầu xoá
+            _isDeleting = true;
+            _timer?.cancel();
+            _timer = Timer(widget.pauseDuration, _startTyping);
+          }
+        } else {
+          // Đang xoá
+          if (_charIndex > 0) {
+            _charIndex--;
+          } else {
+            // Xoá xong -> chuyển sang hint tiếp theo
+            _isDeleting = false;
+            _hintIndex = (_hintIndex + 1) % widget.hints.length;
+            _currentHint = widget.hints[_hintIndex];
+            _timer?.cancel();
+            _timer = Timer(const Duration(milliseconds: 300), _startTyping);
+          }
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = _currentHint.substring(0, _charIndex);
+    return Text(
+      text.isEmpty ? 'Tìm kiếm' : text, // fallback khi mới vào
+      style:
+          widget.textStyle ?? const TextStyle(color: AppColor.buttomThirdCol, fontSize: 14, fontWeight: FontWeight.w500),
+      overflow: TextOverflow.ellipsis,
     );
   }
 }

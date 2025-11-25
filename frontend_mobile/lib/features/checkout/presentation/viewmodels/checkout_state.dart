@@ -1,6 +1,6 @@
 // lib/features/checkout/presentation/viewmodel/checkout_state.dart
 import 'package:frontend_mobile/features/address/data/models/address_model.dart';
-import 'package:frontend_mobile/features/checkout/model/checkout_models.dart';
+import 'package:frontend_mobile/features/checkout/data/model/checkout_models.dart';
 
 enum PaymentMethodMobile { cod, vnpay }
 

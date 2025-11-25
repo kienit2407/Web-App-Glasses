@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:frontend_mobile/features/address/data/models/address_model.dart';
+import 'package:go_router/go_router.dart';
 
 class AddressSelectPage extends ConsumerStatefulWidget {
   const AddressSelectPage({super.key});
@@ -38,8 +39,7 @@ class _AddressSelectPageState extends ConsumerState<AddressSelectPage> {
   }
 
   Future<void> _onAddNew() async {
-    final created =
-        await Navigator.pushNamed(context, '/address-form') as Address?;
+    final created = await context.pushNamed('address-form') as Address?;
     if (created != null) {
       await _loadAddresses();
       setState(() => _selectedId = created.id);
@@ -47,9 +47,8 @@ class _AddressSelectPageState extends ConsumerState<AddressSelectPage> {
   }
 
   Future<void> _onEdit(Address addr) async {
-    final updated =
-        await Navigator.pushNamed(context, '/address-form', arguments: addr)
-            as Address?;
+    final updated =  await context.pushNamed('address-form', extra: addr) as Address?;
+
     if (updated != null) {
       await _loadAddresses();
       setState(() => _selectedId = updated.id);

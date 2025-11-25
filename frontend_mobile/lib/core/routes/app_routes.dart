@@ -7,7 +7,6 @@ import 'package:frontend_mobile/features/checkout/presentation/view/address_form
 import 'package:frontend_mobile/features/checkout/presentation/view/address_select_page.dart';
 import 'package:frontend_mobile/features/checkout/presentation/view/checkout_args.dart';
 import 'package:frontend_mobile/features/checkout/presentation/view/checkout_page.dart';
-import 'package:frontend_mobile/features/checkout/presentation/view/coupon_page.dart';
 import 'package:frontend_mobile/features/product_detail/presentation/views/product_detail_page.dart';
 import 'package:frontend_mobile/features/search/presentation/view/search_page.dart';
 import 'package:frontend_mobile/features/search/presentation/view/search_result_page.dart';
@@ -88,30 +87,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/address-select',
         name: 'address-select',
         builder: (context, state) => const AddressSelectPage(),
-      ),
-      GoRoute(
-        path: '/coupon-select',
-        name: 'coupon-select',
-        builder: (context, state) {
-          final args = state.extra as CheckoutArgs;
-          return CouponPage(args: args);
-        },
-      ),
-      // GoRoute(
-      //   path: '/payment-method',
-      //   name: 'payment-method',
-      //   builder: (context, state) {
-      //     final args = state.extra as CheckoutArgs;
-      //     return PaymentMethodPage(args: args);
-      //   },
-      // ),
-     
-      GoRoute(
-        path: '/address-form',
-        builder: (context, state) {
-          final existing = state.extra as Address?;
-          return AddressFormPage(existing: existing);
-        },
       ),
       GoRoute(
         path: '/address-form',
