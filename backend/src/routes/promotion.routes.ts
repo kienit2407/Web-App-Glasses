@@ -6,7 +6,7 @@ import { promotionController } from "../modules/client/controllers/promotion.con
 const router: Router = express.Router();
 
 
-
+router.use(authMidleWares.protectUserRoute)
 // GET /promotions/center  → list các chương trình khuyến mãi cho coupon center
 router.get("/center", promotionController.listCenter);
 

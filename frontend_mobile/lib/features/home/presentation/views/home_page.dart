@@ -75,7 +75,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                               'Tìm kính mát nam',
                               'Kính cận chống ánh xanh',
                               'Kính mát nữ đi biển',
-                              'Gọng titan siêu nhẹ',
+                              'Gọng titan bền bỉ',
                             ],
                           ),
                         ),

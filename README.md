@@ -79,12 +79,12 @@
 | 🔄📦 React Query | Server State |
 | 🌐🔌 Axios | Api Client |
 
-#### 🌀Mobile
+#### 📱Mobile
 | Tech | Purpose |
 |:---------:|:----------:|
-| 📱🌍 TypeScript | Web Platform |
-| 🐜👀 Styling Design | Ant UI |
-| 🗂️🧠 Bloc | State Management |
+| 💻🌐 Flutter | Cross-Platform |
+| 🌊🔄 Riverpod | State Management |
+| 🔑📦 Hive | Storage Token |
 | 📡🔗 Dio | HTTP Networking |
 ---
 ### 🏆 This is a studying place where i learn about node.js and i can build a server by myself
