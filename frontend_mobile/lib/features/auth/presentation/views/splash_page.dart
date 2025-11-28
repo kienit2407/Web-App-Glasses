@@ -21,17 +21,16 @@ class SplashPage extends ConsumerWidget {
       },
       data: (user) {
         // user != null => đã login, null => chưa login
+        // DÙ login hay chưa, đều vào /home
         Future.microtask(() {
-          if (user == null) {
-            context.go('/signin');
-          } else {
-            context.go('/home');
-          }
+          context.go('/home');
         });
       },
       error: (err, st) {
-        // có lỗi khi bootstrap => coi như chưa login
-        Future.microtask(() => context.go('/signin'));
+        // Có lỗi khi bootstrap => vẫn cho vào home với vai trò khách
+        Future.microtask(() {
+          context.go('/home');
+        });
       },
     );
 
@@ -42,7 +41,7 @@ class SplashPage extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'My Ecommerce',
+              'Shop Glasses',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 24,

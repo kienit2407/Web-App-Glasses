@@ -15,13 +15,19 @@ import 'package:frontend_mobile/features/coupon/presentation/viewmodels/user_cou
 import 'package:frontend_mobile/features/home/data/repository/catalog_repository.dart';
 import 'package:frontend_mobile/features/home/presentation/viewmodels/catalog_controller.dart';
 import 'package:frontend_mobile/features/home/presentation/viewmodels/catalog_state.dart';
+import 'package:frontend_mobile/features/order/data/repository/order_repository.dart';
+import 'package:frontend_mobile/features/order/presentation/viewmodels/orders_controller.dart';
+import 'package:frontend_mobile/features/order/presentation/viewmodels/orders_state.dart';
 import 'package:frontend_mobile/features/product_detail/data/repository/product_detail_repository.dart';
+import 'package:frontend_mobile/features/profile/data/repository/profile_repository.dart';
+import 'package:frontend_mobile/features/profile/presentation/viewmodels/profile_controller.dart';
 import 'package:frontend_mobile/features/search/data/repository/search_repository.dart';
 import 'package:frontend_mobile/features/search/data/repository/search_result_repository.dart';
 import 'package:frontend_mobile/features/search/presentation/viewmodel/search_result_controller.dart';
 import 'package:frontend_mobile/features/search/presentation/viewmodel/search_result_state.dart';
 import 'package:frontend_mobile/features/search/presentation/viewmodel/search_state.dart';
 
+import '../../features/profile/presentation/viewmodels/profile_state.dart';
 import '../network/dio_config.dart';
 import '../network/token_storage.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
@@ -142,3 +148,27 @@ final userCouponControllerProvider = StateNotifierProvider.family<UserCouponCont
     return UserCouponController(repo, subtotal: subtotal);
   },
 );
+
+
+final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
+  final dio = ref.read(dioClientProvider);
+  return ProfileRepository(dioClient: dio);
+});
+
+final profileControllerProvider =
+    StateNotifierProvider<ProfileController, ProfileState>((ref) {
+  final repo = ref.read(profileRepositoryProvider);
+  return ProfileController(repo);
+});
+
+// ORDERS
+final orderRepositoryProvider = Provider<OrderRepository>((ref) {
+  final dio = ref.read(dioClientProvider);
+  return OrderRepository(dio);
+});
+
+final ordersControllerProvider =
+    StateNotifierProvider<OrdersController, OrdersState>((ref) {
+  final repo = ref.read(orderRepositoryProvider);
+  return OrdersController(repo);
+});

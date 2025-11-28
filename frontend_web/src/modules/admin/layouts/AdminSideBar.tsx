@@ -26,7 +26,8 @@ import { useEffect, useState } from "react";
 import { Menu } from "antd";
 import { useAdminNotificationStore } from "@/hooks/use-admin-notification";
 import { NotificationBell } from "@/modules/user/components/NotificationBell";
-
+import { Badge } from "antd";
+import { useAdminSupportBadgeStore } from "@/hooks/use-admin-support-badge";
 const menuItems = [
     { label: "Dashboard", icon: LayoutDashboard, to: "/admin/dashboard" },
     { label: "Sản phẩm", icon: ShoppingBag, to: "/admin/products" },
@@ -131,7 +132,7 @@ export const AdminSidebar = () => {
         markRead,          // ✅ dùng bản có gọi API
         markAllRead,       // ✅
     } = useAdminNotificationStore();
-
+    const supportUnread = useAdminSupportBadgeStore((s) => s.unreadChatCount);
     useEffect(() => {
         fetchFirstPage();
     }, [fetchFirstPage]);
@@ -178,7 +179,7 @@ export const AdminSidebar = () => {
                         navigate("/admin/notifications");
                     }}
                     onMarkAllRead={async () => {
-                        await markAllRead(); // ✅ update local + gọi API
+                        await markAllRead();
                     }}
                     onOpenChange={(open) => {
                         if (open) {
@@ -193,6 +194,8 @@ export const AdminSidebar = () => {
             <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
                 {menuItems.map((item) => {
                     const Icon = item.icon;
+                    const isSupport = item.to === "/admin/conversations";
+
                     return (
                         <NavLink
                             key={item.to}
@@ -207,7 +210,18 @@ export const AdminSidebar = () => {
                             }
                         >
                             <Icon className="w-4 h-4" />
-                            <span>{item.label}</span>
+                            <span className="flex-1 flex items-center justify-between">
+                                <span>{item.label}</span>
+
+                                {isSupport && supportUnread > 0 && (
+                                    <Badge
+                                        count={supportUnread}
+                                        size="small"
+                                        overflowCount={99}
+                                        className="ml-2"
+                                    />
+                                )}
+                            </span>
                         </NavLink>
                     );
                 })}

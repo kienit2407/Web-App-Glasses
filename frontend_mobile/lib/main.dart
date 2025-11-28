@@ -37,6 +37,7 @@ class MyApp extends ConsumerWidget {
       title: 'My Ecommerce',
       routerConfig: router, 
       debugShowCheckedModeBanner: false,
+
     );
   }
 }

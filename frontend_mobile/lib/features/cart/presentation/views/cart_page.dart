@@ -44,11 +44,11 @@ class _CartPageState extends ConsumerState<CartPage> {
     if (cart == null || cart.items.isEmpty) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Giỏ hàng'),
+          title: const Text('Giỏ hàng', style: TextStyle(fontWeight: FontWeight.w600)),
           centerTitle: true,
           elevation: 0,
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black87,
+          backgroundColor: AppColor.buttonprimaryCol,
+          foregroundColor: Colors.white,
         ),
         backgroundColor: const Color(0xfff5f5f5),
         body: Center(
@@ -96,11 +96,11 @@ class _CartPageState extends ConsumerState<CartPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Giỏ hàng ($totalItems)', overflow: TextOverflow.ellipsis),
+        title: Text('Giỏ hàng ($totalItems)', overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600),),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: AppColor.buttonprimaryCol,
+          foregroundColor: Colors.white,
       ),
       backgroundColor: const Color(0xfff5f5f5),
       body: RefreshIndicator(

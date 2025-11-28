@@ -9,7 +9,18 @@ import {
 import { Payment } from "../../../models/payments.model";
 import { SEND_EVENT_TO_USER } from "../../../config/socket.io";
 import { Notification } from "../../../models/notification.model";
-
+interface OrderStatusStats {
+    all: number;
+    pending: number;
+    processing: number;
+    shipping: number;
+    delivering: number;
+    delivered: number;
+    cancelled: number;
+    returned: number;
+    cancel_requested: number;
+    return_requested: number;
+}
 interface SearchOrdersParams {
     page?: number;
     limit?: number;
@@ -20,7 +31,42 @@ interface SearchOrdersParams {
     from_date?: string;
     to_date?: string;
 }
+function buildStatusFilter(
+    status?: TOrderStatus | "cancel_requested" | "return_requested"
+) {
+    const filter: any = {};
 
+    if (!status) {
+        // Tab "Tất cả" hoặc không truyền gì -> không filter theo status
+        return filter;
+    }
+
+    if (status === "cancel_requested") {
+        // Đơn đã yêu cầu huỷ nhưng chưa bị huỷ chính thức
+        filter.cancel_requested = true;
+        filter.order_status = { $ne: "cancelled" };
+        return filter;
+    }
+
+    if (status === "return_requested") {
+        // Đơn đã giao xong và user yêu cầu trả
+        filter.return_requested = true;
+        filter.order_status = "delivered";
+        return filter;
+    }
+
+    // Các trạng thái "bình thường"
+    filter.order_status = status;
+
+    // Với các trạng thái đang trong luồng, không lấy đơn đã request huỷ / trả
+    if (["pending", "processing", "shipping", "delivering", "delivered"].includes(status)) {
+        filter.cancel_requested = { $ne: true };
+        filter.return_requested = { $ne: true };
+    }
+
+    // Với "cancelled" và "returned" thì để nguyên, không cần filter thêm
+    return filter;
+}
 export const adminOrderService = {
     async search(params: SearchOrdersParams) {
         const {
@@ -35,17 +81,17 @@ export const adminOrderService = {
         } = params;
 
         const filter: any = {};
-
-        if (order_status) {
-            if (order_status === "cancel_requested") {
-                filter.cancel_requested = true;
-            }
-            else if (order_status === "return_requested") {
-                filter.return_requested = true;
-            } else {
-                filter.order_status = order_status;
-            }
-        }
+        Object.assign(filter, buildStatusFilter(order_status));
+        // if (order_status) {
+        //     if (order_status === "cancel_requested") {
+        //         filter.cancel_requested = true;
+        //     }
+        //     else if (order_status === "return_requested") {
+        //         filter.return_requested = true;
+        //     } else {
+        //         filter.order_status = order_status;
+        //     }
+        // }
 
         if (payment_status) {
             filter.payment_status = payment_status;
@@ -251,4 +297,56 @@ export const adminOrderService = {
 
         return order.toObject();
     },
+    async getStatusStats(): Promise<OrderStatusStats> {
+        const keys: (keyof OrderStatusStats)[] = [
+            "all",
+            "pending",
+            "processing",
+            "shipping",
+            "delivering",
+            "delivered",
+            "cancelled",
+            "returned",
+            "cancel_requested",
+            "return_requested",
+        ];
+
+        const results = await Promise.all(
+            keys.map((key) => {
+                if (key === "all") {
+                    return Order.countDocuments({});
+                }
+                // dùng buildStatusFilter cho từng key
+                const filter = buildStatusFilter(key as any);
+                return Order.countDocuments(filter);
+            })
+        );
+
+        const [
+            all,
+            pending,
+            processing,
+            shipping,
+            delivering,
+            delivered,
+            cancelled,
+            returned,
+            cancelRequested,
+            returnRequested,
+        ] = results;
+
+        return {
+            all,
+            pending,
+            processing,
+            shipping,
+            delivering,
+            delivered,
+            cancelled,
+            returned,
+            cancel_requested: cancelRequested,
+            return_requested: returnRequested,
+        };
+    }
+
 };

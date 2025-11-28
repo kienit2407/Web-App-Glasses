@@ -1,6 +1,8 @@
 // lib/features/checkout/data/checkout_repository.dart
+import 'package:frontend_mobile/core/contants/url_config.dart';
 import 'package:frontend_mobile/core/network/dio_config.dart';
 import 'package:frontend_mobile/features/checkout/data/model/checkout_models.dart';
+import 'package:frontend_mobile/features/checkout/presentation/viewmodels/checkout_state.dart';
 
 class CheckoutRepository {
   final DioClient dioClient;
@@ -49,12 +51,16 @@ class CheckoutRepository {
     required Map<String, dynamic>? directItem,
     String? couponCode,
     String? note,
+    required PaymentMethodMobile paymentMethod,
   }) async {
     final body = <String, dynamic>{
       'address_id': addressId,
       if (couponCode != null && couponCode.isNotEmpty)
         'coupon_code': couponCode,
       if (note != null && note.isNotEmpty) 'note': note,
+      'payment_method': paymentMethod == PaymentMethodMobile.vnpay
+          ? 'vnpay'
+          : 'cod',
     };
 
     if (cartItemIds != null && cartItemIds.isNotEmpty) {
@@ -84,8 +90,8 @@ class CheckoutRepository {
       '/payments/vnpay/create',
       data: {
         'order_id': orderId,
-        'returnUrl':
-            '', // mobile bạn có thể dùng deep-link sau, tạm để BE ignore
+        // hoặc deep-link sau này: 'myapp://payment-result'
+        'returnUrl': '${UrlConfig.frontendBaseUrl}/payment-result',
       },
     );
     return res.data['data']['payment_url'] as String;

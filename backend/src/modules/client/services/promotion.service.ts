@@ -35,34 +35,54 @@ export const promotionService = {
     async getHighlight(userId: Types.ObjectId) {
         const now = new Date();
 
-        // Nếu bạn có field riêng ví dụ show_in_popup thì add vào filter
-        const promo = await Promotion.findOne({
+        // 1) Lấy tất cả promotion đang chạy
+        const promotions = await Promotion.find({
             is_active: true,
             start_date: { $lte: now },
             $or: [{ end_date: null }, { end_date: { $gte: now } }],
         })
-            .sort({ priority: -1, start_date: -1 }) // ưu tiên priority cao
+            // ❌ Không sort theo priority nữa
+            // ✅ Sort theo thời gian (mới nhất nằm trên)
+            .sort({ start_date: -1, createdAt: -1 })
             .lean();
 
-        if (!promo) {
+        if (!promotions.length) {
             return { promotion: null, already_seen: true };
         }
 
-        const view = await UserPromotionView.findOne({
-            user_id: userId,
-            promotion_id: promo._id,
-        }).lean();
+        const promoIds = promotions.map((p) => p._id);
 
+        // 2) Lấy danh sách promotion mà user đã xem trong đống này
+        const views = await UserPromotionView.find({
+            user_id: userId,
+            promotion_id: { $in: promoIds },
+        })
+            .select("promotion_id")
+            .lean();
+
+        const seenSet = new Set(views.map((v) => String(v.promotion_id)));
+
+        // 3) Tìm promotion ĐẦU TIÊN mà user CHƯA xem
+        const firstUnseen = promotions.find(
+            (p) => !seenSet.has(String(p._id))
+        );
+
+        if (!firstUnseen) {
+            // User đã xem hết các promotion đang chạy
+            return { promotion: null, already_seen: true };
+        }
+
+        // 4) Trả về đúng 1 promotion chưa xem
         return {
             promotion: {
-                _id: promo._id,
-                title: promo.title,
-                description: promo.description,
-                banner_url: promo.banner_url,
-                start_date: promo.start_date,
-                end_date: promo.end_date ?? null,
+                _id: firstUnseen._id,
+                title: firstUnseen.title,
+                description: firstUnseen.description,
+                banner_url: firstUnseen.banner_url,
+                start_date: firstUnseen.start_date,
+                end_date: firstUnseen.end_date ?? null,
             },
-            already_seen: !!view,
+            already_seen: false, // đã đảm bảo đây là promo chưa xem
         };
     },
 

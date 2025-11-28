@@ -141,18 +141,25 @@ class CheckoutPage extends ConsumerWidget {
                 final paymentUrl = result['paymentUrl'];
                 final orderId = result['orderId'];
 
+                if (!context.mounted || orderId == null) return;
+
                 if (state.paymentMethod == PaymentMethodMobile.cod ||
                     paymentUrl == null) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Đặt hàng thành công (Mã: $orderId)'),
-                      ),
-                    );
-                    context.go('/home');
-                  }
+                  // COD: đã confirm trong controller rồi -> sang màn kết quả
+                  context.go(
+                    '/payment-result',
+                    extra: PaymentResultArgs(
+                      status: 'success',
+                      orderId: orderId,
+                      method: PaymentMethodMobile.cod,
+                    ),
+                  );
                 } else {
-                  // TODO: mở WebView / url_launcher với paymentUrl
+                  // VNPay: mở WebView
+                  context.push(
+                    '/vnpay-webview',
+                    extra: VnpayArgs(orderId: orderId, paymentUrl: paymentUrl),
+                  );
                 }
               } catch (_) {
                 if (context.mounted) {
@@ -220,7 +227,6 @@ class _AddressCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
 
-                    // Cột Text
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,7 +263,9 @@ class _AddressCard extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 2), // Bỏ bớt khoảng cách nếu thấy rời rạc
+                          const SizedBox(
+                            height: 2,
+                          ), // Bỏ bớt khoảng cách nếu thấy rời rạc
                           Text(
                             '${address.fullAddress}',
                             style: TextStyle(
@@ -326,7 +334,12 @@ class _ItemsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
       child: Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: Column(
@@ -389,7 +402,12 @@ class _VoucherCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Column(
@@ -456,7 +474,13 @@ class _VoucherCard extends StatelessWidget {
                 ),
 
                 if (state.appliedCoupon != null)
-                  TextButton(onPressed: onClear, child: const Text('Xoá')),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColor.buttomThirdCol,
+                    ),
+                    onPressed: onClear,
+                    child: const Text('Xoá'),
+                  ),
               ],
             ),
             if (state.appliedCoupon != null)
@@ -522,8 +546,6 @@ class _VoucherCard extends StatelessWidget {
   }
 }
 
-/// CARD NOTE
-
 class _NoteCard extends StatelessWidget {
   const _NoteCard({required this.note, required this.onChanged});
 
@@ -534,7 +556,12 @@ class _NoteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Column(
@@ -568,8 +595,6 @@ class _NoteCard extends StatelessWidget {
   }
 }
 
-/// CARD PHƯƠNG THỨC THANH TOÁN
-
 class _PaymentMethodCard extends StatelessWidget {
   const _PaymentMethodCard({required this.method, required this.onChange});
 
@@ -580,7 +605,12 @@ class _PaymentMethodCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Column(
@@ -618,8 +648,6 @@ class _PaymentMethodCard extends StatelessWidget {
   }
 }
 
-/// CARD TÓM TẮT GIÁ – HIỂN THỊ NGUỒN GIẢM GIÁ
-
 class _PriceSummaryCard extends StatelessWidget {
   const _PriceSummaryCard({required this.preview, required this.formatPrice});
 
@@ -640,7 +668,12 @@ class _PriceSummaryCard extends StatelessWidget {
 
     return Card(
       color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         child: Column(
@@ -655,7 +688,12 @@ class _PriceSummaryCard extends StatelessWidget {
             if (preview.discountAmount > 0)
               Padding(
                 padding: const EdgeInsets.only(top: 2),
-                child: _row('Nguồn giảm', discountSourceText, isSmall: true),
+                child: _row(
+                  'Nguồn giảm',
+                  discountSourceText,
+                  isSmall: true,
+                  valueColor: AppColor.buttomThirdCol,
+                ),
               ),
             const SizedBox(height: 4),
             _row('Phí vận chuyển', formatPrice(preview.shippingFee)),
@@ -695,8 +733,6 @@ class _PriceSummaryCard extends StatelessWidget {
     );
   }
 }
-
-/// THANH ĐÁY ĐẶT HÀNG
 
 class _BottomSummaryBar extends StatelessWidget {
   const _BottomSummaryBar({
@@ -779,7 +815,6 @@ class _BottomSummaryBar extends StatelessWidget {
     );
   }
 }
-// ======= BOTTOM SHEET CHỌN VOUCHER =======
 
 void _showCouponBottomSheet({
   required BuildContext context,
@@ -794,7 +829,6 @@ void _showCouponBottomSheet({
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
     builder: (ctx) {
-      // Dùng Consumer để lấy ref trong bottom sheet
       return Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(ctx).viewInsets.bottom,
@@ -805,7 +839,6 @@ void _showCouponBottomSheet({
         child: Consumer(
           builder: (context, ref, _) {
             final state = ref.watch(userCouponControllerProvider(subtotal));
-
             if (state.isLoading && state.coupons.isEmpty) {
               return const SizedBox(
                 height: 260,
@@ -869,7 +902,7 @@ void _showCouponBottomSheet({
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: canUse
-                                  ? Colors.deepPurple
+                                  ? AppColor.buttomThirdCol
                                   : Colors.grey.shade300,
                             ),
                           ),
@@ -893,7 +926,7 @@ void _showCouponBottomSheet({
                                       'Đơn tối thiểu: ${c.minOrder != null ? formatPrice(c.minOrder!) : '0đ'}',
                                       style: const TextStyle(
                                         fontSize: 12,
-                                        color: Colors.grey,
+                                        color: AppColor.buttonprimaryCol,
                                       ),
                                     ),
                                     if (missing > 0)
@@ -938,6 +971,11 @@ void _showCouponBottomSheet({
                                   ),
                                   const SizedBox(height: 8),
                                   ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          AppColor.buttonprimaryCol,
+                                      foregroundColor: Colors.white,
+                                    ),
                                     onPressed: canUse
                                         ? () async {
                                             controller.changeCouponInput(

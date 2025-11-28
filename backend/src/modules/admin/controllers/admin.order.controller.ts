@@ -39,6 +39,10 @@ export const search = TryCatch(async (req: Request, res: Response) => {
 
     return res.json({ data });
 });
+export const stats = TryCatch(async (_req: Request, res: Response) => {
+    const data = await adminOrderService.getStatusStats();
+    return res.json({ data });
+});
 
 // GET /admin/orders/:id
 export const detail = TryCatch(async (req: Request, res: Response) => {
@@ -74,4 +78,5 @@ export const adminOrderController = {
     search,
     detail,
     updateStatus,
+    stats
 };

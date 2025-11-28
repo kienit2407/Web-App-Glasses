@@ -1,7 +1,7 @@
 
 import { Schema, model, Types, Document } from "mongoose"
 
-export type TPaymentProvider = "vnpay" | "momo" | "bank_transfer" | "cod"
+export type TPaymentProvider = "vnpay" | "cod"
 export type TPaymentState = "pending" | "success" | "failed" | "refunded"
 
 export interface IPayment extends Document {

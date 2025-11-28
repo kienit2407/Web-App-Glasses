@@ -4,6 +4,7 @@ import { orderController } from "../modules/client/controllers/order.controller"
 
 const router: Router = express.Router()
 router.use(authMidleWares.protectUserRoute)
+router.get("/stats", orderController.myStats)
 router.post("/", /*validate(createOrder),*/ /*order.create*/orderController.create)   // snapshot address, items, coupon
 router.get ("/", /*order.listMy*/orderController.listMy)                              // ?status&page&limit
 router.get ("/:id", /*order.detailMy*/orderController.detailMy)

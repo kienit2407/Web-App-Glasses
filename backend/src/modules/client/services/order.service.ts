@@ -1,5 +1,5 @@
 import { ClientSession, Types } from "mongoose"
-import { Order, IAddressSnapshot } from "../../../models/orders.model"
+import { Order, IAddressSnapshot, TOrderStatus } from "../../../models/orders.model"
 import { OrderItem } from "../../../models/orders.item.model"
 import { Cart } from "../../../models/cart.model"
 import { CartDetail } from "../../../models/cart.details.model"
@@ -32,7 +32,18 @@ interface CartSelectionPayload {
     coupon_code?: string | null
     payment_method?: PaymentMethod
 }
-
+interface MyOrderStatusStats {
+    all: number;
+    pending: number;
+    processing: number;
+    shipping: number;
+    delivering: number;
+    delivered: number;
+    cancelled: number;
+    returned: number;
+    cancel_requested: number;
+    return_requested: number;
+}
 // ====== PAYLOAD TRỰC TIẾP (luồng Mua ngay) ======
 interface DirectItemInput {
     variant_id: string
@@ -88,7 +99,35 @@ interface PricingResult {
     applied_promotion?: AppliedPromotion | null
     discount_source?: "none" | "coupon" | "promotion"
 }
+function buildUserStatusFilter(
+    status?: string
+) {
+    const filter: any = {};
 
+    if (!status || status === "all") return filter;
+
+    if (status === "cancel_requested") {
+        filter.cancel_requested = true;
+        filter.order_status = { $ne: "cancelled" };
+        return filter;
+    }
+
+    if (status === "return_requested") {
+        filter.return_requested = true;
+        filter.order_status = "delivered";
+        return filter;
+    }
+
+    // các trạng thái bình thường
+    filter.order_status = status;
+
+    if (["pending", "processing", "shipping", "delivering", "delivered"].includes(status)) {
+        filter.cancel_requested = { $ne: true };
+        filter.return_requested = { $ne: true };
+    }
+
+    return filter;
+}
 // ====== HELPER: TÍNH PROMOTION TỐT NHẤT ======
 async function calculateBestPromotionDiscount(
     orderItemsData: PricingResult["orderItemsData"],
@@ -877,7 +916,56 @@ async function createOrder(
         items: orderItemsWithOrderId,
     }
 }
+async function getMyOrderStatusStats(userId: Types.ObjectId): Promise<MyOrderStatusStats> {
+    const keys: (keyof MyOrderStatusStats)[] = [
+        "all",
+        "pending",
+        "processing",
+        "shipping",
+        "delivering",
+        "delivered",
+        "cancelled",
+        "returned",
+        "cancel_requested",
+        "return_requested",
+    ];
 
+    const results = await Promise.all(
+        keys.map((key) => {
+            if (key === "all") {
+                return Order.countDocuments({ user_id: userId });
+            }
+            const statusFilter = buildUserStatusFilter(key as string);
+            return Order.countDocuments({ user_id: userId, ...statusFilter });
+        })
+    );
+
+    const [
+        all,
+        pending,
+        processing,
+        shipping,
+        delivering,
+        delivered,
+        cancelled,
+        returned,
+        cancelRequested,
+        returnRequested,
+    ] = results;
+
+    return {
+        all,
+        pending,
+        processing,
+        shipping,
+        delivering,
+        delivered,
+        cancelled,
+        returned,
+        cancel_requested: cancelRequested,
+        return_requested: returnRequested,
+    };
+}
 // ====== 4) TẠO ORDER TỪ DIRECT ITEMS (Mua ngay – KHÔNG XOÁ CART) ======
 async function createOrderFromDirect(
     userId: Types.ObjectId,
@@ -1042,16 +1130,16 @@ async function listMyOrders(
     const limitNum = Math.min(Math.max(Number(limit) || 10, 1), 50)
 
     const filter: any = { user_id: userId }
-
-    if (status && status !== "all") {
-        if (status === "cancel_requested") {
-            filter.cancel_requested = true
-        } else if (status === "return_requested") {
-            filter.return_requested = true
-        } else {
-            filter.order_status = status
-        }
-    }
+    Object.assign(filter, buildUserStatusFilter(status));
+    // if (status && status !== "all") {
+    //     if (status === "cancel_requested") {
+    //         filter.cancel_requested = true
+    //     } else if (status === "return_requested") {
+    //         filter.return_requested = true
+    //     } else {
+    //         filter.order_status = status
+    //     }
+    // }
 
     const [orders, total] = await Promise.all([
         Order.find(filter)
@@ -1211,11 +1299,6 @@ async function requestCancelMyOrder(userId: Types.ObjectId, orderId: string) {
             order_number: order.order_number,
             action: "cancel_requested",
         },
-    })
-
-    SEND_EVENT_TO_USER(String(userId), "order:cancel_requested", {
-        order_id: order._id,
-        order_number: order.order_number,
     })
 
     // Thông báo cho ADMIN
@@ -1454,4 +1537,5 @@ export const orderService = {
     reorderMyOrder,
     confirmDeliveredMyOrder,
     requestReturnMyOrder,
+    getMyOrderStatusStats
 }

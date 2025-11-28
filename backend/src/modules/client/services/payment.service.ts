@@ -66,74 +66,50 @@ export const paymentService = {
             throw new Error("Invalid order_id");
         }
 
-        const order = await Order.findOne({
-            _id: orderId,
-            user_id: userId,
-        });
+        const order = await Order.findOne({ _id: orderId, user_id: userId });
 
-        if (!order) {
-            throw new Error("Order not found");
-        }
-
+        if (!order) throw new Error("Order not found");
         if (order.payment_status !== "pending") {
             throw new Error("Order is not in pending payment status");
         }
 
         const amount = order.total_amount;
-        if (amount <= 0) {
-            throw new Error("Order total_amount must be greater than 0");
-        }
-        // 🔹 LẤY PAYMENT ĐÃ TẠO TRƯỚC ĐÓ
-        const payment = await Payment.findOne({
-            order_id: order._id,
-            provider: "vnpay",
-        });
+        if (amount <= 0) throw new Error("Order total_amount must be greater than 0");
+
+        // 🔹 LẤY HOẶC TẠO PAYMENT
+        let payment = await Payment.findOne({ order_id: order._id });
 
         if (!payment) {
-            throw new Error("Payment not found for this order");
+            // fallback cho data cũ (lý thuyết ra hiện tại sẽ luôn có)
+            payment = await Payment.create({
+                user_id: userId,
+                order_id: order._id,
+                provider: "vnpay",
+                amount,
+                status: "pending",
+                paidAt: null,
+            });
+        } else if (payment.provider !== "vnpay") {
+            // đơn này vốn là COD mà lại đòi thanh toán VNPay
+            throw new Error("Order payment method is not VNPay");
         }
-        // tạo Payment record (pending)
-        // Nếu chưa có txn_ref thì generate, nếu có rồi thì reuse
+
         const txnRef = payment.vnp_txn_ref || this.generateTxnRef();
 
-        // const payment = await Payment.create({
-        //     user_id: userId,
-        //     order_id: order._id,
-        //     provider: "vnpay",
-        //     amount,
-        //     status: "pending",
-        //     vnp_txn_ref: txnRef,
-        //     metadata: {
-        //         returnUrlOverride: returnUrl || null,
-        //     },
-        // });
-
-        // const createDate = new Date();
-        // const vnpCreateDate = createDate
-        //     .toISOString()
-        //     .replace(/[-T:\.Z]/g, "")
-        //     .slice(0, 14)
         payment.vnp_txn_ref = txnRef;
         payment.metadata = {
             ...(payment.metadata || {}),
             returnUrlOverride: returnUrl || null,
         };
         await payment.save();
+
         const paymentUrl = vnpay.buildPaymentUrl({
-            vnp_Amount: amount, // 
+            vnp_Amount: amount,
             vnp_IpAddr: clientIp || "127.0.0.1",
             vnp_TxnRef: txnRef,
             vnp_OrderInfo: `Thanh toan don hang ${order.order_number}`,
-            vnp_ReturnUrl: env.VNP_RETURN_URL
+            vnp_ReturnUrl: env.VNP_RETURN_URL,
         });
-
-        // const { sorted, signed } = this.signVnpParams(vnpParams);
-
-        // const paymentUrl =
-        //     env.VNP_URL +
-        //     "?" +
-        //     qs.stringify(sorted, { encode: false }) +
-        //     `&vnp_SecureHash=${signed}`;
 
         return {
             paymentUrl,
@@ -141,6 +117,88 @@ export const paymentService = {
             txnRef,
         };
     },
+    // async createVnpPaymentUrl(payload: VnpCreatePayload) {
+    //     const { userId, orderId, returnUrl, clientIp } = payload;
+
+    //     if (!Types.ObjectId.isValid(orderId)) {
+    //         throw new Error("Invalid order_id");
+    //     }
+
+    //     const order = await Order.findOne({
+    //         _id: orderId,
+    //         user_id: userId,
+    //     });
+
+    //     if (!order) {
+    //         throw new Error("Order not found");
+    //     }
+
+    //     if (order.payment_status !== "pending") {
+    //         throw new Error("Order is not in pending payment status");
+    //     }
+
+    //     const amount = order.total_amount;
+    //     if (amount <= 0) {
+    //         throw new Error("Order total_amount must be greater than 0");
+    //     }
+    //     // 🔹 LẤY PAYMENT ĐÃ TẠO TRƯỚC ĐÓ
+    //     const payment = await Payment.findOne({
+    //         order_id: order._id,
+    //         provider: "vnpay",
+    //     });
+
+    //     if (!payment) {
+    //         throw new Error("Payment not found for this order");
+    //     }
+    //     // tạo Payment record (pending)
+    //     // Nếu chưa có txn_ref thì generate, nếu có rồi thì reuse
+    //     const txnRef = payment.vnp_txn_ref || this.generateTxnRef();
+
+    //     // const payment = await Payment.create({
+    //     //     user_id: userId,
+    //     //     order_id: order._id,
+    //     //     provider: "vnpay",
+    //     //     amount,
+    //     //     status: "pending",
+    //     //     vnp_txn_ref: txnRef,
+    //     //     metadata: {
+    //     //         returnUrlOverride: returnUrl || null,
+    //     //     },
+    //     // });
+
+    //     // const createDate = new Date();
+    //     // const vnpCreateDate = createDate
+    //     //     .toISOString()
+    //     //     .replace(/[-T:\.Z]/g, "")
+    //     //     .slice(0, 14)
+    //     payment.vnp_txn_ref = txnRef;
+    //     payment.metadata = {
+    //         ...(payment.metadata || {}),
+    //         returnUrlOverride: returnUrl || null,
+    //     };
+    //     await payment.save();
+    //     const paymentUrl = vnpay.buildPaymentUrl({
+    //         vnp_Amount: amount, // 
+    //         vnp_IpAddr: clientIp || "127.0.0.1",
+    //         vnp_TxnRef: txnRef,
+    //         vnp_OrderInfo: `Thanh toan don hang ${order.order_number}`,
+    //         vnp_ReturnUrl: env.VNP_RETURN_URL
+    //     });
+
+    //     // const { sorted, signed } = this.signVnpParams(vnpParams);
+
+    //     // const paymentUrl =
+    //     //     env.VNP_URL +
+    //     //     "?" +
+    //     //     qs.stringify(sorted, { encode: false }) +
+    //     //     `&vnp_SecureHash=${signed}`;
+
+    //     return {
+    //         paymentUrl,
+    //         paymentId: payment._id,
+    //         txnRef,
+    //     };
+    // },
 
     // /vnpay/return: xử lý kết quả khi user được redirect về (browser)
     // /vnpay/return: xử lý kết quả khi user được redirect về (browser)
@@ -276,7 +334,6 @@ export const paymentService = {
         return { RspCode: "00", Message: "Confirm success" };
     },
 
-    // COD: confirm đặt hàng với phương thức COD
     async codConfirm(userId: Types.ObjectId, orderId: string) {
         if (!Types.ObjectId.isValid(orderId)) {
             throw new Error("Invalid order_id");
@@ -287,26 +344,31 @@ export const paymentService = {
             user_id: userId,
         });
 
-        if (!order) {
-            throw new Error("Order not found");
-        }
-
+        if (!order) throw new Error("Order not found");
         if (order.payment_status !== "pending") {
             throw new Error("Order is not in pending payment status");
         }
 
         const amount = order.total_amount;
 
-        const payment = await Payment.create({
-            user_id: userId,
-            order_id: order._id,
-            provider: "cod",
-            amount,
-            status: "pending", // COD: chờ giao xong mới success
-        });
+        // 🔹 LẤY PAYMENT CÓ SẴN
+        let payment = await Payment.findOne({ order_id: order._id });
 
-        await order.save(); // nếu không sửa gì thì thậm chí có thể bỏ luôn dòng này
+        if (!payment) {
+            // fallback cho data cũ
+            payment = await Payment.create({
+                user_id: userId,
+                order_id: order._id,
+                provider: "cod",
+                amount,
+                status: "pending",
+                paidAt: null,
+            });
+        } else if (payment.provider !== "cod") {
+            throw new Error("Order payment method is not COD");
+        }
 
+        // ở đây chưa cần đổi trạng thái gì, COD chỉ thực sự "success" khi user bấm ĐÃ NHẬN HÀNG
         return payment;
     }
 };

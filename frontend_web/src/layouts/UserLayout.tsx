@@ -35,8 +35,6 @@ export const UserLayout = () => {
                 <Outlet /> {/* render page con */}
             </main>
             <Footer />
-            {/* Nút cuộn lên đầu trang */}
-
             {user ? (<SupportChatWidget />) : null}
             <ScrollToTopButton showAfter={300} />
 

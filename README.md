@@ -1,9 +1,9 @@
 ## App Name: Glasses Shop 
 ## App Project: Glasses Web App
 ---
-> **🕶️Glasses Shop** iGlasses Shop is a production-grade, full-stack e-commerce application built to learn and master Node.js, Flutter, real-time communication, and modern backend architecture. The project provides a complete buying experience with secure authentication, admin features, optimized API performance, and a smooth cross-platform UI..
+> **🕶️Glasses Shop** iGlasses Shop is a production-grade, full-stack e-commerce application built to learn and master Node.js, Flutter, real-time communication, and modern backend architecture. The project provides a complete buying experience with secure authentication, admin features, optimized API performance, and a smooth cross-platform UI.
 ---
-### 🚀 Features (Main Functionalities)
+## 🚀 Features (Main Functionalities)
 ## 🔐 Authentication & User Management
 - JWT Access/Refresh token flow
 - Secure password hashing (bcrypt)
@@ -28,7 +28,7 @@
 - Manage products
 - Manage users
 - Manage orders
-- Real-time notifications (orders, low-stock, etc.)
+- Real-time notifications (orders, low-stock, etc...)
 ## 📱 Mobile App (Flutter)
 - Built with Bloc for predictable state management
 - Responsive UI
@@ -51,9 +51,9 @@
 | 🍃💾 MongoDB | Database |
 | 🐙💻 Github | Store My Code |
 | 🔑🛡️ JWT | Security |
-| 🐿️💾 Redis | in-memory database |
+| 🐿️💾 Redis | In-memory database |
 | 🚦🛑 Arcjet | Rate-Limiting API |
-| 🧩 State Management | Bloc |
+| 🌊🔄 Riverpod | State Management |
 | ☁️📤 File Uploads | Cloudinary |
 | 🔵📘 TypeScript | Web Platform |
 | 🐜👀 Styling Design | Ant UI |
@@ -90,18 +90,9 @@
 ### 🏆 This is a studying place where i learn about node.js and i can build a server by myself
 ---
 ### 🚀 Installation & Setup
-## if u want to take it immatediately. Let follow the intructions which i created for you below 👇:
+## If u want to take it immatediately. Let follow the intructions which i created for you below 👇:
 ```bash
 git clone https://github.com/kienit2407/Web-App-Glasses.git
-```
-## Instruction for Node.js
-### if u installed yarn:
-```bash
-yarn install
-```
-### if u use npm normally:
-```bash
-npm install
 ```
 ### Navigate to the backend directory
 ```bash
@@ -110,6 +101,15 @@ cd Web-App-Glasses/backend
 ### Navigate to the frontend_web directory
 ```bash
 cd Web-App-Glasses/frontend_web
+```
+## Instruction for Node.js
+### If u installed yarn:
+```bash
+yarn install
+```
+### If u use npm normally:
+```bash
+npm install
 ```
 ---
 ## Instruction for Flutter

@@ -2,9 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
+import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:frontend_mobile/features/address/data/models/address_model.dart';
 import 'package:frontend_mobile/features/address/data/repository/address_repository.dart';
-import 'package:frontend_mobile/features/checkout/presentation/viewmodels/region_select_page.dart';
+import 'package:frontend_mobile/features/checkout/presentation/view/region_select_page.dart';
 
 class AddressFormPage extends ConsumerStatefulWidget {
   const AddressFormPage({super.key, this.existing});
@@ -86,7 +87,7 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
     if (!_formKey.currentState!.validate()) return;
     if (_provinceCode == null || _districtCode == null || _wardCode == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn City / District / Ward')),
+        const SnackBar(content: Text('Vui lòng chọn Thành phố / Huyện / Xã')),
       );
       return;
     }
@@ -133,7 +134,12 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
   Widget build(BuildContext context) {
     final isEdit = widget.existing != null;
     return Scaffold(
-      appBar: AppBar(title: Text(isEdit ? 'Edit Address' : 'New Address')),
+      backgroundColor: const Color(0xfffafafa),
+      appBar: AppBar(
+        foregroundColor: Colors.white,
+        backgroundColor: AppColor.buttonprimaryCol,
+        title: Text(isEdit ? 'Chỉnh sửa địa chỉ' : 'Địa chỉ mới', style: TextStyle(fontWeight: FontWeight.w600),),
+      ),
       body: Form(
         key: _formKey,
         child: Column(
@@ -143,8 +149,12 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                 padding: const EdgeInsets.all(12),
                 children: [
                   Card(
+                    color: Colors.white,
+                    margin: EdgeInsets.zero,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.grey.shade200),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
@@ -152,14 +162,15 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Address',
+                            'Địa chỉ giao hàng',
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
                           TextFormField(
+                            cursorColor: AppColor.buttonprimaryCol,
                             controller: _nameCtrl,
                             decoration: const InputDecoration(
-                              hintText: 'Full Name',
+                              hintText: 'Tên người nhận',
                               border: InputBorder.none,
                             ),
                             validator: (v) => v == null || v.trim().isEmpty
@@ -168,10 +179,11 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                           ),
                           const Divider(height: 1),
                           TextFormField(
+                            cursorColor: AppColor.buttonprimaryCol,
                             controller: _phoneCtrl,
                             keyboardType: TextInputType.phone,
                             decoration: const InputDecoration(
-                              hintText: 'Phone Number',
+                              hintText: 'Số điện thoại',
                               border: InputBorder.none,
                             ),
                             validator: (v) => v == null || v.trim().isEmpty
@@ -188,7 +200,7 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                                   Expanded(
                                     child: Text(
                                       _regionText.isEmpty
-                                          ? 'City, District, Ward'
+                                          ? 'Thành phố, Huyện, Xã'
                                           : _regionText,
                                       style: TextStyle(
                                         color: _regionText.isEmpty
@@ -204,10 +216,11 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                           ),
                           const Divider(height: 1),
                           TextFormField(
+                            cursorColor: AppColor.buttonprimaryCol,
                             controller: _specificCtrl,
                             maxLines: 2,
                             decoration: const InputDecoration(
-                              hintText: 'Street Name, Building, House No.',
+                              hintText: 'Địa chỉ cụ thể',
                               border: InputBorder.none,
                             ),
                             validator: (v) => v == null || v.trim().isEmpty
@@ -220,41 +233,17 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                   ),
                   const SizedBox(height: 8),
                   Card(
+                    color: Colors.white,
+                    margin: EdgeInsets.zero,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.grey.shade200),
                     ),
-                    child: Column(
-                      children: [
-                        SwitchListTile(
-                          title: const Text('Set as Default Address'),
-                          value: _isDefault,
-                          onChanged: (val) => setState(() => _isDefault = val),
-                        ),
-                        const Divider(height: 1),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          child: Row(
-                            children: [
-                              const Text('Label As:'),
-                              const SizedBox(width: 12),
-                              ChoiceChip(
-                                label: const Text('Work'),
-                                selected: false,
-                                onSelected: (_) {},
-                              ),
-                              const SizedBox(width: 8),
-                              ChoiceChip(
-                                label: const Text('Home'),
-                                selected: false,
-                                onSelected: (_) {},
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    child: SwitchListTile.adaptive(
+                      title: const Text('Đặt làm mặc định'),
+                      value: _isDefault,
+                      onChanged: (val) => setState(() => _isDefault = val),
                     ),
                   ),
                 ],
@@ -270,6 +259,10 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColor.buttonprimaryCol,
+                      foregroundColor: Colors.white
+                    ),
                     onPressed: _isSaving ? null : _onSubmit,
                     child: _isSaving
                         ? const SizedBox(
@@ -280,7 +273,9 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('Submit'),
+                        : Text(
+                          '${isEdit ? 'Xong' : 'Tạo mới'}',
+                        style: TextStyle(fontWeight: FontWeight.w600),),
                   ),
                 ),
               ),

@@ -85,7 +85,7 @@ const AdminCouponPage = () => {
     const [filters, setFilters] = useState<FilterState>({
         type: "all",
     });
-    const [activeTab, setActiveTab] = useState<ActiveTab>("active");
+    const [activeTab, setActiveTab] = useState<ActiveTab>("all");
     const [loading, setLoading] = useState(false);
 
     const [modalVisible, setModalVisible] = useState(false);
@@ -259,7 +259,7 @@ const AdminCouponPage = () => {
                         >
                             <Button size="middle" type="link" variant="filled"
                                 color="danger">
-                                Vô hiệu
+                                Tạm dừng
                             </Button>
                         </Popconfirm>
                     ) : (
@@ -365,12 +365,11 @@ const AdminCouponPage = () => {
     };
 
     const tabItems: TabsProps["items"] = [
+        { key: "all", label: "Tất cả" },
         { key: "active", label: "Đang hoạt động" },
         { key: "inactive", label: "Đã tắt" },
-        { key: "all", label: "Tất cả" },
     ];
 
-    // ===== Render =====
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -382,16 +381,17 @@ const AdminCouponPage = () => {
                 </div>
             </div>
 
-            {/* Tabs trạng thái */}
-            <Tabs
-                activeKey={activeTab}
-                items={tabItems}
-                onChange={(k) => {
-                    setActiveTab(k as ActiveTab);
-                    setPagination((p) => ({ ...p, current: 1 }));
-                }}
-            />
+            <div className="bg-white rounded-lg shadow p-4">
+                <Tabs
+                    activeKey={activeTab}
+                    items={tabItems}
+                    onChange={(k) => {
+                        setActiveTab(k as ActiveTab);
+                        setPagination((p) => ({ ...p, current: 1 }));
+                    }}
+                />
 
+            </div>
             {/* Bộ lọc */}
             <div className="rounded-lg border bg-white p-3 flex flex-wrap gap-4 items-end">
                 <div>
@@ -411,7 +411,7 @@ const AdminCouponPage = () => {
                         }
                     />
                     <Button
-                    className="ml-10"
+                        className="ml-10"
                         type="primary"
                         icon={<PlusOutlined />}
                         onClick={openCreateModal}

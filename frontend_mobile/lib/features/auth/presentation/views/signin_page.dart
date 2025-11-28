@@ -51,6 +51,25 @@ class _SigninPageState extends ConsumerState<SigninPage> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent, // Nền trong suốt
+          elevation: 0, // Bỏ bóng đổ
+          leading: IconButton(
+            icon: const Icon(
+              Iconsax.arrow_left, // Dùng icon arrow của Iconsax cho đồng bộ
+              color: AppColor.textpriCol, // Màu đen/xám theo theme text
+            ),
+            onPressed: () {
+              // Kiểm tra xem có thể back được không
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                // Nếu không còn trang trước (ví dụ chạy thẳng vào login), về trang chủ hoặc onboarding
+                context.go('/');
+              }
+            },
+          ),
+        ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

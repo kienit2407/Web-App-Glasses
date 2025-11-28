@@ -62,7 +62,16 @@ export const create = TryCatch(async (req: Request, res: Response) => {
 
     throw new BadRequestException("Either cart_item_ids or items is required")
 })
+export const myStats = TryCatch(async (req: Request, res: Response) => {
+    if (!req.user?._id) {
+        throw new BadRequestException("Unauthorized");
+    }
 
+    const userId = new Types.ObjectId(req.user._id);
+    const data = await orderService.getMyOrderStatusStats(userId);
+
+    return res.json({ data });
+});
 // GET /orders?status=&page=&limit=
 export const listMy = TryCatch(async (req: Request, res: Response) => {
     if (!req.user?._id) {
@@ -163,4 +172,5 @@ export const orderController = {
     reorderMy,
     confirmDeliveredMy,
     requestReturnMy,
+    myStats
 }

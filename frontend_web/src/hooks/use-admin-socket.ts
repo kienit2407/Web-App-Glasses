@@ -6,11 +6,13 @@ import { useAuth } from "./use-auth";
 import { useAdminNotificationStore } from "./use-admin-notification";
 import { useQueryClient } from "@tanstack/react-query";
 import { SupportConversation } from "@/types/support";
+import { useAdminSupportBadgeStore } from "./use-admin-support-badge";
 
 export const useAdminSocket = () => {
     const socket = useSocket();
     const { user } = useAuth();
     const increase = useAdminNotificationStore((s) => s.increase);
+    const increaseChatUnread = useAdminSupportBadgeStore((s) => s.increaseUnread);
     const queryClient = useQueryClient();
 
     useEffect(() => {
@@ -49,7 +51,7 @@ export const useAdminSocket = () => {
 
         const handleChatNewMessage = (payload: any) => {
             console.log("Admin received chat message:", payload);
-
+            increaseChatUnread(1)
             playSoundChat();
 
             // queryClient.invalidateQueries({ queryKey: ["admin-support-conversations"] });

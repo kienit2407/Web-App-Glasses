@@ -3,13 +3,16 @@ import 'dart:async';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend_mobile/core/assets/app_image.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
+import 'package:frontend_mobile/core/routes/bottom_navigation_bar.dart';
 import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:frontend_mobile/features/home/data/models/banner_model.dart';
 import 'package:frontend_mobile/features/home/data/models/brand_model.dart';
 import 'package:frontend_mobile/features/home/data/models/product_list_item.dart';
 import 'package:frontend_mobile/features/product_detail/presentation/views/product_detail_page.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iconsax/iconsax.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -27,10 +30,14 @@ class _HomePageState extends ConsumerState<HomePage> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      // load sản phẩm home
+      final auth = ref.read(authControllerProvider);
+      final user = auth.valueOrNull;
+
+      if (user != null) {
+        ref.read(profileControllerProvider.notifier).loadProfile();
+        ref.read(cartControllerProvider.notifier).loadCart();
+      }
       ref.read(catalogControllerProvider.notifier).loadInitial();
-      // load giỏ hàng để có totalQuantity cho badge
-      ref.read(cartControllerProvider.notifier).loadCart();
     });
   }
 
@@ -94,6 +101,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       backgroundColor: const Color(0xfff5f5f5),
       body: SafeArea(
+        top: true,
         child: RefreshIndicator.adaptive(
           onRefresh: () =>
               ref.read(catalogControllerProvider.notifier).refresh(),
@@ -188,6 +196,61 @@ class _HomePageState extends ConsumerState<HomePage> {
                             style: TextStyle(color: Colors.grey),
                           ),
                   ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGuestAccount(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xfff5f5f5),
+      appBar: AppBar(
+        title: const Text('Tài khoản'),
+        backgroundColor: AppColor.buttonprimaryCol,
+        foregroundColor: Colors.white,
+        centerTitle: true,
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.person_outline, size: 80, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text(
+                'Bạn chưa đăng nhập',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Đăng nhập để xem đơn hàng, voucher và quản lý tài khoản.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => context.goNamed('signin'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColor.buttonprimaryCol,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Đăng nhập'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => context.goNamed('signup'),
+                  child: const Text('Đăng ký'),
                 ),
               ),
             ],
@@ -690,7 +753,12 @@ class _SearchHintTyperState extends State<_SearchHintTyper> {
     return Text(
       text.isEmpty ? 'Tìm kiếm' : text, // fallback khi mới vào
       style:
-          widget.textStyle ?? const TextStyle(color: AppColor.buttomThirdCol, fontSize: 14, fontWeight: FontWeight.w500),
+          widget.textStyle ??
+          const TextStyle(
+            color: AppColor.buttomThirdCol,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
       overflow: TextOverflow.ellipsis,
     );
   }

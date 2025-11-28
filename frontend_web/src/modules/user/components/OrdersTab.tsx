@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react"
-import { Tabs, Button, Tag, Typography, Empty, message, Pagination } from "antd"
+import { Tabs, Button, Tag, Typography, Empty, message, Pagination, Badge } from "antd"
 import { API } from "@/app/lib/axios-client"
 import { Spinner } from "@/components/ui/spinner"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -52,7 +53,7 @@ export const OrdersTab = () => {
     const [reorderLoadingId, setReorderLoadingId] = useState<string | null>(null)
     const [confirmLoadingId, setConfirmLoadingId] = useState<string | null>(null)
     const [returnLoadingId, setReturnLoadingId] = useState<string | null>(null)
-
+    const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
     const isMobile = useIsMobile()
     const navigate = useNavigate()
 
@@ -87,6 +88,7 @@ export const OrdersTab = () => {
     useEffect(() => {
         // mỗi lần đổi tab, luôn quay về trang 1
         fetchOrders(activeStatus, 1, pageSize)
+        fetchStats()
         setPage(1);
     }, [activeStatus, pageSize])
     const handlePageChange = (p: number, size: number) => {
@@ -99,7 +101,10 @@ export const OrdersTab = () => {
             setConfirmLoadingId(order._id)
             await API.patch(`/orders/${order._id}/confirm-delivered`)
             message.success("Đã xác nhận nhận hàng")
-            fetchOrders(activeStatus)
+            await Promise.all([
+                fetchOrders(activeStatus),
+                fetchStats(),
+            ])
         } catch (err: any) {
             console.error(err)
             const msg =
@@ -109,13 +114,24 @@ export const OrdersTab = () => {
             setConfirmLoadingId(null)
         }
     }
-
+    const fetchStats = async () => {
+        try {
+            const res = await API.get("/orders/stats");
+            const data = res.data?.data || {};
+            setStatusCounts(data);
+        } catch (err) {
+            console.error(err);
+        }
+    }
     const handleRequestReturn = async (order: OrderRow) => {
         try {
             setReturnLoadingId(order._id)
             await API.patch(`/orders/${order._id}/request-return`)
             message.success("Đã gửi yêu cầu trả hàng")
-            fetchOrders(activeStatus)
+            await Promise.all([
+                fetchOrders(activeStatus),
+                fetchStats(),
+            ])
         } catch (err: any) {
             console.error(err)
             const msg =
@@ -131,7 +147,10 @@ export const OrdersTab = () => {
             setCancelLoadingId(order._id)
             await API.patch(`/orders/${order._id}/cancel`)
             message.success("Đã gửi yêu cầu huỷ đơn hàng")
-            fetchOrders(activeStatus)
+            await Promise.all([
+                fetchOrders(activeStatus),
+                fetchStats(),
+            ])
         } catch (err: any) {
             console.error(err)
             const msg =
@@ -157,7 +176,19 @@ export const OrdersTab = () => {
             setReorderLoadingId(null)
         }
     }
-
+    const renderTabLabel = (key: string, label: string) => {
+        const count = statusCounts[key] ?? 0;
+        return (
+            <span>
+                {label}
+                {count > 0 && (
+                    <span className="ml-1 text-xs text-slate-500">
+                        <Badge count={count} offset={[0, -20]}></Badge>
+                    </span>
+                )}
+            </span>
+        );
+    };
     const renderStatusTag = (
         status: string,
         cancelRequested?: boolean,
@@ -298,7 +329,10 @@ export const OrdersTab = () => {
                 className="mt-4"
             >
                 {ORDER_TABS.map((tab) => (
-                    <Tabs.TabPane tab={tab.label} key={tab.key} />
+                    <Tabs.TabPane
+                        key={tab.key}
+                        tab={renderTabLabel(tab.key, tab.label)} 
+                    />
                 ))}
             </Tabs>
 

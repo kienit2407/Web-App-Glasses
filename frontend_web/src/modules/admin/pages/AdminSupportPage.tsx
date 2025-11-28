@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Upload, { RcFile } from "antd/es/upload";
 import { useSocket } from "@/hooks/use-socket";
 import { TypingDots } from "@/modules/user/components/ChatTypingIndicator";
+import { useAdminSupportBadgeStore } from "@/hooks/use-admin-support-badge";
 
 const { TextArea } = Input;
 
@@ -40,10 +41,12 @@ export const AdminSupportPage = () => {
 
     // reset badge khi vào trang hỗ trợ
     const resetNotif = useAdminNotificationStore((s) => s.reset);
-
+    const setUnreadChatCount = useAdminSupportBadgeStore((s) => s.setUnreadChatCount);
+    const resetChatUnread = useAdminSupportBadgeStore((s) => s.resetUnread);
     useEffect(() => {
         resetNotif();
-    }, [resetNotif]);
+        resetChatUnread()
+    }, [resetNotif, resetChatUnread]);
 
     // conversations
     const {
@@ -53,7 +56,18 @@ export const AdminSupportPage = () => {
         queryKey: ["admin-support-conversations"],
         queryFn: fetchAdminSupportConversations,
     });
+    useEffect(() => {
+        if (!convs) {
+            setUnreadChatCount(0);
+            return;
+        }
 
+        const totalUnread = convs.reduce(
+            (sum, c) => sum + (c.unread_for_admin || 0),
+            0
+        );
+        setUnreadChatCount(totalUnread);
+    }, [convs, setUnreadChatCount])
     useEffect(() => {
         if (conversationId) {
             setActiveId(conversationId);
@@ -149,7 +163,7 @@ export const AdminSupportPage = () => {
             navigate("/admin/conversations");
         },
     });
-    
+
     const handleSelectConversation = (id: string) => {
         setActiveId(id);
         navigate(`/admin/conversations/${id}`);

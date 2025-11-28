@@ -160,6 +160,7 @@ class CheckoutController extends StateNotifier<CheckoutState> {
         directItem: directItem,
         couponCode: state.appliedCoupon?.code,
         note: state.note.isEmpty ? null : state.note,
+        paymentMethod: state.paymentMethod, 
       );
       final order = data['order'] as Map<String, dynamic>?;
       final orderId = order?['_id'] as String?;

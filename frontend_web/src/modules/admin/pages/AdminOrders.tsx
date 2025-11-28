@@ -8,6 +8,7 @@ import {
     Table,
     Tag,
     Tabs,
+    Badge,
     message,
 } from "antd";
 import type { TableProps, TabsProps } from "antd";
@@ -67,7 +68,7 @@ const AdminOrders = () => {
     const [limit, setLimit] = useState(10);
     const [total, setTotal] = useState(0);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
-
+    const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
     const navigate = useNavigate();
 
     const fetchOrders = async (opts?: {
@@ -122,7 +123,8 @@ const AdminOrders = () => {
     };
 
     useEffect(() => {
-        fetchOrders();
+        fetchOrders()
+        fetchStats()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeStatus]);
 
@@ -169,7 +171,15 @@ const AdminOrders = () => {
                 return <Tag>Khác</Tag>;
         }
     };
-
+    const fetchStats = async () => {
+        try {
+            const res = await API.get("/admin/orders/stats");
+            const data = res.data?.data || {};
+            setStatusCounts(data);
+        } catch (err) {
+            console.error(err);
+        }
+    }
     const handleUpdateStatus = async (
         orderId: string,
         nextStatus: AdminOrderStatus
@@ -180,18 +190,36 @@ const AdminOrders = () => {
                 order_status: nextStatus,
             });
             message.success("Cập nhật trạng thái đơn hàng thành công");
-            fetchOrders();
+            // fetchOrders();
+            await Promise.all([fetchOrders(), fetchStats()]);
         } catch (err: any) {
             console.error(err);
             message.error(
                 err?.response?.data?.message ||
                 "Không thể cập nhật trạng thái đơn hàng"
-            );
+            )
         } finally {
             setUpdatingId(null);
         }
     };
+    const renderTabLabel = (key: string, label: string) => {
+        const count = statusCounts[key] ?? 0;
+        return (
+            <span>
+                {label}
+                {count > 0 && (
+                    <span className="ml-1 text-xs text-slate-500">
+                        <Badge count={count} offset={[0, -20]}></Badge>
+                    </span>
+                )}
+            </span>
+        );
+    };
 
+    const tabItems: TabsProps["items"] = STATUS_TABS.map((t) => ({
+        key: t.key,
+        label: renderTabLabel(t.key, t.label),
+    }));
     const columns: TableProps<AdminOrderRow>["columns"] = [
         {
             title: "Mã đơn",
@@ -392,10 +420,10 @@ const AdminOrders = () => {
         },
     ];
 
-    const tabItems: TabsProps["items"] = STATUS_TABS.map((t) => ({
-        key: t.key,
-        label: t.label,
-    }));
+    // const tabItems: TabsProps["items"] = STATUS_TABS.map((t) => ({
+    //     key: t.key,
+    //     label: t.label,
+    // }));
 
     return (
         <div className="space-y-2">

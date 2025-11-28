@@ -2,7 +2,11 @@ import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_mobile/core/common/cart_icon_button.dart';
-import 'package:frontend_mobile/core/di/providers.dart' show productDetailRepositoryProvider, cartControllerProvider;
+import 'package:frontend_mobile/core/di/providers.dart'
+    show
+        productDetailRepositoryProvider,
+        cartControllerProvider,
+        authControllerProvider;
 import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:frontend_mobile/features/checkout/presentation/view/checkout_args.dart';
 import 'package:frontend_mobile/features/product_detail/data/model/product_detail_model.dart';
@@ -45,10 +49,6 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
     isAnimating = true;
 
     final overlay = Overlay.of(context);
-    if (overlay == null) {
-      isAnimating = false;
-      return;
-    }
 
     // box của ảnh và icon giỏ
     final imageBox = _imageKey.currentContext?.findRenderObject() as RenderBox?;
@@ -209,6 +209,8 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
   Widget build(BuildContext context) {
     final detail = _detail;
     final cartController = ref.read(cartControllerProvider.notifier);
+    final authState = ref.watch(authControllerProvider);
+    final isLoggedIn = authState.valueOrNull != null;
 
     if (_isLoading) {
       return Scaffold(
@@ -401,6 +403,11 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
                   onPressed: variant == null || stock <= 0
                       ? null
                       : () async {
+                          // 1. Nếu chưa login -> đi signin
+                          if (!isLoggedIn) {
+                            context.goNamed('signin');
+                            return;
+                          }
                           try {
                             await cartController.addToCart(
                               variant.variantId,
@@ -449,6 +456,10 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
                   onPressed: (variant == null || stock <= 0)
                       ? null
                       : () {
+                          if (!isLoggedIn) {
+                            context.goNamed('signin');
+                            return;
+                          }
                           context.pushNamed(
                             'checkout',
                             extra: CheckoutArgs.direct(

@@ -1,9 +1,9 @@
-
 import 'package:apptomate_custom_checkbox/apptomate_custom_checkbox.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend_mobile/core/assets/app_icon.dart';
 import 'package:frontend_mobile/core/common/app_button.dart';
 import 'package:frontend_mobile/core/theme/app_color.dart';
+import 'package:go_router/go_router.dart';
 import 'package:iconsax/iconsax.dart';
 
 class SignupPage extends StatefulWidget {
@@ -22,6 +22,25 @@ class _SignupPageState extends State<SignupPage> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent, // Nền trong suốt
+          elevation: 0, // Bỏ bóng đổ
+          leading: IconButton(
+            icon: const Icon(
+              Iconsax.arrow_left, // Dùng icon arrow của Iconsax cho đồng bộ
+              color: AppColor.textpriCol, // Màu đen/xám theo theme text
+            ),
+            onPressed: () {
+              // Kiểm tra xem có thể back được không
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                // Nếu không còn trang trước (ví dụ chạy thẳng vào login), về trang chủ hoặc onboarding
+                context.go('/');
+              }
+            },
+          ),
+        ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -46,13 +65,14 @@ class _SignupPageState extends State<SignupPage> {
               const SizedBox(height: 20),
               _methodSignUp(),
               const SizedBox(height: 20),
-              _moveOnSignIn()
+              _moveOnSignIn(),
             ],
           ),
         ),
       ),
     );
   }
+
   Widget _moveOnSignIn() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -68,8 +88,8 @@ class _SignupPageState extends State<SignupPage> {
         const SizedBox(width: 5),
         TextButton(
           style: TextButton.styleFrom(
-            padding: EdgeInsets.zero, 
-            minimumSize: Size(0, 0), 
+            padding: EdgeInsets.zero,
+            minimumSize: Size(0, 0),
             tapTargetSize:
                 MaterialTapTargetSize.shrinkWrap, // 🔹 giảm vùng nhấn
           ),
@@ -86,13 +106,14 @@ class _SignupPageState extends State<SignupPage> {
       ],
     );
   }
+
   Widget _methodSignUp() {
     return Row(
       spacing: 25,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _iconMethod(AppIcon.googleIcon, () => {},),
-        _iconMethod(AppIcon.apppleIcon, () => {},),
+        _iconMethod(AppIcon.googleIcon, () => {}),
+        _iconMethod(AppIcon.apppleIcon, () => {}),
       ],
     );
   }
