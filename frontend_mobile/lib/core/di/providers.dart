@@ -12,9 +12,15 @@ import 'package:frontend_mobile/features/coupon/data/model/user_coupon_model.dar
 import 'package:frontend_mobile/features/coupon/data/repository/coupon_repository.dart';
 import 'package:frontend_mobile/features/coupon/presentation/viewmodels/user_coupon_controller.dart';
 import 'package:frontend_mobile/features/coupon/presentation/viewmodels/user_coupon_state.dart';
+import 'package:frontend_mobile/features/coupon_center/data/repository/coupon_center_repository.dart';
+import 'package:frontend_mobile/features/coupon_center/presentation/viewmodel/coupon_center_controller.dart';
+import 'package:frontend_mobile/features/coupon_center/presentation/viewmodel/coupon_center_state.dart';
 import 'package:frontend_mobile/features/home/data/repository/catalog_repository.dart';
 import 'package:frontend_mobile/features/home/presentation/viewmodels/catalog_controller.dart';
 import 'package:frontend_mobile/features/home/presentation/viewmodels/catalog_state.dart';
+import 'package:frontend_mobile/features/notifications/data/repository/user_notification_repository.dart';
+import 'package:frontend_mobile/features/notifications/presentation/viewmodels/user_notification_controller.dart';
+import 'package:frontend_mobile/features/notifications/presentation/viewmodels/user_notification_state.dart';
 import 'package:frontend_mobile/features/order/data/repository/order_repository.dart';
 import 'package:frontend_mobile/features/order/presentation/viewmodels/orders_controller.dart';
 import 'package:frontend_mobile/features/order/presentation/viewmodels/orders_state.dart';
@@ -172,3 +178,27 @@ final ordersControllerProvider =
   final repo = ref.read(orderRepositoryProvider);
   return OrdersController(repo);
 });
+
+// repository
+final couponCenterRepositoryProvider = Provider<CouponCenterRepository>((ref) {
+  final dioClient = ref.read(dioClientProvider);
+  return CouponCenterRepository(dioClient: dioClient);
+});
+
+// controller
+final couponCenterControllerProvider =
+    StateNotifierProvider<CouponCenterController, CouponCenterState>((ref) {
+  final repo = ref.read(couponCenterRepositoryProvider);
+  return CouponCenterController(repo);
+});
+
+final userNotificationRepositoryProvider = Provider<UserNotificationRepository>(
+  (ref) => UserNotificationRepository(dioClient: ref.read(dioClientProvider)),
+);
+
+final userNotificationControllerProvider = StateNotifierProvider<
+    UserNotificationController, UserNotificationState>(
+  (ref) => UserNotificationController(
+    ref.read(userNotificationRepositoryProvider),
+  ),
+);

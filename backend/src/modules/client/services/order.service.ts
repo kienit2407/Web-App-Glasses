@@ -23,6 +23,8 @@ import { SEND_EVENT_TO_ADMINS, SEND_EVENT_TO_USER } from "../../../config/socket
 import { Payment } from "../../../models/payments.model"
 import { Notification } from "../../../models/notification.model"
 import { getOrderThumbnail } from "../../../utils/get-order-thumbnail"
+import { geoService } from "./geo.service"
+import { ProductImage } from "../../../models/products.image.model"
 export type PaymentMethod = "cod" | "vnpay"
 // ====== PAYLOAD TỪ CART (luồng giỏ hàng) ======
 interface CartSelectionPayload {
@@ -1239,23 +1241,129 @@ async function listMyOrders(
 }
 
 // ====== 6) DETAIL ORDER CỦA USER ======
-async function getMyOrderDetail(userId: Types.ObjectId, orderId: string) {
+export async function getMyOrderDetail(userId: Types.ObjectId, orderId: string) {
     if (!Types.ObjectId.isValid(orderId)) {
-        throw new BadRequestException("Invalid order id")
+        throw new BadRequestException("Invalid order id");
     }
 
     const order = await Order.findOne({
         _id: orderId,
         user_id: userId,
-    }).lean()
+    }).lean();
 
     if (!order) {
-        throw new NotFoundException("Order not found")
+        throw new NotFoundException("Order not found");
     }
 
-    const items = await OrderItem.find({ order_id: order._id }).lean()
+    // ====== ENRICH ĐỊA CHỈ GỐC -> FULL_ADDRESS ======
+    if (order.shipping_address) {
+        const {
+            province_code,
+            district_code,
+            ward_code,
+            specific_address,
+        } = order.shipping_address;
 
-    return { order, items }
+        const geo = await geoService.getAddressDetails(
+            province_code,
+            district_code,
+            ward_code
+        );
+
+        (order as any).shipping_address = {
+            ...order.shipping_address,
+            province_name: geo.province_name,
+            district_name: geo.district_name,
+            ward_name: geo.ward_name,
+            full_address: [
+                geo.full_location, // "Phường 4, Quận Tân Bình, Hồ Chí Minh"
+            ]
+                .filter(Boolean)
+                .join(", "),
+        };
+    }
+
+    // ====== LẤY ITEM GỐC ======
+    let items = await OrderItem.find({ order_id: order._id }).lean();
+
+    if (items.length === 0) {
+        return { order, items };
+    }
+
+    // ====== LẤY LIST product_id & variant_id ======
+    const productIds = Array.from(
+        new Set(
+            items
+                .map((it) => it.product_id)
+                .filter(Boolean)
+                .map((id) => id.toString())
+        )
+    );
+
+    const variantIds = Array.from(
+        new Set(
+            items
+                .map((it) => it.variant_id)
+                .filter(Boolean)
+                .map((id) => id.toString())
+        )
+    );
+
+    // ====== QUERY PRODUCT + ẢNH VARIANT ======
+    const [products, variantImages] = await Promise.all([
+        Product.find({
+            _id: { $in: productIds },
+        })
+            .select("_id product_name slug thumbnail_url")
+            .lean(),
+
+        // Lấy ảnh theo variant, ưu tiên position nhỏ nhất (ảnh đầu tiên)
+        variantIds.length
+            ? ProductImage.find({
+                variant_id: { $in: variantIds },
+                url: { $ne: null },
+            })
+                .sort({ position: 1 })
+                .lean()
+            : Promise.resolve([] as any[]),
+    ]);
+
+    const productMap = new Map(
+        products.map((p) => [p._id.toString(), p])
+    );
+
+    // Map variant_id -> url ảnh đầu tiên
+    const variantImageMap = new Map<string, string>();
+    for (const img of variantImages) {
+        const vid = img.variant_id?.toString();
+        if (!vid) continue;
+        // chỉ lấy ảnh đầu tiên cho mỗi variant
+        if (!variantImageMap.has(vid) && img.url) {
+            variantImageMap.set(vid, img.url as string);
+        }
+    }
+
+    // ====== ENRICH ITEM: thumbnail_url, product_name, slug (nếu muốn) ======
+    const hydratedItems = items.map((it) => {
+        const pid = it.product_id?.toString();
+        const vid = it.variant_id?.toString();
+
+        const product = pid ? productMap.get(pid) : null;
+        const variantImageUrl = vid ? variantImageMap.get(vid) : null;
+
+        const thumbnail_url =
+            variantImageUrl || product?.thumbnail_url || null;
+
+        return {
+            ...it,
+            thumbnail_url,
+            // muốn đồng bộ tên sản phẩm theo Product luôn cũng được
+            product_name: product?.product_name ?? it.name,
+            slug: product?.slug,
+        };
+    });
+
+    return { order, items: hydratedItems };
 }
 
 // ====== 7) USER YÊU CẦU HUỶ ĐƠN ======

@@ -4,7 +4,7 @@ import 'package:frontend_mobile/core/assets/app_icon.dart';
 import 'package:frontend_mobile/core/common/app_button.dart';
 import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax/iconsax.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});

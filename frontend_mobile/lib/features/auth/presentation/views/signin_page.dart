@@ -7,7 +7,7 @@ import 'package:frontend_mobile/core/di/service_local.dart';
 import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:frontend_mobile/features/home/presentation/views/home_page.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax/iconsax.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 class SigninPage extends ConsumerStatefulWidget {
   const SigninPage({super.key});
@@ -195,20 +195,11 @@ class _SigninPageState extends ConsumerState<SigninPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Text(
-                'Remember Me',
-                style: TextStyle(
-                  color: AppColor.textpriCol,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
           TextButton(
-            onPressed: () {},
+            onPressed: () {
+              // Tạm thời cũng dùng chung trang đổi mật khẩu
+              context.pushNamed('change-password');
+            },
             child: Text(
               'Forgot Password?',
               style: TextStyle(

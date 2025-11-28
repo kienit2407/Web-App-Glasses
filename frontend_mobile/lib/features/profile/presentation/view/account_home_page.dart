@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend_mobile/core/assets/app_image.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +19,7 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
     // load profile lần đầu
     Future.microtask(() {
       ref.read(profileControllerProvider.notifier).loadProfile();
+      ref.read(ordersControllerProvider.notifier).init();
     });
   }
 
@@ -34,7 +36,16 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
     // Đã đăng nhập -> như cũ
     final state = ref.watch(profileControllerProvider);
     final user = state.user;
+  
+    final ordersState = ref.watch(ordersControllerProvider);
+    final counts = ordersState.statusCounts;
 
+    // Tính 4 con số cho 4 icon
+    final pendingCount = counts['pending'] ?? 0;
+    final shippingCount =
+        (counts['shipping'] ?? 0) + (counts['delivering'] ?? 0);
+    final deliveredCount = counts['delivered'] ?? 0;
+    final cancelledCount = counts['cancelled'] ?? 0;
     return Scaffold(
       backgroundColor: const Color(0xfff5f5f5),
       body: CustomScrollView(
@@ -45,76 +56,85 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
             backgroundColor: AppColor.buttonprimaryCol,
             foregroundColor: Colors.white,
             flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xfff9735b), Color(0xfffdc46b)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    bottom: 24,
-                    top: 56,
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Stack(
+              background: GestureDetector(
+                onTap: () => context.pushNamed('account-settings'),
+                child: InkWell(
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xfff9735b), Color(0xfffdc46b)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      image: DecorationImage(
+                        image: AssetImage(AppImage.bgProfile),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        bottom: 24,
+                        top: 56,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          CircleAvatar(
-                            radius: 32,
-                            backgroundColor: Colors.white,
-                            backgroundImage:
-                                (user?.avatarUrl != null &&
-                                    user!.avatarUrl!.isNotEmpty)
-                                ? NetworkImage(user.avatarUrl!) as ImageProvider
-                                : null,
-                            child:
-                                (user?.avatarUrl == null ||
-                                    user!.avatarUrl!.isEmpty)
-                                ? Text(
-                                    _initials(
-                                      user?.displayName ?? user?.email ?? 'U',
-                                    ),
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  )
-                                : null,
+                          Stack(
+                            children: [
+                              CircleAvatar(
+                                radius: 32,
+                                backgroundColor: Colors.white,
+                                backgroundImage:
+                                    (user?.avatarUrl != null &&
+                                        user!.avatarUrl!.isNotEmpty)
+                                    ? NetworkImage(user.avatarUrl!) as ImageProvider
+                                    : null,
+                                child:
+                                    (user?.avatarUrl == null ||
+                                        user!.avatarUrl!.isEmpty)
+                                    ? Text(
+                                        _initials(
+                                          user?.displayName ?? user?.email ?? 'U',
+                                        ),
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  user?.displayName ?? user?.email ?? 'Người dùng',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  user?.email ?? '',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              user?.displayName ?? user?.email ?? 'Người dùng',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              user?.email ?? '',
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -143,6 +163,7 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
                       _orderShortcut(
                         icon: Icons.pending_actions_outlined,
                         label: 'Chờ xác nhận',
+                        badgeCount: pendingCount,
                         onTap: () => context.pushNamed(
                           'orders',
                           extra: {'status': 'pending'},
@@ -151,6 +172,7 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
                       _orderShortcut(
                         icon: Icons.local_shipping_outlined,
                         label: 'Đang giao',
+                        badgeCount: shippingCount,
                         onTap: () => context.pushNamed(
                           'orders',
                           extra: {'status': 'shipping'},
@@ -159,14 +181,16 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
                       _orderShortcut(
                         icon: Icons.check_circle_outline,
                         label: 'Hoàn thành',
+                        badgeCount: deliveredCount, // 👈
                         onTap: () => context.pushNamed(
                           'orders',
-                          extra: {'status': 'completed'},
+                          extra: {'status': 'delivered'},
                         ),
                       ),
                       _orderShortcut(
                         icon: Icons.cancel_outlined,
                         label: 'Đã hủy',
+                        badgeCount: cancelledCount,
                         onTap: () => context.pushNamed(
                           'orders',
                           extra: {'status': 'cancelled'},
@@ -341,12 +365,41 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    int badgeCount = 0,
   }) {
     return InkWell(
       onTap: onTap,
       child: Column(
         children: [
-          Icon(icon, size: 26, color: Colors.orange),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(icon, size: 26, color: Colors.orange),
+              if (badgeCount > 0)
+                Positioned(
+                  right: -8,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade600,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      badgeCount > 99 ? '99+' : '$badgeCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
           const SizedBox(height: 6),
           Text(label, style: const TextStyle(fontSize: 11)),
         ],

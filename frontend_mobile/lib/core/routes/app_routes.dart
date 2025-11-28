@@ -9,8 +9,12 @@ import 'package:frontend_mobile/features/checkout/presentation/view/checkout_arg
 import 'package:frontend_mobile/features/checkout/presentation/view/checkout_page.dart';
 import 'package:frontend_mobile/features/checkout/presentation/view/payment_result_page.dart';
 import 'package:frontend_mobile/features/checkout/presentation/view/vnpay_webview_page.dart';
+import 'package:frontend_mobile/features/order/presentation/views/order_detail_page.dart';
 import 'package:frontend_mobile/features/order/presentation/views/orders_page.dart';
 import 'package:frontend_mobile/features/product_detail/presentation/views/product_detail_page.dart';
+import 'package:frontend_mobile/features/profile/presentation/view/change_password_page.dart';
+import 'package:frontend_mobile/features/profile/presentation/view/edit_profile_page.dart';
+import 'package:frontend_mobile/features/profile/presentation/view/my_coupons_page.dart';
 import 'package:frontend_mobile/features/search/presentation/view/search_page.dart';
 import 'package:frontend_mobile/features/search/presentation/view/search_result_page.dart';
 import 'package:go_router/go_router.dart';
@@ -88,6 +92,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return CheckoutPage(args: extra);
         },
       ),
+
       // NEW: màn WebView VNPay
       GoRoute(
         path: '/vnpay-webview',
@@ -107,11 +112,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return PaymentResultPage(args: args);
         },
       ),
-
       GoRoute(
-        path: '/address-select',
         name: 'address-select',
-        builder: (context, state) => const AddressSelectPage(),
+        path: '/checkout/address-select',
+        builder: (context, state) =>
+            const AddressSelectPage(returnSelectedAddress: true),
       ),
       GoRoute(
         path: '/address-form',
@@ -126,11 +131,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'orders',
         builder: (context, state) => const OrdersPage(),
       ),
-      // GoRoute(
-      //   path: '/my-coupons',
-      //   name: 'my-coupons',
-      //   builder: (context, state) => const MyCouponsPage(),
-      // ),
+      GoRoute(
+        path: '/orders/:id',
+        name: 'order-detail',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return OrderDetailPage(orderId: id);
+        },
+      ),
+      GoRoute(
+        name: 'my-addresses',
+        path: '/account/addresses',
+        builder: (context, state) =>
+            const AddressSelectPage(returnSelectedAddress: false),
+      ),
+      GoRoute(
+        path: '/my-coupons',
+        name: 'my-coupons',
+        builder: (context, state) => const MyCouponsPage(),
+      ),
+      GoRoute(
+        name: 'account-settings',
+        path: '/account-settings',
+        builder: (context, state) => const EditProfilePage(),
+      ),
+      GoRoute(
+        name: 'change-password',
+        path: '/change-password',
+        builder: (context, state) => const ChangePasswordPage(),
+      ),
     ],
   );
 });

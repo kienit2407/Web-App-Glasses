@@ -12,7 +12,6 @@ import 'package:frontend_mobile/features/home/data/models/brand_model.dart';
 import 'package:frontend_mobile/features/home/data/models/product_list_item.dart';
 import 'package:frontend_mobile/features/product_detail/presentation/views/product_detail_page.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax/iconsax.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -147,7 +146,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
               if (state.isLoading && state.products.isEmpty)
                 const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(child: CircularProgressIndicator.adaptive()),
                 )
               else
                 SliverPadding(

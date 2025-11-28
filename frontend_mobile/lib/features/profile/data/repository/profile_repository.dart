@@ -20,36 +20,41 @@ class ProfileRepository {
     return UserModel.fromJson(data);
   }
 
-  /// Cập nhật display_name (không đổi avatar)
-  Future<UserModel> updateProfile({
-    required String displayName,
-  }) async {
-    final res = await dioClient.dio.patch(
-      '/users/me',
-      data: {
-        'display_name': displayName,
-      },
-    );
+  Future<UserModel> updateMe({String? displayName, File? avatarFile}) async {
+    Response res;
+
+    // Nếu có file -> dùng multipart/form-data
+    if (avatarFile != null) {
+      final formData = FormData.fromMap({
+        if (displayName != null) 'display_name': displayName,
+        'file': await MultipartFile.fromFile(avatarFile.path),
+      });
+
+      res = await dioClient.dio.patch(
+        '/users/me',
+        data: formData,
+        options: Options(contentType: 'multipart/form-data'),
+      );
+    } else {
+      // Không có file -> gửi JSON bình thường
+      res = await dioClient.dio.patch(
+        '/users/me',
+        data: {if (displayName != null) 'display_name': displayName},
+      );
+    }
+
     final data = res.data['data'] as Map<String, dynamic>;
     return UserModel.fromJson(data);
   }
 
-  /// Upload avatar mới (field "file" – đúng với backend bạn đang dùng)
+  /// Cập nhật display_name (không đổi avatar) – dùng lại updateMe
+  Future<UserModel> updateProfile({required String displayName}) async {
+    return updateMe(displayName: displayName);
+  }
+
+  /// Upload avatar mới (field "file")
   Future<UserModel> uploadAvatar(File file) async {
-    final formData = FormData.fromMap({
-      'file': await MultipartFile.fromFile(file.path),
-    });
-
-    final res = await dioClient.dio.patch(
-      '/users/me',
-      data: formData,
-      options: Options(
-        contentType: 'multipart/form-data',
-      ),
-    );
-
-    final data = res.data['data'] as Map<String, dynamic>;
-    return UserModel.fromJson(data);
+    return updateMe(avatarFile: file);
   }
 
   /// Đổi mật khẩu

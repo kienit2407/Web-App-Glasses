@@ -220,16 +220,17 @@ export const couponService = {
                 const c = row.coupon_id;
                 if (!c) return null;
 
-        
+                // 1. Bỏ các voucher đã dùng
                 if (row.is_used) return null;
 
-                // per user limit
+                // 2. Check per-user limit (nếu bạn đang track used_count trên Coupon)
                 if (c.per_user_limit != null && c.per_user_limit > 0) {
                     if (c.used_count >= c.per_user_limit) {
                         return null;
                     }
                 }
 
+                // 3. Check expire / active -> nếu hết hạn hoặc inactive thì loại luôn
                 const timeInvalid =
                     (c.start_date && now < c.start_date) ||
                     (c.end_date && now > c.end_date);
@@ -237,7 +238,13 @@ export const couponService = {
                 const inactive = !c.is_active;
                 const is_expired = timeInvalid || inactive;
 
-                let can_use = !is_expired && !row.is_used;
+                if (is_expired) {
+                    // 👈 Quan trọng: coupon hết hạn thì không trả về nữa
+                    return null;
+                }
+
+                // 4. Tính khả năng sử dụng theo subtotal
+                let can_use = true; // tới đây là còn hạn & chưa dùng
                 let missing_amount: number | undefined;
 
                 if (typeof subtotal === "number" && c.min_order != null) {
@@ -257,12 +264,13 @@ export const couponService = {
                     start_date: c.start_date,
                     end_date: c.end_date,
                     can_use,
-                    is_expired,
+                    is_expired: false, // luôn false vì đã lọc hết expired ở trên
                     missing_amount,
-                    is_used: row.is_used,
+                    is_used: row.is_used, // luôn false nhưng giữ cho đủ thông tin
                 };
             })
             .filter(Boolean);
+
         return items;
     },
 };

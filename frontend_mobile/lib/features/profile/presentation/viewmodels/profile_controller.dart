@@ -16,10 +16,26 @@ class ProfileController extends StateNotifier<ProfileState> {
       final user = await _repo.getMe();
       state = state.copyWith(user: user, loading: false);
     } catch (e) {
-      state = state.copyWith(
-        loading: false,
-        errorMessage: e.toString(),
+      state = state.copyWith(loading: false, errorMessage: e.toString());
+    }
+  }
+
+  Future<void> updateProfile({
+    required String displayName,
+    File? avatarFile,
+  }) async {
+    try {
+      state = state.copyWith(savingProfile: true, errorMessage: null);
+
+      final updatedUser = await _repo.updateMe(
+        displayName: displayName.trim(),
+        avatarFile: avatarFile,
       );
+
+      state = state.copyWith(user: updatedUser, savingProfile: false);
+    } catch (e) {
+      state = state.copyWith(savingProfile: false, errorMessage: e.toString());
+      rethrow;
     }
   }
 
@@ -32,10 +48,7 @@ class ProfileController extends StateNotifier<ProfileState> {
       final user = await _repo.updateProfile(displayName: displayName.trim());
       state = state.copyWith(user: user, savingProfile: false);
     } catch (e) {
-      state = state.copyWith(
-        savingProfile: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(savingProfile: false, errorMessage: e.toString());
     }
   }
 

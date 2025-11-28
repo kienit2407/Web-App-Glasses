@@ -9,7 +9,7 @@ import 'package:frontend_mobile/features/checkout/presentation/viewmodels/checko
 import 'package:frontend_mobile/features/checkout/presentation/viewmodels/checkout_state.dart';
 import 'package:frontend_mobile/features/coupon/data/model/user_coupon_model.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax/iconsax.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 class CheckoutPage extends ConsumerWidget {
   const CheckoutPage({super.key, required this.args});
@@ -186,6 +186,7 @@ class _AddressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
     return Card(
       color: Colors.white,
       margin: EdgeInsets.zero,

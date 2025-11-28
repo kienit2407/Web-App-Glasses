@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:frontend_mobile/core/theme/app_color.dart';
-import 'package:iconsax/iconsax.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 
 class AppButton extends StatelessWidget {
@@ -35,7 +35,7 @@ class AppButton extends StatelessWidget {
               color: Colors.white,
               shape: BoxShape.circle
             ),
-            child: Center(child: Icon(Iconsax.arrow_right_14, size: 20, color: AppColor.buttonprimaryCol, fontWeight: FontWeight.w600,))
+            child: Center(child: Icon(Iconsax.arrow, size: 20, color: AppColor.buttonprimaryCol, fontWeight: FontWeight.w600,))
           )
         ],
       ),

@@ -1,11 +1,24 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:frontend_mobile/core/network/dio_config.dart';
 import 'package:frontend_mobile/core/network/token_storage.dart';
+import 'package:frontend_mobile/core/notifications/push_notification_service.dart';
 import 'package:frontend_mobile/core/routes/app_routes.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
+// // dùng cho message khi app đang ở background
+// @pragma('vm:entry-point')
+// Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+//   await Firebase.initializeApp();
+//   // TODO: xử lý logic nếu cần
+//   print('BG message: ${message.messageId}');
+// }
 
+// final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+//     FlutterLocalNotificationsPlugin();
 void main() async {
   // guardiantee to fluter started first!
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +27,21 @@ void main() async {
   final tokenStorage = TokenStorage();
   // await initializeGetit();
   await Hive.initFlutter();
+  // await Firebase.initializeApp();
+  // // await PushNotificationService.init();
+  // FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // cấu hình local notification (để hiện notification khi app đang mở)
+  // const AndroidInitializationSettings androidInit =
+  //     AndroidInitializationSettings('@mipmap/ic_launcher');
+  // const InitializationSettings initSettings =
+  //     InitializationSettings(android: androidInit);
+  // await flutterLocalNotificationsPlugin.initialize(
+  //   initSettings,
+  //   onDidReceiveNotificationResponse: (response) {
+  //     // TODO: điều hướng tới orderDetail nếu cần
+  //   },
+  // );
   // 2. Chạy app với ProviderScope + override
   runApp(
     ProviderScope(

@@ -7,8 +7,8 @@ import 'package:frontend_mobile/features/address/data/models/address_model.dart'
 import 'package:go_router/go_router.dart';
 
 class AddressSelectPage extends ConsumerStatefulWidget {
-  const AddressSelectPage({super.key});
-
+  const AddressSelectPage({super.key, this.returnSelectedAddress = true});
+  final bool returnSelectedAddress;
   @override
   ConsumerState<AddressSelectPage> createState() => _AddressSelectPageState();
 }
@@ -129,38 +129,42 @@ class _AddressSelectPageState extends ConsumerState<AddressSelectPage> {
   }
 
   Widget _buildAddressItem(Address addr) {
+    final showRadio = widget.returnSelectedAddress;
     // Logic xử lý chọn và back về
     void onSelect() {
       setState(() => _selectedId = addr.id);
-      // Trả về đối tượng address cho màn hình Checkout
-      Navigator.pop(context, addr);
+
+      if (widget.returnSelectedAddress) {
+        Navigator.pop(context, addr);
+      }
     }
 
     return InkWell(
-      onTap: onSelect, // Bấm vào khung -> Chọn và back
+      onTap: showRadio ? onSelect : null,
       child: Container(
         color: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Radio Button
-            Padding(
-              padding: const EdgeInsets.only(top: 2.0),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: Radio<String>(
-                  value: addr.id,
-                  groupValue: _selectedId,
-                  activeColor: AppColor.buttonprimaryCol,
-                  onChanged: (val) =>
-                      onSelect(), // Bấm vào nút tròn -> Chọn và back
+          
+            if (showRadio) 
+              Padding(
+                padding: const EdgeInsets.only(top: 2.0),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: Radio<String>(
+                    value: addr.id,
+                    groupValue: _selectedId,
+                    activeColor: AppColor.buttonprimaryCol,
+                    onChanged: (_) => onSelect(),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 12),
+              )
+            else
 
+            const SizedBox(width: 12),
             // Thông tin địa chỉ
             Expanded(
               child: Column(
