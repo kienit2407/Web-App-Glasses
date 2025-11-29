@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,11 +7,15 @@ import 'package:frontend_mobile/core/di/providers.dart'
     show
         productDetailRepositoryProvider,
         cartControllerProvider,
-        authControllerProvider;
+        authControllerProvider,
+        productReviewsControllerProvider;
 import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:frontend_mobile/features/checkout/presentation/view/checkout_args.dart';
 import 'package:frontend_mobile/features/product_detail/data/model/product_detail_model.dart';
+import 'package:frontend_mobile/features/review/data/model/review_model.dart';
+import 'package:frontend_mobile/features/review/presentation/viewmodel/product_reviews_controller.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProductDetailPage extends ConsumerStatefulWidget {
   const ProductDetailPage({super.key, required this.productId});
@@ -811,13 +816,677 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
   }
 
   Widget _buildReviewsTab(ProductInfo product) {
-    // TODO: sau này nối API review mobile giống web
-    return const Center(
-      child: Text(
-        'Tính năng đánh giá sẽ được cập nhật trên app mobile.',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 13, color: Colors.grey),
+    // dùng provider family theo productId
+    final reviewState = ref.watch(
+      productReviewsControllerProvider(widget.productId),
+    );
+    final controller = ref.read(
+      productReviewsControllerProvider(widget.productId).notifier,
+    );
+
+    final authState = ref.watch(authControllerProvider);
+    final isLoggedIn = authState.valueOrNull != null;
+
+    // show error nếu có
+    if (reviewState.errorMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(reviewState.errorMessage!)));
+      });
+    }
+
+    if (reviewState.isLoading && reviewState.items.isEmpty) {
+      return const Center(child: CircularProgressIndicator.adaptive());
+    }
+
+    final items = reviewState.items;
+    final avg = reviewState.avgRating;
+    final myReview = reviewState.myReview;
+
+    if (items.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              avg.toStringAsFixed(1),
+              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Chưa có đánh giá nào cho sản phẩm này',
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            if (isLoggedIn)
+              ElevatedButton(
+                onPressed: () => _showReviewDialog(
+                  controller: controller,
+                  existing: myReview,
+                ),
+                child: const Text('Viết đánh giá'),
+              ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        // header avg rating + nút viết / sửa
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    avg.toStringAsFixed(1),
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '${items.length} đánh giá',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 8,
+                  children: [
+                    if (isLoggedIn && myReview != null)
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: AppColor.buttonprimaryCol),
+                        ),
+                        onPressed: () => _showReviewDialog(
+                          controller: controller,
+                          existing: myReview,
+                        ),
+                        child: Text('Sửa đánh giá', style: TextStyle(color: AppColor.buttonprimaryCol),),
+                      ),
+                    if (isLoggedIn && myReview == null)
+                      ElevatedButton(
+                        onPressed: () => _showReviewDialog(
+                          controller: controller,
+                          existing: null,
+                        ),
+                        child: const Text('Viết đánh giá'),
+                      ),
+                    if (isLoggedIn && myReview != null)
+                      TextButton(
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Xoá đánh giá?'),
+                              content: const Text(
+                                'Bạn có chắc muốn xoá đánh giá này?',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(ctx).pop(false),
+                                  child: const Text('Huỷ'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.of(ctx).pop(true),
+                                  child: const Text(
+                                    'Xoá',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirm == true) {
+                            await controller.deleteMyReview();
+                          }
+                        },
+                        child: const Text(
+                          'Xoá đánh giá',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const Divider(height: 1),
+
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.all(12),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (context, index) {
+              final rv = items[index];
+              return _buildReviewItem(rv);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReviewItem(ReviewModel rv) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // avatar + tên + rating + ngày
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundImage: rv.user?.avatarUrl != null
+                    ? NetworkImage(rv.user!.avatarUrl!)
+                    : null,
+                child: rv.user?.avatarUrl == null
+                    ? Text(
+                        rv.user?.displayName.substring(0, 1).toUpperCase() ??
+                            'U',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      rv.user?.displayName ?? 'Người dùng',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Row(
+                          children: List.generate(
+                            5,
+                            (i) => Icon(
+                              i < rv.rating ? Icons.star : Icons.star_border,
+                              size: 14,
+                              color: Colors.orange,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${rv.createdAt.day}/${rv.createdAt.month}/${rv.createdAt.year}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        if (rv.isEdited) ...[
+                          const SizedBox(width: 4),
+                          const Text(
+                            'Đã chỉnh sửa',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(rv.comment, style: const TextStyle(fontSize: 13)),
+          if (rv.images.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            SizedBox(
+              height: 70,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: rv.images.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 6),
+                itemBuilder: (context, index) {
+                  final img = rv.images[index];
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.network(
+                      img.url,
+                      width: 70,
+                      height: 70,
+                      fit: BoxFit.cover,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+          if (rv.videoUrl != null) ...[
+            const SizedBox(height: 6),
+            const Text(
+              'Video đính kèm (chưa support play trên mobile — TODO)',
+              style: TextStyle(fontSize: 11, color: Colors.grey),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showReviewDialog({
+    required ProductReviewsController controller,
+    ReviewModel? existing,
+  }) {
+    final commentController = TextEditingController(
+      text: existing?.comment ?? '',
+    );
+
+    final picker = ImagePicker();
+
+    // State local cho dialog
+    int _rating = existing?.rating ?? 5;
+    List<File> _images = [];
+    File? _videoFile;
+
+    // Helper: Text mô tả theo số sao
+    String _getRatingLabel(int star) {
+      switch (star) {
+        case 1:
+          return 'Tệ';
+        case 2:
+          return 'Không hài lòng';
+        case 3:
+          return 'Bình thường';
+        case 4:
+          return 'Hài lòng';
+        case 5:
+          return 'Tuyệt vời';
+        default:
+          return '';
+      }
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Bắt buộc bấm Huỷ hoặc Gửi
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            // Hàm xoá ảnh
+            void _removeImage(int index) {
+              setStateDialog(() {
+                _images.removeAt(index);
+              });
+            }
+
+            // Hàm xoá video
+            void _removeVideo() {
+              setStateDialog(() {
+                _videoFile = null;
+              });
+            }
+
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              insetPadding: const EdgeInsets.all(20),
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // 1. HEADER
+                      Center(
+                        child: Text(
+                          existing == null
+                              ? 'Đánh giá sản phẩm'
+                              : 'Sửa đánh giá',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // 2. CHỌN SAO (Interactive)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(5, (index) {
+                          final starIndex = index + 1;
+                          return GestureDetector(
+                            onTap: () {
+                              setStateDialog(() => _rating = starIndex);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
+                              child: Icon(
+                                starIndex <= _rating
+                                    ? Icons.star_rounded
+                                    : Icons.star_border_rounded,
+                                color: Colors.amber, // Sao luôn màu vàng
+                                size: 36,
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                      const SizedBox(height: 8),
+                      Center(
+                        child: Text(
+                          _getRatingLabel(_rating),
+                          style: TextStyle(
+                            color: Colors.amber[700],
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // 3. Ô NHẬP TEXT (Style Shopee: Nền xám, không viền)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: TextField(
+                          controller: commentController,
+                          maxLines: 5,
+                          maxLength: 200, // Giới hạn ký tự giống Shopee
+                          style: const TextStyle(fontSize: 14),
+                          decoration: const InputDecoration(
+                            hintText:
+                                'Hãy chia sẻ nhận xét cho sản phẩm này bạn nhé!',
+                            border: InputBorder.none,
+                            hintStyle: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 13,
+                            ),
+                            counterText: '', // Ẩn counter mặc định
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 4. KHU VỰC MEDIA (Ảnh + Video)
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Nút Thêm Ảnh/Video
+                            GestureDetector(
+                              onTap: () async {
+                                // Logic chọn: Hỏi người dùng muốn chọn ảnh hay video
+                                // Hoặc đơn giản là show bottom sheet nhỏ
+                                showModalBottomSheet(
+                                  context: context,
+                                  builder: (bsContext) => Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      ListTile(
+                                        leading: const Icon(
+                                          Icons.photo_library,
+                                        ),
+                                        title: const Text('Thêm hình ảnh'),
+                                        onTap: () async {
+                                          Navigator.pop(bsContext);
+                                          final picked = await picker
+                                              .pickMultiImage(
+                                                maxWidth: 1920,
+                                                imageQuality: 85,
+                                              );
+                                          if (picked.isNotEmpty) {
+                                            setStateDialog(() {
+                                              _images.addAll(
+                                                picked.map((x) => File(x.path)),
+                                              );
+                                            });
+                                          }
+                                        },
+                                      ),
+                                      ListTile(
+                                        leading: const Icon(Icons.videocam),
+                                        title: const Text('Thêm video'),
+                                        onTap: () async {
+                                          Navigator.pop(bsContext);
+                                          final picked = await picker.pickVideo(
+                                            source: ImageSource.gallery,
+                                            maxDuration: const Duration(
+                                              seconds: 60,
+                                            ),
+                                          );
+                                          if (picked != null) {
+                                            setStateDialog(
+                                              () => _videoFile = File(
+                                                picked.path,
+                                              ),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                width: 70,
+                                height: 70,
+                                margin: const EdgeInsets.only(right: 12),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: AppColor.buttonprimaryCol,
+                                    style: BorderStyle.solid,
+                                  ), // Viền xanh nét đứt hoặc liền
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.camera_alt_outlined,
+                                      color: AppColor.buttonprimaryCol,
+                                      size: 24,
+                                    ),
+                                    Text(
+                                      'Thêm',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: AppColor.buttonprimaryCol,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            // Hiển thị Video đã chọn
+                            if (_videoFile != null)
+                              _MediaThumbnail(
+                                file: _videoFile!,
+                                isVideo: true,
+                                onRemove: _removeVideo,
+                              ),
+
+                            // Hiển thị List Ảnh
+                            ..._images.asMap().entries.map((entry) {
+                              return _MediaThumbnail(
+                                file: entry.value,
+                                isVideo: false,
+                                onRemove: () => _removeImage(entry.key),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // 5. BUTTONS
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(ctx).pop(),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: Colors.grey.shade400),
+                                foregroundColor: Colors.black87,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text('Trở lại'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                final comment = commentController.text.trim();
+                                if (comment.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Vui lòng viết nội dung đánh giá',
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                await controller.createOrUpdate(
+                                  rating: _rating,
+                                  comment: comment,
+                                  images: _images,
+                                  videoFile: _videoFile,
+                                );
+
+                                if (context.mounted) {
+                                  Navigator.of(ctx).pop();
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColor.buttonprimaryCol,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text('Gửi đánh giá'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _MediaThumbnail extends StatelessWidget {
+  final File file;
+  final bool isVideo;
+  final VoidCallback onRemove;
+
+  const _MediaThumbnail({
+    required this.file,
+    required this.isVideo,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 70,
+          height: 70,
+          margin: const EdgeInsets.only(right: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: isVideo
+                ? Container(
+                    color: Colors.black12,
+                    child: const Center(
+                      child: Icon(
+                        Icons.play_circle_fill,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                  )
+                : Image.file(file, fit: BoxFit.cover),
+          ),
+        ),
+        Positioned(
+          top: -6,
+          right: 4,
+          child: GestureDetector(
+            onTap: onRemove,
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, size: 14, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

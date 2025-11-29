@@ -27,6 +27,9 @@ import 'package:frontend_mobile/features/order/presentation/viewmodels/orders_st
 import 'package:frontend_mobile/features/product_detail/data/repository/product_detail_repository.dart';
 import 'package:frontend_mobile/features/profile/data/repository/profile_repository.dart';
 import 'package:frontend_mobile/features/profile/presentation/viewmodels/profile_controller.dart';
+import 'package:frontend_mobile/features/review/data/repository/review_repository.dart';
+import 'package:frontend_mobile/features/review/presentation/viewmodel/product_reviews_controller.dart';
+import 'package:frontend_mobile/features/review/presentation/viewmodel/review_state.dart';
 import 'package:frontend_mobile/features/search/data/repository/search_repository.dart';
 import 'package:frontend_mobile/features/search/data/repository/search_result_repository.dart';
 import 'package:frontend_mobile/features/search/presentation/viewmodel/search_result_controller.dart';
@@ -201,4 +204,23 @@ final userNotificationControllerProvider = StateNotifierProvider<
   (ref) => UserNotificationController(
     ref.read(userNotificationRepositoryProvider),
   ),
+);
+
+// repo
+final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
+  final dioClient = ref.watch(dioClientProvider); // <-- dùng dioClientProvider, không phải dioProvider
+  return ReviewRepository(dioClient: dioClient);
+});
+
+// controller theo productId
+final productReviewsControllerProvider = StateNotifierProvider.family<
+    ProductReviewsController, ProductReviewsState, String>(
+  (ref, productId) {
+    final repo = ref.watch(reviewRepositoryProvider);
+    return ProductReviewsController(
+      repo: repo,
+      ref: ref,
+      productId: productId,
+    );
+  },
 );
