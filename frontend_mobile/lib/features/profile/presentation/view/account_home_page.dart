@@ -4,6 +4,7 @@ import 'package:frontend_mobile/core/assets/app_image.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 class AccountHomePage extends ConsumerStatefulWidget {
   const AccountHomePage({super.key});
@@ -51,6 +52,12 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
+            actions: [
+              IconButton(
+                icon: const Icon(Iconsax.message_question),
+                onPressed: () => context.pushNamed('ai-chat'),
+              ),
+            ],
             pinned: true,
             expandedHeight: 150,
             backgroundColor: AppColor.buttonprimaryCol,

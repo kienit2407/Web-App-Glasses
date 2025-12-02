@@ -55,6 +55,32 @@ export const supportAdminService = {
         return { conversation: conv.toObject(), messages };
     },
 
+
+
+    async closeConversation(adminId: Types.ObjectId, conversationId: string) {
+        if (!Types.ObjectId.isValid(conversationId)) {
+            throw new BadRequestException("Invalid conversation id");
+        }
+
+        const conv = await SupportConversation.findById(conversationId);
+        if (!conv) throw new NotFoundException("Conversation not found");
+
+        conv.status = "closed";
+        await conv.save();
+
+        return conv.toObject();
+    },
+
+    async deleteConversationForAdmin(conversationId: string) {
+        if (!Types.ObjectId.isValid(conversationId)) {
+            throw new BadRequestException("Invalid conversation id");
+        }
+
+        await SupportMessage.deleteMany({ conversation_id: conversationId });
+        await SupportConversation.deleteOne({ _id: conversationId });
+
+        return { success: true };
+    },
     // ADMIN gửi tin nhắn cho user
     async sendAdminMessage(
         adminId: Types.ObjectId,
@@ -104,7 +130,6 @@ export const supportAdminService = {
         }
         await conv.save();
 
-        // 🔔 gửi socket cho USER – widget nhận chat:new_message
         SEND_EVENT_TO_USER(String(conv.user_id), "chat:new_message", {
             conversation_id: conv._id,
             message: msg.toObject(),
@@ -113,31 +138,6 @@ export const supportAdminService = {
         });
 
         return { conversation: conv.toObject(), message: msg.toObject() };
-    },
-
-    async closeConversation(adminId: Types.ObjectId, conversationId: string) {
-        if (!Types.ObjectId.isValid(conversationId)) {
-            throw new BadRequestException("Invalid conversation id");
-        }
-
-        const conv = await SupportConversation.findById(conversationId);
-        if (!conv) throw new NotFoundException("Conversation not found");
-
-        conv.status = "closed";
-        await conv.save();
-
-        return conv.toObject();
-    },
-
-    async deleteConversationForAdmin(conversationId: string) {
-        if (!Types.ObjectId.isValid(conversationId)) {
-            throw new BadRequestException("Invalid conversation id");
-        }
-
-        await SupportMessage.deleteMany({ conversation_id: conversationId });
-        await SupportConversation.deleteOne({ _id: conversationId });
-
-        return { success: true };
     },
     async sendAdminMediaMessage(
         adminId: Types.ObjectId,

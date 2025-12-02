@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tag, Image, Rate, Card, Typography, message } from 'antd'
+import { Tag, Image, Rate, Card, Typography, message, Popconfirm } from 'antd'
 import {
   Tabs,
   TabsContent,
@@ -277,7 +277,7 @@ const ProductDetail = () => {
     // nếu component bị unmount trước khi timer kết thúc.
     // Đây là cách dọn dẹp tốt nhất trong React.
     return () => clearTimeout(timer);
-  
+
   };
   const selectedVariant: Variant | null = useMemo(() => {
     if (!data || !selectedVariantId) return null;
@@ -791,16 +791,25 @@ const ProductDetail = () => {
                                 <Pencil className="h-4 w-4" />
                               </Button>
                               {/* nút xoá */}
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={async () => {
-                                  await deleteReview(rv.id);
-                                  await fetchOfProduct(product.product_id);
-                                }}
+                              <Popconfirm
+                                title={"Xoá đánh giá"}
+                                description={
+                                  "Bạn có chắc muốn xoá đánh giá này không? Hành động này không thể hoàn tác."
+                                }
+                                okText={"Xoá đánh giá"}
+                                cancelText="Huỷ"
+                                okButtonProps={{ danger: true }}
+                                onConfirm={
+                                  async () => {
+                                    await deleteReview(rv.id);
+                                    await fetchOfProduct(product.product_id);
+                                  }
+                                }
                               >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
+                                <Button size="icon" variant="ghost">
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </Popconfirm>
                             </div>
                           )}
                         </div>

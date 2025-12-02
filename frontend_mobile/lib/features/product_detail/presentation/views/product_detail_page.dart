@@ -313,7 +313,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
 
               const SizedBox(height: 8),
 
-              // ===== TABS: Mô tả / Thông số / Đánh giá =====
+            
               Container(
                 color: Colors.white,
                 child: Column(

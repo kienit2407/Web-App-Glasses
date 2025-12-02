@@ -56,7 +56,7 @@ class _SigninPageState extends ConsumerState<SigninPage> {
           elevation: 0, // Bỏ bóng đổ
           leading: IconButton(
             icon: const Icon(
-              Iconsax.arrow_left, // Dùng icon arrow của Iconsax cho đồng bộ
+              Iconsax.arrow_left_2_copy, // Dùng icon arrow của Iconsax cho đồng bộ
               color: AppColor.textpriCol, // Màu đen/xám theo theme text
             ),
             onPressed: () {
@@ -123,9 +123,11 @@ class _SigninPageState extends ConsumerState<SigninPage> {
             padding: EdgeInsets.zero,
             minimumSize: Size(0, 0),
             tapTargetSize:
-                MaterialTapTargetSize.shrinkWrap, // 🔹 giảm vùng nhấn
+                MaterialTapTargetSize.shrinkWrap, 
           ),
-          onPressed: () {},
+          onPressed: () {
+            context.pushReplacementNamed('signup');
+          },
           child: const Text(
             'SIGN UP',
             style: TextStyle(

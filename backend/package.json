@@ -8,6 +8,8 @@
     "start": "node dist/src/server.js"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@qdrant/qdrant-js": "^1.16.1",
     "@types/async-exit-hook": "^2.0.2",
     "@types/cookie-parser": "^1.4.10",
     "@types/morgan": "^1.9.10",
@@ -20,6 +22,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "face-api.js": "^0.22.2",
+    "groq-sdk": "^0.37.0",
     "http-status-codes": "^2.3.0",
     "joi": "^18.0.1",
     "jsonwebtoken": "^9.0.0",

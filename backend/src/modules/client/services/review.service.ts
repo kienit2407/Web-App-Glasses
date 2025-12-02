@@ -128,7 +128,7 @@ export const reviewService = {
             is_edited: false,
         });
 
-        // ⭐ tính lại rating_avg + review_count
+ 
         await this.recomputeProductRating(productObjectId);
 
         // trả về review mới nhất của user cho product đó

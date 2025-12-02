@@ -29,6 +29,9 @@ import { NOTIFICATION_ROUTES } from "./notification.routes"
 import { ADMIN_NOTIFICATION_ROUTES } from "./admin/admin.notification.routes"
 import { SUPPORT_ROUTES } from "./support.user.routes"
 import { ADMIN_SUPPORT_ROUTES } from "./admin/admin.support.routes"
+import { ADMIN_FACE_ADVICE_ROUTES } from "./face-advice.routes"
+import { CHAT_ROUTES } from "./chat.routes"
+import { VIRTUAL_TRY_ON_ROUTES } from "./virtualTryOn.route"
 
 
 const router : Router = express.Router() 
@@ -61,6 +64,8 @@ client.use("/shop-settings", SHOP_SETTINGS_ROUTES)
 client.use("/support", SUPPORT_ROUTES)
 client.use('/geo', GEO_ROUTES) // provinces/districts/wards
 client.use('/shipping-fee', SHIPPING_ROUTES) // /shipping/quote
+client.use('/trap-bot', CHAT_ROUTES) // /shipping/quote
+client.use('/virtual-room', VIRTUAL_TRY_ON_ROUTES) // /shipping/quote
 
 router.use('/', client)
 
@@ -78,6 +83,7 @@ admin.use("/settings", ADMIN_SETTINGS_ROUTES)
 admin.use("/dashboard", ADMIN_DASHBOARD_ROUTES)
 admin.use("/support", ADMIN_SUPPORT_ROUTES)
 admin.use("/notifications", ADMIN_NOTIFICATION_ROUTES)
+admin.use("/face-advice", ADMIN_FACE_ADVICE_ROUTES)
 
 router.use("/admin", admin)
 

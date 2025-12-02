@@ -499,6 +499,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           const SizedBox(height: 12),
           ListView.separated(
             shrinkWrap: true,
+            reverse: false,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: items.length,
             separatorBuilder: (_, __) => const Divider(height: 24),

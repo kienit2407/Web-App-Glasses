@@ -42,6 +42,7 @@ import { UserNotificationsPage } from "./modules/user/components/UserNotificatio
 import { AdminNotificationsPage } from "./modules/admin/pages/AdminNotifications"
 import { AdminSupportPage } from "./modules/admin/pages/AdminSupportPage"
 import PaymentResult from "./modules/user/pages/PaymentResult"
+import { VirtualTryOnPage } from "./modules/user/pages/VirtualTryOn"
 
 const queryClient = new QueryClient() // dùng để quản lý cache dữ liệu api
 
@@ -73,6 +74,7 @@ const App = () => {
             <Route element={<UserLayout />}>
               <Route path="/" element={<Index />} />
               <Route path="/products" element={<Products />} />
+              <Route path="/virtual-tryon" element={<VirtualTryOnPage />} />
               <Route path="/products/:slug/:productId" element={<ProductDetail />} />
               <Route path="/payment-result" element={<PaymentResult />} />
               <Route

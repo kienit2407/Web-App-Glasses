@@ -336,19 +336,20 @@ export const Navbar = () => {
 
             <div className="relative group">
               <Link
-                to="/contact"
-                className={`${baseNavItem} ${isActivePath("/contact")
+                to="/virtual-tryon"
+                className={`${baseNavItem} ${isActivePath("/virtual-tryon")
                   ? "text-primary"
                   : "text-foreground hover:text-primary"
                   }`}
               >
-                Liên hệ
+                Phòng thử kính ảo
               </Link>
               <div
-                className={`${navUnderline} ${isActivePath("/contact") ? "w-full" : ""
+                className={`${navUnderline} ${isActivePath("/about") ? "w-full" : ""
                   }`}
               />
             </div>
+        
           </div>
 
           <div className="hidden md:flex items-center gap-3">

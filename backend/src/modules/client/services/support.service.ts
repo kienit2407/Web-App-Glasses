@@ -36,6 +36,46 @@ async function findOrCreateConversationForUser(userId: Types.ObjectId) {
 }
 
 export const supportUserService = {
+    
+
+    // USER: list các cuộc hội thoại của mình
+    async listMyConversations(userId: Types.ObjectId) {
+        const convs = await SupportConversation.find({ user_id: userId })
+            .sort({ last_message_at: -1 })
+            .lean();
+
+        return convs;
+    },
+
+    // USER: list messages của 1 cuộc hội thoại
+    async listMessagesForUser(userId: Types.ObjectId, conversationId: string) {
+        if (!Types.ObjectId.isValid(conversationId)) {
+            throw new BadRequestException("Invalid conversation id");
+        }
+
+        const conv = await SupportConversation.findOne({
+            _id: conversationId,
+            user_id: userId,
+        });
+
+        
+        if (!conv) {
+            throw new BadRequestException("Conversation not found");
+            // hoặc custom NotFoundException tuỳ bạn có class hay không
+        }
+
+        const messages = await SupportMessage.find({
+            conversation_id: conv._id,
+        })
+            .sort({ createdAt: 1 })
+            .lean();
+
+        // user đã vào xem → clear unread_for_user
+        conv.unread_for_user = 0;
+        await conv.save();
+
+        return { conversation: conv.toObject(), messages };
+    },
     // USER gửi tin nhắn cho shop
     async sendUserMessage(userId: Types.ObjectId, payload: SendMessagePayload) {
         const { content = "", type = "text", media_url, media_thumb } = payload;
@@ -80,45 +120,6 @@ export const supportUserService = {
         });
 
         return { conversation: conv.toObject(), message: msg.toObject() };
-    },
-
-    // USER: list các cuộc hội thoại của mình
-    async listMyConversations(userId: Types.ObjectId) {
-        const convs = await SupportConversation.find({ user_id: userId })
-            .sort({ last_message_at: -1 })
-            .lean();
-
-        return convs;
-    },
-
-    // USER: list messages của 1 cuộc hội thoại
-    async listMessagesForUser(userId: Types.ObjectId, conversationId: string) {
-        if (!Types.ObjectId.isValid(conversationId)) {
-            throw new BadRequestException("Invalid conversation id");
-        }
-
-        const conv = await SupportConversation.findOne({
-            _id: conversationId,
-            user_id: userId,
-        });
-
-        // ✅ Không tự tạo mới nữa, nếu không thấy thì báo lỗi
-        if (!conv) {
-            throw new BadRequestException("Conversation not found");
-            // hoặc custom NotFoundException tuỳ bạn có class hay không
-        }
-
-        const messages = await SupportMessage.find({
-            conversation_id: conv._id,
-        })
-            .sort({ createdAt: 1 })
-            .lean();
-
-        // user đã vào xem → clear unread_for_user
-        conv.unread_for_user = 0;
-        await conv.save();
-
-        return { conversation: conv.toObject(), messages };
     },
     async sendUserMediaMessage(userId: Types.ObjectId, file: Express.Multer.File) {
         if (!file) {

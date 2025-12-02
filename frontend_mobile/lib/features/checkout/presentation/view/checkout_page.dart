@@ -93,7 +93,7 @@ class CheckoutPage extends ConsumerWidget {
                 _AddressCard(
                   address: state.selectedAddress!,
                   onChange: () async {
-                    final res = await context.push('/address-select');
+                    final res = await context.push('/checkout/address-select');
                     if (res is Address) {
                       controller.changeAddress(res);
                     }
@@ -155,7 +155,6 @@ class CheckoutPage extends ConsumerWidget {
                     ),
                   );
                 } else {
-                  // VNPay: mở WebView
                   context.push(
                     '/vnpay-webview',
                     extra: VnpayArgs(orderId: orderId, paymentUrl: paymentUrl),
@@ -469,7 +468,7 @@ class _VoucherCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const Text('Chọn voucher của bạn'),
-                      Icon(Iconsax.arrow_right_1, size: 16),
+                      Icon(Iconsax.arrow_right_1_copy, size: 16, fontWeight: FontWeight.w600,),
                     ],
                   ),
                 ),

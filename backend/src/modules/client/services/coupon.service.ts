@@ -239,7 +239,6 @@ export const couponService = {
                 const is_expired = timeInvalid || inactive;
 
                 if (is_expired) {
-                    // 👈 Quan trọng: coupon hết hạn thì không trả về nữa
                     return null;
                 }
 

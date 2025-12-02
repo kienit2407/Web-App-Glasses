@@ -3,6 +3,7 @@ import 'package:frontend_mobile/core/routes/bottom_navigation_bar.dart';
 import 'package:frontend_mobile/features/address/data/models/address_model.dart';
 import 'package:frontend_mobile/features/auth/presentation/views/signup_page.dart';
 import 'package:frontend_mobile/features/cart/presentation/views/cart_page.dart';
+import 'package:frontend_mobile/features/chat/presentation/views/bot_chat_page.dart';
 import 'package:frontend_mobile/features/checkout/presentation/view/address_form_page.dart';
 import 'package:frontend_mobile/features/checkout/presentation/view/address_select_page.dart';
 import 'package:frontend_mobile/features/checkout/presentation/view/checkout_args.dart';
@@ -159,6 +160,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'change-password',
         path: '/change-password',
         builder: (context, state) => const ChangePasswordPage(),
+      ),
+      GoRoute(
+        path: '/ai-chat',
+        name: 'ai-chat',
+        builder: (context, state) => const BotChatPage(),
       ),
     ],
   );

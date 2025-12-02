@@ -80,8 +80,7 @@ export const adminReviewService = {
             }
             filter.user_id = new Types.ObjectId(user_id);
         }
-
-        // 🔹 lọc theo tên sản phẩm
+        
         if (product_name) {
             const products = await Product.find({
                 product_name: new RegExp(product_name.trim(), "i"),
@@ -98,7 +97,6 @@ export const adminReviewService = {
             }
         }
 
-        // 🔹 lọc theo tên/email user
         if (user_name) {
             const users = await User.find({
                 $or: [

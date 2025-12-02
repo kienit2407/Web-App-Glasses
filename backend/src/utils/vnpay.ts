@@ -7,7 +7,7 @@ export const vnpay = new VNPay({
     secureSecret: env.VNP_HASH_SECRET.trim(),
     vnpayHost: 'https://sandbox.vnpayment.vn', // "https://sandbox.vnpayment.vn"
     testMode: true,                      // sandbox
-    hashAlgorithm: HashAlgorithm.SHA512, // ✅dùng enum, không dùng string
+    hashAlgorithm: HashAlgorithm.SHA512, 
     enableLog: true,
     loggerFn: ignoreLogger,
     endpoints: {

@@ -31,7 +31,7 @@ interface CreatePromotionPayload {
     is_active?: boolean;
     priority?: number;
 
-    // 👇 thêm:
+    
     discount_type: "percent" | "fixed";
     discount_value: number;
     max_discount?: number | null;   // optional nếu bạn có
@@ -48,7 +48,7 @@ interface UpdatePromotionPayload {
     is_active?: boolean;
     priority?: number;
 
-    // 👇 thêm:
+    
     discount_type?: "percent" | "fixed";
     discount_value?: number;
     max_discount?: number | null;

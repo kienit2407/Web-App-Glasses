@@ -12,6 +12,7 @@ import 'package:frontend_mobile/features/home/data/models/brand_model.dart';
 import 'package:frontend_mobile/features/home/data/models/product_list_item.dart';
 import 'package:frontend_mobile/features/product_detail/presentation/views/product_detail_page.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -48,6 +49,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       appBar: AppBar(
         // Sử dụng AppColor.buttonprimaryCol làm background cho toàn bộ AppBar
         backgroundColor: AppColor.buttonprimaryCol,
+        foregroundColor: Colors.white,
         // Dùng `title` để chứa thanh tìm kiếm và icon giỏ hàng
         // Và thiết lập chiều cao tùy chỉnh nếu cần thiết (optional)
         toolbarHeight: 60, // Tăng nhẹ chiều cao thanh công cụ nếu cần
@@ -93,6 +95,10 @@ class _HomePageState extends ConsumerState<HomePage> {
               const SizedBox(width: 8),
 
               const _CartIconButton(),
+              IconButton(
+                icon: const Icon(Iconsax.message_question_copy),
+                onPressed: () => context.pushNamed('ai-chat'),
+              ),
             ],
           ),
         ),

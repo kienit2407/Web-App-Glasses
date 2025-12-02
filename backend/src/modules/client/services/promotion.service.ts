@@ -41,8 +41,6 @@ export const promotionService = {
             start_date: { $lte: now },
             $or: [{ end_date: null }, { end_date: { $gte: now } }],
         })
-            // ❌ Không sort theo priority nữa
-            // ✅ Sort theo thời gian (mới nhất nằm trên)
             .sort({ start_date: -1, createdAt: -1 })
             .lean();
 

@@ -44,7 +44,6 @@ interface UpdateCouponPayload {
 }
 
 export const adminCouponService = {
-    // ========== LIST ==========
     async list(params: ListCouponsParams) {
         const {
             page = 1,

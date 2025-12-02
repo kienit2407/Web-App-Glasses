@@ -132,22 +132,7 @@ export const adminUsersService = {
         return plain;
     },
 
-    /**
-     * Lấy chi tiết 1 user
-     */
-    async detail(userId: string) {
-        if (!Types.ObjectId.isValid(userId)) {
-            throw new BadRequestException("Invalid user id");
-        }
 
-        const user = await User.findById(userId).select("-password").lean();
-
-        if (!user) {
-            throw new NotFoundException("User not found");
-        }
-
-        return user;
-    },
 
     /**
      * Update trạng thái is_active
@@ -273,7 +258,22 @@ export const adminUsersService = {
 
         return { success: true, softDeleted: true };
     },
+    /**
+    * Lấy chi tiết 1 user
+    */
+    async detail(userId: string) {
+        if (!Types.ObjectId.isValid(userId)) {
+            throw new BadRequestException("Invalid user id");
+        }
 
+        const user = await User.findById(userId).select("-password").lean();
+
+        if (!user) {
+            throw new NotFoundException("User not found");
+        }
+
+        return user;
+    },
     /**
      * Lấy lịch sử đăng nhập của 1 user (cho Drawer)
      */

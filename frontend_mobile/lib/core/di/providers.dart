@@ -4,6 +4,9 @@ import 'package:frontend_mobile/features/auth/data/models/user_model.dart';
 import 'package:frontend_mobile/features/cart/data/repository/cart_repository.dart';
 import 'package:frontend_mobile/features/cart/presentation/viewmodels/cart_controller.dart';
 import 'package:frontend_mobile/features/cart/presentation/viewmodels/cart_state.dart';
+import 'package:frontend_mobile/features/chat/data/repo/bot_chat_repository.dart';
+import 'package:frontend_mobile/features/chat/presentation/viewmodel/bot_chat_controller.dart';
+import 'package:frontend_mobile/features/chat/presentation/viewmodel/bot_chat_state.dart';
 import 'package:frontend_mobile/features/checkout/data/repository/checkout_repository.dart';
 import 'package:frontend_mobile/features/checkout/presentation/view/checkout_args.dart';
 import 'package:frontend_mobile/features/checkout/presentation/viewmodels/checkout_controller.dart';
@@ -224,3 +227,14 @@ final productReviewsControllerProvider = StateNotifierProvider.family<
     );
   },
 );
+
+final botChatRepositoryProvider = Provider<BotChatRepository>((ref) {
+  final dioClient = ref.read(dioClientProvider);
+  return BotChatRepository(dioClient: dioClient);
+});
+
+final botChatControllerProvider =
+    StateNotifierProvider<BotChatController, BotChatState>((ref) {
+  final repo = ref.read(botChatRepositoryProvider);
+  return BotChatController(repo);
+});

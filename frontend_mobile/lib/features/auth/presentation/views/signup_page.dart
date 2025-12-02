@@ -27,7 +27,7 @@ class _SignupPageState extends State<SignupPage> {
           elevation: 0, // Bỏ bóng đổ
           leading: IconButton(
             icon: const Icon(
-              Iconsax.arrow_left, // Dùng icon arrow của Iconsax cho đồng bộ
+              Iconsax.arrow_left_2_copy, // Dùng icon arrow của Iconsax cho đồng bộ
               color: AppColor.textpriCol, // Màu đen/xám theo theme text
             ),
             onPressed: () {
@@ -91,9 +91,11 @@ class _SignupPageState extends State<SignupPage> {
             padding: EdgeInsets.zero,
             minimumSize: Size(0, 0),
             tapTargetSize:
-                MaterialTapTargetSize.shrinkWrap, // 🔹 giảm vùng nhấn
+                MaterialTapTargetSize.shrinkWrap,
           ),
-          onPressed: () {},
+          onPressed: () {
+            context.pushReplacementNamed('signin');
+          },
           child: const Text(
             'SIGN IN',
             style: TextStyle(
