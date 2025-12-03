@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.orderController = exports.requestReturnMy = exports.confirmDeliveredMy = exports.reorderMy = exports.cancelMy = exports.detailMy = exports.listMy = exports.create = void 0;
+exports.orderController = exports.requestReturnMy = exports.confirmDeliveredMy = exports.reorderMy = exports.cancelMy = exports.detailMy = exports.listMy = exports.myStats = exports.create = void 0;
 const mongoose_1 = require("mongoose");
 const try_catch_1 = require("../../../utils/try_catch");
 const app_errol_1 = require("../../../utils/app_errol");
@@ -10,21 +10,42 @@ exports.create = (0, try_catch_1.TryCatch)(async (req, res) => {
     if (!req.user?._id) {
         throw new app_errol_1.BadRequestException("Unauthorized");
     }
-    const { cart_item_ids, address_id, note, coupon_code } = req.body;
-    if (!cart_item_ids || !Array.isArray(cart_item_ids) || cart_item_ids.length === 0) {
-        throw new app_errol_1.BadRequestException("cart_item_ids is required");
-    }
+    const { cart_item_ids, items, address_id, note, coupon_code, payment_method } = req.body;
     if (!address_id) {
         throw new app_errol_1.BadRequestException("address_id is required");
     }
     const userId = new mongoose_1.Types.ObjectId(req.user._id);
-    const result = await order_service_1.orderService.createOrder(userId, {
-        cart_item_ids,
-        address_id,
-        note,
-        coupon_code,
-    });
-    return res.status(201).json({ data: result });
+    // ƯU TIÊN: nếu có cart_item_ids -> luồng giỏ hàng
+    if (cart_item_ids && Array.isArray(cart_item_ids) && cart_item_ids.length > 0) {
+        const result = await order_service_1.orderService.createOrder(userId, {
+            cart_item_ids,
+            address_id,
+            note,
+            coupon_code,
+            payment_method
+        });
+        return res.status(201).json({ data: result });
+    }
+    // Nếu không có cart_item_ids, nhưng có items -> luồng Mua ngay
+    if (items && Array.isArray(items) && items.length > 0) {
+        const result = await order_service_1.orderService.createOrderFromDirect(userId, {
+            items,
+            address_id,
+            note,
+            coupon_code,
+            payment_method
+        });
+        return res.status(201).json({ data: result });
+    }
+    throw new app_errol_1.BadRequestException("Either cart_item_ids or items is required");
+});
+exports.myStats = (0, try_catch_1.TryCatch)(async (req, res) => {
+    if (!req.user?._id) {
+        throw new app_errol_1.BadRequestException("Unauthorized");
+    }
+    const userId = new mongoose_1.Types.ObjectId(req.user._id);
+    const data = await order_service_1.orderService.getMyOrderStatusStats(userId);
+    return res.json({ data });
 });
 // GET /orders?status=&page=&limit=
 exports.listMy = (0, try_catch_1.TryCatch)(async (req, res) => {
@@ -98,4 +119,5 @@ exports.orderController = {
     reorderMy: exports.reorderMy,
     confirmDeliveredMy: exports.confirmDeliveredMy,
     requestReturnMy: exports.requestReturnMy,
+    myStats: exports.myStats
 };

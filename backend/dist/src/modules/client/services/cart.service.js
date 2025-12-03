@@ -97,9 +97,6 @@ exports.cartService = {
         console.log(">>> addItem updateOne result =", result);
         return this.getMyCart(userId);
     },
-    // price: giá gốc(niêm yết).
-    //     sale_price: giá đã giảm(có thể do promotion khi bạn set ở admin).
-    //         price_at_add: giá khách sẽ trả tại thời điểm thêm vào giỏ(để “khóa” giá).
     async updateItem(userId, itemId, payload) {
         if (!mongoose_1.Types.ObjectId.isValid(itemId)) {
             throw new Error("Invalid itemId");

@@ -96,19 +96,6 @@ exports.adminUsersService = {
         return plain;
     },
     /**
-     * Lấy chi tiết 1 user
-     */
-    async detail(userId) {
-        if (!mongoose_1.Types.ObjectId.isValid(userId)) {
-            throw new app_errol_1.BadRequestException("Invalid user id");
-        }
-        const user = await user_model_1.User.findById(userId).select("-password").lean();
-        if (!user) {
-            throw new app_errol_1.NotFoundException("User not found");
-        }
-        return user;
-    },
-    /**
      * Update trạng thái is_active
      * Có check: nếu user là admin cuối cùng thì không cho deactivate
      */
@@ -207,6 +194,19 @@ exports.adminUsersService = {
         user.is_active = false;
         await user.save();
         return { success: true, softDeleted: true };
+    },
+    /**
+    * Lấy chi tiết 1 user
+    */
+    async detail(userId) {
+        if (!mongoose_1.Types.ObjectId.isValid(userId)) {
+            throw new app_errol_1.BadRequestException("Invalid user id");
+        }
+        const user = await user_model_1.User.findById(userId).select("-password").lean();
+        if (!user) {
+            throw new app_errol_1.NotFoundException("User not found");
+        }
+        return user;
     },
     /**
      * Lấy lịch sử đăng nhập của 1 user (cho Drawer)

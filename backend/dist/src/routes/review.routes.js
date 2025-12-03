@@ -9,25 +9,13 @@ const review_controller_1 = require("../modules/client/controllers/review.contro
 const upload_middlewares_1 = require("../middleware/upload.middlewares");
 const authMiddleware_1 = require("../middleware/authMiddleware");
 const router = express_1.default.Router();
-router.use(authMiddleware_1.authMidleWares.protectUserRoute);
 router.get("/of/:productId", review_controller_1.reviewController.listOfProduct);
-// tạo review: tối đa 5 ảnh + 1 video
-router.post("/", 
-// requireAuth,
-upload_middlewares_1.uploadMiddlewares.upload.fields([
-    { name: "images", maxCount: 5 },
-    { name: "video", maxCount: 1 },
-]), review_controller_1.reviewController.create);
-// sửa review: cho phép chỉnh rating/comment, sau này nếu muốn sửa media thì cũng dùng fields giống trên
-router.patch("/:id", 
-// requireAuth,
-upload_middlewares_1.uploadMiddlewares.upload.fields([
-    { name: "images", maxCount: 5 },
-    { name: "video", maxCount: 1 },
-]), review_controller_1.reviewController.update);
-router.delete("/:id", 
-// requireAuth,
-review_controller_1.reviewController.remove);
+// Bắt đầu áp dụng middleware xác thực cho TẤT CẢ các route bên dưới
+router.use(authMiddleware_1.authMidleWares.protectUserRoute);
+// 2. Các route CẦN Auth
+router.post("/", upload_middlewares_1.uploadMiddlewares.upload.fields([ /* ... */]), review_controller_1.reviewController.create);
+router.patch("/:id", upload_middlewares_1.uploadMiddlewares.upload.fields([ /* ... */]), review_controller_1.reviewController.update);
+router.delete("/:id", review_controller_1.reviewController.remove);
 // router.get("/of/:productId", /*review.listOfProduct*/reviewController.listOfProduct) // ?page&limit
 // router.post("/", /*requireAuth,*/ /*validate(createReview),*/ /*review.create*/reviewController.create)
 // router.patch("/:id", /*requireAuth,*/ /*review.update*/reviewController.update)

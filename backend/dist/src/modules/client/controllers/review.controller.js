@@ -17,6 +17,7 @@ const listOfProduct = (0, try_catch_1.TryCatch)(async (req, res) => {
             page: p,
             limit: l,
         });
+        console.log(result);
         return res.json({
             data: result.items,
             meta: {
@@ -77,7 +78,6 @@ const create = (0, try_catch_1.TryCatch)(async (req, res) => {
         throw new app_errol_1.BadRequestException(err.message || "Cannot create review");
     }
 });
-// PATCH /reviews/:id
 const update = (0, try_catch_1.TryCatch)(async (req, res) => {
     if (!req.user?._id) {
         throw new app_errol_1.UnauthorizedException("Unauthorized");
@@ -85,11 +85,39 @@ const update = (0, try_catch_1.TryCatch)(async (req, res) => {
     const { id } = req.params;
     const { rating, comment } = req.body;
     const userId = new mongoose_1.Types.ObjectId(req.user._id);
+    // ✅ LẤY FILE TỪ MULTER.FIELDS
+    const fileMap = req.files;
+    const imageFiles = fileMap?.images ?? [];
+    const videoFile = fileMap?.video?.[0];
+    const imageMetas = [];
+    let videoUrl = null;
+    // upload từng ảnh
+    for (const file of imageFiles) {
+        const uploaded = await (0, cloudinary_1.uploadToCloud)(file, "reviews/images");
+        imageMetas.push(uploaded);
+    }
+    // upload video nếu có
+    if (videoFile) {
+        const uploadedVideo = await (0, cloudinary_1.uploadToCloud)(videoFile, "reviews/videos");
+        videoUrl = uploadedVideo.url;
+    }
     try {
-        const review = await review_service_1.reviewService.updateReview(userId, id, {
-            rating,
-            comment,
-        });
+        const payload = {};
+        if (rating !== undefined) {
+            payload.rating = Number(rating);
+        }
+        if (comment !== undefined) {
+            payload.comment = comment;
+        }
+        // chỉ set nếu có gửi ảnh mới
+        if (imageMetas.length > 0) {
+            payload.images = imageMetas;
+        }
+        // chỉ set nếu có gửi video mới
+        if (videoUrl !== null) {
+            payload.video_url = videoUrl;
+        }
+        const review = await review_service_1.reviewService.updateReview(userId, id, payload);
         return res.json({ data: review });
     }
     catch (err) {

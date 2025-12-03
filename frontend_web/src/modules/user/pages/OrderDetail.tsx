@@ -39,6 +39,10 @@ const ORDER_STATUS_LABEL: Record<string, string> = {
     returned: "Đã trả hàng",
 };
 
+const PAYMENT_STATUS_COLOR: Record<string, string> = {
+    success: "green",
+    failed: "red",
+};
 const ORDER_STATUS_COLOR: Record<string, string> = {
     pending: "gold",
     processing: "blue",
@@ -158,6 +162,7 @@ const OrderDetail = () => {
     const rawStatus: string = order.order_status;
     const statusLabel = ORDER_STATUS_LABEL[rawStatus] || rawStatus;
     const statusColor = ORDER_STATUS_COLOR[rawStatus] || "default";
+    const statusPaymentColor = PAYMENT_STATUS_COLOR[order.payment_status]
 
     // Map delivering -> shipping cho thanh bước
     const normalizedStatusForStep =
@@ -311,12 +316,16 @@ const OrderDetail = () => {
                         <div className="flex items-center justify-between text-sm">
                             <span>Trạng thái thanh toán</span>
                             <span className="font-semibold">
-                                {order.payment_status === "paid" ||
-                                    order.payment_status === "success"
-                                    ? "Đã thanh toán"
-                                    : order.payment_status === "failed"
-                                        ? "Thanh toán thất bại"
-                                        : "Chờ thanh toán"}
+                                <Tag color={statusPaymentColor}
+                                    className="text-sm px-3 py-1 rounded-full"
+                                >
+                                    {order.payment_status === "paid" ||
+                                        order.payment_status === "success"
+                                        ? "Đã thanh toán"
+                                        : order.payment_status === "failed"
+                                            ? "Thanh toán thất bại"
+                                            : "Chờ thanh toán"}
+                                </Tag>
                             </span>
                         </div>
 

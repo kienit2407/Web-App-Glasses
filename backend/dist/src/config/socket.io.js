@@ -30,6 +30,38 @@ const INITIALIZE_SOCKET_IO = (server) => {
     });
     io.on("connection", (socket) => {
         console.log(`New client connected: ${socket.id}`);
+        // ============ TYPING EVENTS – USER → ADMIN ============
+        socket.on("user:typing", ({ conversation_id }) => {
+            if (!io)
+                return;
+            // bắn cho tất cả admin đang ở room "admins"
+            io.to("admins").emit("admin:chat:typing", {
+                conversation_id,
+                sender_type: "user",
+            });
+        });
+        socket.on("user:stop_typing", ({ conversation_id }) => {
+            if (!io)
+                return;
+            io.to("admins").emit("admin:chat:stop_typing", {
+                conversation_id,
+                sender_type: "user",
+            });
+        });
+        // ============ TYPING EVENTS – ADMIN → USER ============
+        // frontend admin nhớ gửi kèm user_id của cuộc hội thoại
+        socket.on("admin:typing", ({ conversation_id, user_id }) => {
+            (0, exports.SEND_EVENT_TO_USER)(String(user_id), "chat:typing", {
+                conversation_id,
+                sender_type: "admin",
+            });
+        });
+        socket.on("admin:stop_typing", ({ conversation_id, user_id }) => {
+            (0, exports.SEND_EVENT_TO_USER)(String(user_id), "chat:stop_typing", {
+                conversation_id,
+                sender_type: "admin",
+            });
+        });
         socket.on("register_user", (userId) => {
             if (!userId)
                 return;
@@ -86,7 +118,6 @@ const SEND_EVENT_TO_MULTIPLE_USERS = (userIds, eventName, data) => {
     });
 };
 exports.SEND_EVENT_TO_MULTIPLE_USERS = SEND_EVENT_TO_MULTIPLE_USERS;
-// 👉 Helper riêng cho admin
 const SEND_EVENT_TO_ADMINS = (eventName, data) => {
     if (!io)
         return;

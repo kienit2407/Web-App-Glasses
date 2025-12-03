@@ -42,4 +42,21 @@ exports.geoService = {
             district_code: w.district_code,
         }));
     },
+    async getAddressDetails(pCode, dCode, wCode) {
+        // Chạy song song 3 câu lệnh findOne để tiết kiệm thời gian
+        const [province, district, ward] = await Promise.all([
+            province_model_1.Province.findOne({ code: pCode, is_active: true }).select("name").lean(),
+            district_model_1.District.findOne({ code: dCode, is_active: true }).select("name").lean(),
+            ward_model_1.Ward.findOne({ code: wCode, is_active: true }).select("name").lean(),
+        ]);
+        const pName = province?.name || "";
+        const dName = district?.name || "";
+        const wName = ward?.name || "";
+        return {
+            province_name: pName,
+            district_name: dName,
+            ward_name: wName,
+            full_location: [wName, dName, pName].filter(Boolean).join(", "),
+        };
+    }
 };

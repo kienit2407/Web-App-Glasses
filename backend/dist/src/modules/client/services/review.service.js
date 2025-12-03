@@ -93,7 +93,6 @@ exports.reviewService = {
             video_url: video_url ?? null,
             is_edited: false,
         });
-        // ⭐ tính lại rating_avg + review_count
         await this.recomputeProductRating(productObjectId);
         // trả về review mới nhất của user cho product đó
         const review = await reviews_model_1.Review.findOne({
@@ -119,15 +118,14 @@ exports.reviewService = {
         if (payload.comment !== undefined) {
             review.comment = payload.comment;
         }
-        // if (payload.images !== undefined) {
-        //     review.images.url = payload.images.u;
-        // }
-        // if (payload.video_url !== undefined) {
-        //     review.video_url = payload.video_url;
-        // }
+        if (payload.images !== undefined) {
+            review.images = payload.images;
+        }
+        if (payload.video_url !== undefined) {
+            review.video_url = payload.video_url;
+        }
         review.is_edited = true;
         await review.save();
-        // ⭐ tính lại rating_avg + review_count cho product đó
         await this.recomputeProductRating(review.product_id);
         return review.toObject();
     },

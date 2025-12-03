@@ -57,7 +57,6 @@ exports.adminReviewService = {
             }
             filter.user_id = new mongoose_1.Types.ObjectId(user_id);
         }
-        // 🔹 lọc theo tên sản phẩm
         if (product_name) {
             const products = await products_model_1.Product.find({
                 product_name: new RegExp(product_name.trim(), "i"),
@@ -74,7 +73,6 @@ exports.adminReviewService = {
                 };
             }
         }
-        // 🔹 lọc theo tên/email user
         if (user_name) {
             const users = await user_model_1.User.find({
                 $or: [

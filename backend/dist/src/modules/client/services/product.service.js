@@ -6,6 +6,24 @@ const mongoose_1 = require("mongoose");
 const products_model_1 = require("../../../models/products.model");
 const product_variants_model_1 = require("../../../models/product.variants.model");
 const products_image_model_1 = require("../../../models/products.image.model");
+const brands_model_1 = require("../../../models/brands.model");
+function escapeRegex(text) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+const FACE_SHAPE_TO_FRAME_SHAPES = {
+    round: ["square", "rectangle", "polygon", "browline"],
+    square: ["round", "oval", "cat-eye"],
+    oval: ["square", "rectangle", "round", "pilot", "browline"],
+    heart: ["round", "oval", "cat-eye"],
+    diamond: ["round", "oval", "cat-eye"],
+};
+function removeVietnameseTones(str) {
+    return str
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // bỏ các dấu thanh
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "D");
+}
 exports.productService = {
     async getPublicProducts(query) {
         const { q, categories, brands, minPrice, maxPrice, sort = "newest", page = 1, limit = 20, gender, shape, } = query;
@@ -215,6 +233,64 @@ exports.productService = {
             limit: limitNum,
         };
     },
+    async getSearchSuggestions(rawQ, limit = 10) {
+        const q = rawQ.trim();
+        if (!q) {
+            return { keywords: [], products: [], brands: [] };
+        }
+        const normQ = removeVietnameseTones(q.toLowerCase());
+        // lấy tạm 300 sp, ưu tiên bán nhiều / review nhiều
+        const products = await products_model_1.Product.find({ is_active: true })
+            .sort({ selled_amount: -1, review_count: -1 })
+            .limit(300)
+            .select("product_name slug tags");
+        const matchedProducts = products.filter((p) => {
+            const name = p.product_name ?? "";
+            const tags = Array.isArray(p.tags) ? p.tags.join(" ") : "";
+            const haystack = (name + " " + tags).toLowerCase();
+            const haystackNorm = removeVietnameseTones(haystack);
+            return haystackNorm.includes(normQ);
+        });
+        // sinh keywords từ matchedProducts
+        const keywordSet = new Set();
+        for (const p of matchedProducts) {
+            if (p.product_name)
+                keywordSet.add(p.product_name);
+            if (Array.isArray(p.tags)) {
+                for (const t of p.tags) {
+                    if (typeof t === "string") {
+                        const tNorm = removeVietnameseTones(t.toLowerCase());
+                        if (tNorm.includes(normQ))
+                            keywordSet.add(t);
+                    }
+                }
+            }
+        }
+        const keywords = Array.from(keywordSet).slice(0, limit);
+        const productItems = matchedProducts.slice(0, limit).map((p) => ({
+            product_id: p._id,
+            product_name: p.product_name,
+            slug: p.slug,
+        }));
+        // brand cũng làm tương tự nếu muốn
+        const brands = await brands_model_1.Brand.find({ is_active: true })
+            .limit(100)
+            .select("brand_name logo_url");
+        const matchedBrands = brands.filter((b) => {
+            const normName = removeVietnameseTones(b.brand_name.toLowerCase());
+            return normName.includes(normQ);
+        });
+        const brandItems = matchedBrands.slice(0, 5).map((b) => ({
+            brand_id: b._id,
+            brand_name: b.brand_name,
+            logo_url: b.logo_url ?? null,
+        }));
+        return {
+            keywords,
+            products: productItems,
+            brands: brandItems,
+        };
+    },
     async getProductDetail(productId) {
         if (!mongoose_1.Types.ObjectId.isValid(productId))
             return null;
@@ -299,4 +375,211 @@ exports.productService = {
             },
         };
     },
+    async getFaceShapeRecommendations(params) {
+        const { faceShape, maxBudget, limit = 6 } = params;
+        const allowedShapes = FACE_SHAPE_TO_FRAME_SHAPES[faceShape] ?? [];
+        const pipeline = [
+            { $match: { is_active: true } },
+            {
+                $lookup: {
+                    from: "product_variants",
+                    let: { productId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: { $eq: ["$product_id", "$$productId"] },
+                                is_active: true,
+                                ...(allowedShapes.length
+                                    ? { frame_shape: { $in: allowedShapes } }
+                                    : {}),
+                            },
+                        },
+                    ],
+                    as: "variants",
+                },
+            },
+            { $match: { "variants.0": { $exists: true } } },
+            {
+                $addFields: {
+                    price: {
+                        $min: {
+                            $map: {
+                                input: "$variants",
+                                as: "v",
+                                in: {
+                                    $ifNull: ["$$v.sale_price", "$$v.price"],
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        ];
+        if (typeof maxBudget === "number") {
+            pipeline.push({
+                $match: { price: { $lte: maxBudget } },
+            });
+        }
+        pipeline.push({ $sort: { selled_amount: -1, createdAt: -1 } }, { $limit: limit }, {
+            $lookup: {
+                from: "brands",
+                localField: "brand_id",
+                foreignField: "_id",
+                as: "brand",
+            },
+        }, {
+            $unwind: {
+                path: "$brand",
+                preserveNullAndEmptyArrays: true,
+            },
+        });
+        const docs = await products_model_1.Product.aggregate(pipeline);
+        const items = docs.map((p) => ({
+            product_id: p._id,
+            product_name: p.product_name,
+            slug: p.slug,
+            price: p.price,
+            thumbnail_url: p.thumbnail_url ?? null,
+            brand_name: p.brand?.brand_name ?? null,
+        }));
+        return { items };
+    },
+    async getBudgetRecommendations(params) {
+        const { maxBudget, limit = 6 } = params;
+        const pipeline = [
+            { $match: { is_active: true } },
+            {
+                $lookup: {
+                    from: "product_variants",
+                    let: { productId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: { $eq: ["$product_id", "$$productId"] },
+                                is_active: true,
+                            },
+                        },
+                    ],
+                    as: "variants",
+                },
+            },
+            { $match: { "variants.0": { $exists: true } } },
+            {
+                $addFields: {
+                    price: {
+                        $min: {
+                            $map: {
+                                input: "$variants",
+                                as: "v",
+                                in: { $ifNull: ["$$v.sale_price", "$$v.price"] },
+                            },
+                        },
+                    },
+                },
+            },
+        ];
+        if (typeof maxBudget === "number") {
+            pipeline.push({ $match: { price: { $lte: maxBudget } } });
+        }
+        pipeline.push({ $sort: { selled_amount: -1, createdAt: -1 } }, { $limit: limit });
+        const docs = await products_model_1.Product.aggregate(pipeline);
+        const items = docs.map((p) => ({
+            product_id: String(p._id),
+            product_name: p.product_name,
+            slug: p.slug,
+            price: p.price,
+            thumbnail_url: p.thumbnail_url ?? null,
+        }));
+        console.log("[getBudgetRecommendations] maxBudget =", maxBudget);
+        console.log("docs count =", docs.length);
+        return { items };
+    },
+    async getContextRecommendations(params) {
+        const { keywordContext, maxBudget, limit = 6, genderPref } = params;
+        // match cơ bản
+        const matchStage = {
+            is_active: true,
+        };
+        // NEW: filter theo giới tính nếu có
+        if (genderPref === "male") {
+            matchStage.for_gender = { $in: ["male", "unisex"] };
+        }
+        else if (genderPref === "female") {
+            matchStage.for_gender = { $in: ["female", "unisex"] };
+        }
+        else if (genderPref === "kids") {
+            matchStage.for_gender = "kids";
+        }
+        const pipeline = [
+            { $match: matchStage },
+            // 1. Lọc theo loại sản phẩm (tên có "kính mát/kính râm" hoặc "gọng")
+            {
+                $match: {
+                    product_name: {
+                        $regex: keywordContext === "sunglasses"
+                            ? /kính mát|kính râm/i
+                            : /gọng/i,
+                    },
+                },
+            },
+            // 2. Lookup variants để tính giá như getBudgetRecommendations
+            {
+                $lookup: {
+                    from: "product_variants",
+                    let: { productId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: { $eq: ["$product_id", "$$productId"] },
+                                is_active: true,
+                            },
+                        },
+                    ],
+                    as: "variants",
+                },
+            },
+            { $match: { "variants.0": { $exists: true } } },
+            {
+                $addFields: {
+                    price: {
+                        $min: {
+                            $map: {
+                                input: "$variants",
+                                as: "v",
+                                in: { $ifNull: ["$$v.sale_price", "$$v.price"] },
+                            },
+                        },
+                    },
+                },
+            },
+        ];
+        if (typeof maxBudget === "number") {
+            pipeline.push({ $match: { price: { $lte: maxBudget } } });
+        }
+        pipeline.push({ $sort: { selled_amount: -1, createdAt: -1 } }, // Ưu tiên bán chạy
+        { $limit: limit });
+        const docs = await products_model_1.Product.aggregate(pipeline);
+        const items = docs.map((p) => ({
+            product_id: String(p._id),
+            product_name: p.product_name,
+            slug: p.slug,
+            price: p.price,
+            thumbnail_url: p.thumbnail_url ?? null,
+            for_gender: p.for_gender,
+            has_uv_protection: p.has_uv_protection,
+            frame_shapes: p.frame_shapes ?? [],
+        }));
+        return { items };
+    },
+    async findProductByNameApprox(raw) {
+        const trimmed = raw.trim();
+        if (!trimmed)
+            return null;
+        const regex = new RegExp(escapeRegex(trimmed), "i");
+        const product = await products_model_1.Product.findOne({
+            is_active: true,
+            product_name: regex,
+        }).lean();
+        return product;
+    }
 };

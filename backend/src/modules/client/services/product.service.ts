@@ -8,6 +8,7 @@ import { Brand } from "../../../models/brands.model";
 function escapeRegex(text: string) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
+type GenderPref = "male" | "female" | "kids";
 type FaceShape = "round" | "square" | "oval" | "heart" | "diamond";
 type RecommendProductItem = {
     product_id: string;
@@ -15,7 +16,10 @@ type RecommendProductItem = {
     slug: string;
     price: number;
     thumbnail_url: string | null;
-};
+    for_gender?: "male" | "female" | "unisex" | "kids";
+    has_uv_protection?: boolean;
+    frame_shapes?: string[]; // từ variants
+}
 const FACE_SHAPE_TO_FRAME_SHAPES: Record<FaceShape, string[]> = {
     round: ["square", "rectangle", "polygon", "browline"],
     square: ["round", "oval", "cat-eye"],
@@ -585,25 +589,39 @@ export const productService = {
         keywordContext: 'sunglasses' | 'frame'; // Kính mát hoặc gọng
         maxBudget?: number;
         limit?: number;
+        genderPref?: GenderPref; // NEW
     }): Promise<{ items: RecommendProductItem[] }> {
-        const { keywordContext, maxBudget, limit = 6 } = params;
+        const { keywordContext, maxBudget, limit = 6, genderPref } = params;
+
+        // match cơ bản
+        const matchStage: any = {
+            is_active: true,
+        };
+
+        // NEW: filter theo giới tính nếu có
+        if (genderPref === "male") {
+            matchStage.for_gender = { $in: ["male", "unisex"] };
+        } else if (genderPref === "female") {
+            matchStage.for_gender = { $in: ["female", "unisex"] };
+        } else if (genderPref === "kids") {
+            matchStage.for_gender = "kids";
+        }
 
         const pipeline: any[] = [
-            { $match: { is_active: true } },
-            // 1. Lọc theo loại sản phẩm (Giả sử trong DB bạn có trường 'type' là 'sunglasses' hoặc 'frame')
-            // Nếu DB bạn không có field 'type', có thể search text "Kính mát" trong tên sản phẩm
+            { $match: matchStage },
+
+            // 1. Lọc theo loại sản phẩm (tên có "kính mát/kính râm" hoặc "gọng")
             {
                 $match: {
-                    // Cách 1: Nếu có field type
-                    // type: keywordContext 
-
-                    // Cách 2: Search text trong tên (nếu DB chưa chuẩn hoá type)
                     product_name: {
-                        $regex: keywordContext === 'sunglasses' ? /kính mát|kính râm/i : /gọng/i
-                    }
-                }
+                        $regex: keywordContext === "sunglasses"
+                            ? /kính mát|kính râm/i
+                            : /gọng/i,
+                    },
+                },
             },
-            // ... (lookup variants để lấy giá - Giống hệt hàm getBudgetRecommendations)
+
+            // 2. Lookup variants để tính giá như getBudgetRecommendations
             {
                 $lookup: {
                     from: "product_variants",
@@ -641,19 +659,34 @@ export const productService = {
 
         pipeline.push(
             { $sort: { selled_amount: -1, createdAt: -1 } }, // Ưu tiên bán chạy
-            { $limit: limit }
+            { $limit: limit },
         );
 
         const docs = await Product.aggregate(pipeline);
 
-        const items = docs.map((p: any) => ({
+        const items: RecommendProductItem[] = docs.map((p: any) => ({
             product_id: String(p._id),
             product_name: p.product_name,
             slug: p.slug,
             price: p.price,
             thumbnail_url: p.thumbnail_url ?? null,
+            for_gender: p.for_gender,
+            has_uv_protection: p.has_uv_protection,
+            frame_shapes: p.frame_shapes ?? [],
         }));
 
         return { items };
+    },
+    async findProductByNameApprox(raw: string) {
+        const trimmed = raw.trim();
+        if (!trimmed) return null;
+
+        const regex = new RegExp(escapeRegex(trimmed), "i");
+        const product = await Product.findOne({
+            is_active: true,
+            product_name: regex,
+        }).lean();
+
+        return product;
     }
 };

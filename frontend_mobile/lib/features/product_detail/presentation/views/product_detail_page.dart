@@ -15,6 +15,7 @@ import 'package:frontend_mobile/features/product_detail/data/model/product_detai
 import 'package:frontend_mobile/features/review/data/model/review_model.dart';
 import 'package:frontend_mobile/features/review/presentation/viewmodel/product_reviews_controller.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ProductDetailPage extends ConsumerStatefulWidget {
@@ -313,7 +314,6 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
 
               const SizedBox(height: 8),
 
-            
               Container(
                 color: Colors.white,
                 child: Column(
@@ -863,6 +863,14 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
             const SizedBox(height: 12),
             if (isLoggedIn)
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: AppColor.buttonprimaryCol,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                ),
                 onPressed: () => _showReviewDialog(
                   controller: controller,
                   existing: myReview,
@@ -912,7 +920,10 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
                           controller: controller,
                           existing: myReview,
                         ),
-                        child: Text('Sửa đánh giá', style: TextStyle(color: AppColor.buttonprimaryCol),),
+                        child: Text(
+                          'Sửa đánh giá',
+                          style: TextStyle(color: AppColor.buttonprimaryCol),
+                        ),
                       ),
                     if (isLoggedIn && myReview == null)
                       ElevatedButton(
@@ -1151,6 +1162,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
             }
 
             return Dialog(
+              backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -1158,266 +1170,289 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
               child: SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                  child: Stack(
                     children: [
-                      // 1. HEADER
-                      Center(
-                        child: Text(
-                          existing == null
-                              ? 'Đánh giá sản phẩm'
-                              : 'Sửa đánh giá',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 2. CHỌN SAO (Interactive)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(5, (index) {
-                          final starIndex = index + 1;
-                          return GestureDetector(
-                            onTap: () {
-                              setStateDialog(() => _rating = starIndex);
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                              ),
-                              child: Icon(
-                                starIndex <= _rating
-                                    ? Icons.star_rounded
-                                    : Icons.star_border_rounded,
-                                color: Colors.amber, // Sao luôn màu vàng
-                                size: 36,
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // 1. HEADER
+                          Center(
+                            child: Text(
+                              existing == null
+                                  ? 'Đánh giá sản phẩm'
+                                  : 'Sửa đánh giá',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          );
-                        }),
-                      ),
-                      const SizedBox(height: 8),
-                      Center(
-                        child: Text(
-                          _getRatingLabel(_rating),
-                          style: TextStyle(
-                            color: Colors.amber[700],
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
+                          const SizedBox(height: 20),
 
-                      // 3. Ô NHẬP TEXT (Style Shopee: Nền xám, không viền)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: TextField(
-                          controller: commentController,
-                          maxLines: 5,
-                          maxLength: 200, // Giới hạn ký tự giống Shopee
-                          style: const TextStyle(fontSize: 14),
-                          decoration: const InputDecoration(
-                            hintText:
-                                'Hãy chia sẻ nhận xét cho sản phẩm này bạn nhé!',
-                            border: InputBorder.none,
-                            hintStyle: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 13,
-                            ),
-                            counterText: '', // Ẩn counter mặc định
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // 4. KHU VỰC MEDIA (Ảnh + Video)
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Nút Thêm Ảnh/Video
-                            GestureDetector(
-                              onTap: () async {
-                                // Logic chọn: Hỏi người dùng muốn chọn ảnh hay video
-                                // Hoặc đơn giản là show bottom sheet nhỏ
-                                showModalBottomSheet(
-                                  context: context,
-                                  builder: (bsContext) => Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      ListTile(
-                                        leading: const Icon(
-                                          Icons.photo_library,
-                                        ),
-                                        title: const Text('Thêm hình ảnh'),
-                                        onTap: () async {
-                                          Navigator.pop(bsContext);
-                                          final picked = await picker
-                                              .pickMultiImage(
-                                                maxWidth: 1920,
-                                                imageQuality: 85,
-                                              );
-                                          if (picked.isNotEmpty) {
-                                            setStateDialog(() {
-                                              _images.addAll(
-                                                picked.map((x) => File(x.path)),
-                                              );
-                                            });
-                                          }
-                                        },
-                                      ),
-                                      ListTile(
-                                        leading: const Icon(Icons.videocam),
-                                        title: const Text('Thêm video'),
-                                        onTap: () async {
-                                          Navigator.pop(bsContext);
-                                          final picked = await picker.pickVideo(
-                                            source: ImageSource.gallery,
-                                            maxDuration: const Duration(
-                                              seconds: 60,
-                                            ),
-                                          );
-                                          if (picked != null) {
-                                            setStateDialog(
-                                              () => _videoFile = File(
-                                                picked.path,
-                                              ),
-                                            );
-                                          }
-                                        },
-                                      ),
-                                    ],
+                          // 2. CHỌN SAO (Interactive)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(5, (index) {
+                              final starIndex = index + 1;
+                              return GestureDetector(
+                                onTap: () {
+                                  setStateDialog(() => _rating = starIndex);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
                                   ),
-                                );
-                              },
-                              child: Container(
-                                width: 70,
-                                height: 70,
-                                margin: const EdgeInsets.only(right: 12),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: AppColor.buttonprimaryCol,
-                                    style: BorderStyle.solid,
-                                  ), // Viền xanh nét đứt hoặc liền
-                                  borderRadius: BorderRadius.circular(4),
+                                  child: Icon(
+                                    starIndex <= _rating
+                                        ? Icons.star_rounded
+                                        : Icons.star_border_rounded,
+                                    color: Colors.amber, // Sao luôn màu vàng
+                                    size: 36,
+                                  ),
                                 ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.camera_alt_outlined,
-                                      color: AppColor.buttonprimaryCol,
-                                      size: 24,
-                                    ),
-                                    Text(
-                                      'Thêm',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: AppColor.buttonprimaryCol,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-
-                            // Hiển thị Video đã chọn
-                            if (_videoFile != null)
-                              _MediaThumbnail(
-                                file: _videoFile!,
-                                isVideo: true,
-                                onRemove: _removeVideo,
-                              ),
-
-                            // Hiển thị List Ảnh
-                            ..._images.asMap().entries.map((entry) {
-                              return _MediaThumbnail(
-                                file: entry.value,
-                                isVideo: false,
-                                onRemove: () => _removeImage(entry.key),
                               );
                             }),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // 5. BUTTONS
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => Navigator.of(ctx).pop(),
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: Colors.grey.shade400),
-                                foregroundColor: Colors.black87,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          Center(
+                            child: Text(
+                              _getRatingLabel(_rating),
+                              style: TextStyle(
+                                color: Colors.amber[700],
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
                               ),
-                              child: const Text('Trở lại'),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                final comment = commentController.text.trim();
-                                if (comment.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Vui lòng viết nội dung đánh giá',
-                                      ),
-                                    ),
-                                  );
-                                  return;
-                                }
+                          const SizedBox(height: 20),
 
-                                await controller.createOrUpdate(
-                                  rating: _rating,
-                                  comment: comment,
-                                  images: _images,
-                                  videoFile: _videoFile,
-                                );
-
-                                if (context.mounted) {
-                                  Navigator.of(ctx).pop();
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColor.buttonprimaryCol,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: const Text('Gửi đánh giá'),
+                          // 3. Ô NHẬP TEXT (Style Shopee: Nền xám, không viền)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
                             ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: TextField(
+                              cursorColor: AppColor.buttonprimaryCol,
+                              controller: commentController,
+                              maxLines: 5,
+                              maxLength: 200, // Giới hạn ký tự giống Shopee
+                              style: const TextStyle(fontSize: 14),
+                              decoration: const InputDecoration(
+                                hintText:
+                                    'Hãy chia sẻ nhận xét cho sản phẩm này bạn nhé!',
+                                border: InputBorder.none,
+                                hintStyle: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13,
+                                ),
+                                counterText: '', // Ẩn counter mặc định
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // 4. KHU VỰC MEDIA (Ảnh + Video)
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Nút Thêm Ảnh/Video
+                                GestureDetector(
+                                  onTap: () async {
+                                    // Logic chọn: Hỏi người dùng muốn chọn ảnh hay video
+                                    // Hoặc đơn giản là show bottom sheet nhỏ
+                                    showModalBottomSheet(
+                                      context: context,
+                                      builder: (bsContext) => Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          ListTile(
+                                            leading: const Icon(
+                                              Iconsax.photoshop_copy,
+                                            ),
+                                            title: const Text('Thêm hình ảnh'),
+                                            onTap: () async {
+                                              Navigator.pop(bsContext);
+                                              final picked = await picker
+                                                  .pickMultiImage(
+                                                    maxWidth: 1920,
+                                                    imageQuality: 85,
+                                                  );
+                                              if (picked.isNotEmpty) {
+                                                setStateDialog(() {
+                                                  _images.addAll(
+                                                    picked.map(
+                                                      (x) => File(x.path),
+                                                    ),
+                                                  );
+                                                });
+                                              }
+                                            },
+                                          ),
+                                          ListTile(
+                                            leading: const Icon(Icons.videocam),
+                                            title: const Text('Thêm video'),
+                                            onTap: () async {
+                                              Navigator.pop(bsContext);
+                                              final picked = await picker
+                                                  .pickVideo(
+                                                    source: ImageSource.gallery,
+                                                    maxDuration: const Duration(
+                                                      seconds: 60,
+                                                    ),
+                                                  );
+                                              if (picked != null) {
+                                                setStateDialog(
+                                                  () => _videoFile = File(
+                                                    picked.path,
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    width: 70,
+                                    height: 70,
+                                    margin: const EdgeInsets.only(right: 12),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: AppColor.buttonprimaryCol,
+                                        style: BorderStyle.solid,
+                                      ), // Viền xanh nét đứt hoặc liền
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.camera_alt_outlined,
+                                          color: AppColor.buttonprimaryCol,
+                                          size: 24,
+                                        ),
+                                        Text(
+                                          'Thêm',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: AppColor.buttonprimaryCol,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+
+                                // Hiển thị Video đã chọn
+                                if (_videoFile != null)
+                                  _MediaThumbnail(
+                                    file: _videoFile!,
+                                    isVideo: true,
+                                    onRemove: _removeVideo,
+                                  ),
+
+                                // Hiển thị List Ảnh
+                                ..._images.asMap().entries.map((entry) {
+                                  return _MediaThumbnail(
+                                    file: entry.value,
+                                    isVideo: false,
+                                    onRemove: () => _removeImage(entry.key),
+                                  );
+                                }),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // 5. BUTTONS
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () => Navigator.of(ctx).pop(),
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(
+                                      color: Colors.grey.shade400,
+                                    ),
+                                    foregroundColor: Colors.black87,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text('Huỷ'),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    final comment = commentController.text
+                                        .trim();
+                                    if (comment.isEmpty) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Vui lòng viết nội dung đánh giá',
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    await controller.createOrUpdate(
+                                      rating: _rating,
+                                      comment: comment,
+                                      images: _images,
+                                      videoFile: _videoFile,
+                                    );
+
+                                    if (context.mounted) {
+                                      Navigator.of(ctx).pop();
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColor.buttonprimaryCol,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: const Text('Gửi đánh giá'),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
+                      ),
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: IconButton(
+                          onPressed: () {
+                            Navigator.of(ctx).pop();
+                          },
+                          icon: Icon(Icons.close, color: Colors.grey.shade600),
+                        ),
                       ),
                     ],
                   ),

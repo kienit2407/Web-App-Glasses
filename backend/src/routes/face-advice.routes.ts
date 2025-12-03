@@ -1,7 +1,7 @@
 // src/routes/admin.face-advice.routes.ts
 import { Router } from "express";
 import { authMidleWares } from "../middleware/authMiddleware";
-import { reindexFaceAdvice } from "../modules/face-advice/controller/faceAdvice.controller";
+import { reindexFaceAdvice } from "../modules/client/controllers/faceAdvice.controller";
 
 const router = Router();
 

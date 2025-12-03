@@ -45,7 +45,8 @@ exports.vnpReturn = (0, try_catch_1.TryCatch)(async (req, res) => {
         const redirectUrl = `${FRONTEND_URL}/payment-result` +
             `?vnp_status=${result.status}` +
             `&order_id=${result.orderId}` +
-            `&code=${result.responseCode}`;
+            `&code=${result.responseCode}` +
+            `&method=vnpay`;
         console.log("VNPAY RETURN OK, redirect to:", redirectUrl);
         return res.redirect(redirectUrl);
     }

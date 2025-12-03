@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminOrderController = exports.updateStatus = exports.detail = exports.search = void 0;
+exports.adminOrderController = exports.updateStatus = exports.detail = exports.stats = exports.search = void 0;
 const try_catch_1 = require("../../../utils/try_catch");
 const app_errol_1 = require("../../../utils/app_errol");
 const admin_order_service_1 = require("../services/admin.order.service");
@@ -17,6 +17,10 @@ exports.search = (0, try_catch_1.TryCatch)(async (req, res) => {
         page: page ? Number(page) : undefined,
         limit: limit ? Number(limit) : undefined,
     });
+    return res.json({ data });
+});
+exports.stats = (0, try_catch_1.TryCatch)(async (_req, res) => {
+    const data = await admin_order_service_1.adminOrderService.getStatusStats();
     return res.json({ data });
 });
 // GET /admin/orders/:id
@@ -47,4 +51,5 @@ exports.adminOrderController = {
     search: exports.search,
     detail: exports.detail,
     updateStatus: exports.updateStatus,
+    stats: exports.stats
 };

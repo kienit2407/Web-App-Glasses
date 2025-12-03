@@ -76,7 +76,6 @@ export const paymentService = {
         const amount = order.total_amount;
         if (amount <= 0) throw new Error("Order total_amount must be greater than 0");
 
-        // 🔹 LẤY HOẶC TẠO PAYMENT
         let payment = await Payment.findOne({ order_id: order._id });
 
         if (!payment) {

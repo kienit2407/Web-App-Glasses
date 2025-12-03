@@ -1,7 +1,7 @@
 // src/modules/face-advice/faceAdvice.controller.ts
 import { Request, Response } from "express";
-import { indexFaceAdviceToQdrant } from "../service/faceAdvice.service";
 import { TryCatch } from "../../../utils/try_catch";
+import { indexFaceAdviceToQdrant } from "../services/faceAdvice.service";
 
 
 export const reindexFaceAdvice = TryCatch(async (_req: Request, res: Response) => {

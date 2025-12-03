@@ -12,6 +12,7 @@ exports.listMy = (0, try_catch_1.TryCatch)(async (req, res) => {
     }
     const userId = new mongoose_1.Types.ObjectId(req.user._id);
     const result = await address_service_1.addressService.listMyAddresses(userId);
+    console.log(result);
     return res.json({ data: result });
 });
 // POST /addresses

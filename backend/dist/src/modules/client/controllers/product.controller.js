@@ -4,6 +4,22 @@ exports.productController = exports.getProductDetail = void 0;
 const product_service_1 = require("../services/product.service");
 const try_catch_1 = require("../../../utils/try_catch");
 const app_errol_1 = require("../../../utils/app_errol");
+const getSearchSuggestions = (0, try_catch_1.TryCatch)(async (req, res) => {
+    const q = String(req.query.q || "").trim();
+    const limit = req.query.limit ? Number(req.query.limit) : 10;
+    if (!q) {
+        // có thể trả "hot keywords" sau, tạm thời trả rỗng
+        return res.json({
+            data: {
+                keywords: [],
+                products: [],
+                brands: [],
+            },
+        });
+    }
+    const data = await product_service_1.productService.getSearchSuggestions(q, limit);
+    return res.json({ data });
+});
 const getProducts = (0, try_catch_1.TryCatch)(async (req, res) => {
     const { q, categories, brands, minPrice, maxPrice, sort, page, limit, gender, shape,
     // type: frame | sunglasses (FE tự map sang categories, BE không cần xử lý)
@@ -42,5 +58,6 @@ exports.getProductDetail = (0, try_catch_1.TryCatch)(async (req, res) => {
 });
 exports.productController = {
     getProducts,
-    getProductDetail: exports.getProductDetail
+    getProductDetail: exports.getProductDetail,
+    getSearchSuggestions
 };

@@ -5,9 +5,10 @@ import {
     upsertFaceAdvicePoints,
     searchFaceAdvice as searchFaceAdviceVector,
 } from "../../../config/qdrant_client";
-import { FACE_ADVICE_DOCS, FaceAdviceDoc } from "../faceAdvice.docs";
+
 
 import { randomUUID } from "crypto";
+import { FACE_ADVICE_DOCS, FaceAdviceDoc } from "../../../utils/faceAdvice.docs";
 
 const COLLECTION =
     process.env.QDRANT_COLLECTION_FACE_ADVICE ||

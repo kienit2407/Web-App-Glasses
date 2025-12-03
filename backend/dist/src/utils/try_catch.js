@@ -41,8 +41,8 @@ const TryCatch = (handler) => {
             await handler(req, res, next);
         }
         catch (error) {
-            console.error("🔥 Controller error:", error);
-            console.error("🔥 Controller error message:", error.message);
+            console.error("Controller error:", error);
+            console.error("Controller error message:", error.message);
             // Nếu đã là lỗi business (AppError) thì giữ nguyên
             if (error instanceof app_errol_1.default) {
                 return next(error);

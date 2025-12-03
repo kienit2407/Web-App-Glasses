@@ -9,6 +9,7 @@ const authMiddleware_1 = require("../middleware/authMiddleware");
 const order_controller_1 = require("../modules/client/controllers/order.controller");
 const router = express_1.default.Router();
 router.use(authMiddleware_1.authMidleWares.protectUserRoute);
+router.get("/stats", order_controller_1.orderController.myStats);
 router.post("/", /*validate(createOrder),*/ /*order.create*/ order_controller_1.orderController.create); // snapshot address, items, coupon
 router.get("/", /*order.listMy*/ order_controller_1.orderController.listMy); // ?status&page&limit
 router.get("/:id", /*order.detailMy*/ order_controller_1.orderController.detailMy);

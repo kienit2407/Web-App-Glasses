@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 //==============Dependencies=====================
 const express_1 = __importDefault(require("express"));
-const environment_1 = require("./config/environment");
 const index_1 = require("./routes/index");
 const errol_handling_middleware_1 = require("./middleware/errol_handling_middleware");
 const mongoosedb_1 = require("./config/mongoosedb");
@@ -16,10 +15,12 @@ const redis_1 = require("./config/redis");
 const http_1 = __importDefault(require("http"));
 const morgan_1 = __importDefault(require("morgan"));
 const socket_io_1 = require("./config/socket.io");
+const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
+const swagger_jsdoc_1 = __importDefault(require("swagger-jsdoc"));
+const path_1 = __importDefault(require("path"));
 //===================================
 const app = (0, express_1.default)();
-const port = parseInt(environment_1.env.APP_PORT) ?? 3000;
-const hostname = environment_1.env.APP_HOST;
+const port = Number(process.env.PORT) || 8017;
 const START_SERVER = () => {
     // Chỉ tạo 1 server duy nhất
     const server = http_1.default.createServer(app);
@@ -36,16 +37,66 @@ const START_SERVER = () => {
             'http://localhost:8017',
             'http://localhost:8080',
             'https://localhost:5173',
-            'https://vision-api-dev.onrender.com',
+            'https://web-app-glasses-x57x.vercel.app',
         ],
         allowedHeaders: ["Content-Type", "Authorization", "x-client-platform"],
         credentials: true,
     }));
+    // --- CẤU HÌNH SWAGGER ---
+    const options = {
+        definition: {
+            openapi: '3.0.0',
+            info: {
+                title: 'Glasses E-commerce API',
+                version: '1.0.0',
+                description: 'Tài liệu API đầy đủ cho dự án Glasses',
+            },
+            servers: [
+                {
+                    url: `http://localhost:${port}`,
+                    description: 'Local server',
+                },
+            ],
+            components: {
+                securitySchemes: {
+                    bearerAuth: {
+                        type: 'http',
+                        scheme: 'bearer',
+                        bearerFormat: 'JWT',
+                    },
+                },
+            },
+        },
+        // khi chạy bản build thì file là .js, không còn .ts
+        apis: [
+            path_1.default.join(__dirname, 'routes/*.js'),
+            path_1.default.join(__dirname, 'routes/**/*.js'),
+        ],
+    };
+    const specs = (0, swagger_jsdoc_1.default)(options);
+    app.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(specs));
+    // --- SERVE FRONTEND BUILD (static files) ---
+    const clientBuildPath = path_1.default.join(process.cwd(), '../frontend_web/dist');
+    console.log('Serving frontend from:', clientBuildPath);
+    // 1) serve file tĩnh (JS, CSS, image...)
+    app.use(express_1.default.static(clientBuildPath));
+    // 2) API routes
+    app.use('/', index_1.API_ENTRYPOINT);
+    // 3) Error handler CHO API
+    app.use(errol_handling_middleware_1.errolHandlingMiddleware);
+    // 4) SPA fallback (LUÔN LUÔN ĐỂ CUỐI CÙNG)
+    app.get('*', (req, res) => {
+        // giữ lại /api-docs hoặc các route khác nếu muốn
+        if (req.path.startsWith('/api-docs')) {
+            return res.status(404).send('Not found');
+        }
+        res.sendFile(path_1.default.join(clientBuildPath, 'index.html'));
+    });
     app.use('/', index_1.API_ENTRYPOINT);
     app.use(errol_handling_middleware_1.errolHandlingMiddleware);
     // Listen bằng chính server đã gắn Socket.IO
     server.listen(port, () => {
-        console.log(`Server running at http://${hostname}:${port}`);
+        console.log(`Server running at ${port}`);
     });
     (0, async_exit_hook_1.default)(() => {
         server.close(async () => {

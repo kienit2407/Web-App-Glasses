@@ -40,7 +40,6 @@ const coupons_model_1 = require("../../../models/coupons.model");
 const user_coupons_1 = require("../../../models/user.coupons");
 const app_errol_1 = __importStar(require("../../../utils/app_errol"));
 exports.adminCouponService = {
-    // ========== LIST ==========
     async list(params) {
         const { page = 1, limit = 20, code, type, is_active, from_date, to_date, } = params;
         const filter = {};

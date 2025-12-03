@@ -8,18 +8,50 @@ const orders_item_model_1 = require("../../../models/orders.item.model");
 const app_errol_1 = require("../../../utils/app_errol");
 const payments_model_1 = require("../../../models/payments.model");
 const socket_io_1 = require("../../../config/socket.io");
+const notification_model_1 = require("../../../models/notification.model");
+function buildStatusFilter(status) {
+    const filter = {};
+    if (!status) {
+        // Tab "Tất cả" hoặc không truyền gì -> không filter theo status
+        return filter;
+    }
+    if (status === "cancel_requested") {
+        // Đơn đã yêu cầu huỷ nhưng chưa bị huỷ chính thức
+        filter.cancel_requested = true;
+        filter.order_status = { $ne: "cancelled" };
+        return filter;
+    }
+    if (status === "return_requested") {
+        // Đơn đã giao xong và user yêu cầu trả
+        filter.return_requested = true;
+        filter.order_status = "delivered";
+        return filter;
+    }
+    // Các trạng thái "bình thường"
+    filter.order_status = status;
+    // Với các trạng thái đang trong luồng, không lấy đơn đã request huỷ / trả
+    if (["pending", "processing", "shipping", "delivering", "delivered"].includes(status)) {
+        filter.cancel_requested = { $ne: true };
+        filter.return_requested = { $ne: true };
+    }
+    // Với "cancelled" và "returned" thì để nguyên, không cần filter thêm
+    return filter;
+}
 exports.adminOrderService = {
     async search(params) {
         const { page = 1, limit = 20, order_status, payment_status, order_number, user_id, from_date, to_date, } = params;
         const filter = {};
-        if (order_status) {
-            if (order_status === "cancel_requested") {
-                filter.cancel_requested = true;
-            }
-            else {
-                filter.order_status = order_status;
-            }
-        }
+        Object.assign(filter, buildStatusFilter(order_status));
+        // if (order_status) {
+        //     if (order_status === "cancel_requested") {
+        //         filter.cancel_requested = true;
+        //     }
+        //     else if (order_status === "return_requested") {
+        //         filter.return_requested = true;
+        //     } else {
+        //         filter.order_status = order_status;
+        //     }
+        // }
         if (payment_status) {
             filter.payment_status = payment_status;
         }
@@ -149,23 +181,83 @@ exports.adminOrderService = {
             order.return_requested = false;
         }
         await order.save();
+        // Notification cho user về việc cập nhật trạng thái đơn
+        const newStatusLabel = (() => {
+            switch (order.order_status) {
+                case "pending": return "Chờ xác nhận";
+                case "processing": return "Đang xử lý";
+                case "shipping": return "Đang vận chuyển";
+                case "delivering": return "Chờ giao";
+                case "delivered": return "Hoàn thành";
+                case "cancelled": return "Đã huỷ";
+                case "returned": return "Đã trả hàng";
+                default: return order.order_status;
+            }
+        })();
+        let thumbnailUrl = null;
+        const firstItem = await orders_item_model_1.OrderItem.findOne({ order_id: order._id })
+            .populate("product_id", "thumbnail_url")
+            .lean();
+        if (firstItem && firstItem.product_id) {
+            const p = firstItem.product_id;
+            thumbnailUrl = p.thumbnail_url || p.thumbnail || null;
+        }
+        await notification_model_1.Notification.create({
+            audience: "user",
+            user_id: order.user_id,
+            category: "order",
+            type: "user:order_status_updated",
+            title: `Cập nhật trạng thái đơn #${order.order_number}`,
+            message: `Đơn hàng của bạn đã được cập nhật trạng thái: ${newStatusLabel}.`,
+            thumbnail_url: thumbnailUrl,
+            meta: {
+                order_id: order._id,
+                order_number: order.order_number,
+                order_status: order.order_status,
+                order_status_label: newStatusLabel,
+            },
+        });
         (0, socket_io_1.SEND_EVENT_TO_USER)(String(order.user_id), "order:status_updated", {
             order_id: order._id,
             order_number: order.order_number,
             new_status: order.order_status,
-            new_status_label: (() => {
-                switch (order.order_status) {
-                    case "pending": return "Chờ xác nhận";
-                    case "processing": return "Đang xử lý";
-                    case "shipping": return "Đang vận chuyển";
-                    case "delivering": return "Chờ giao";
-                    case "delivered": return "Hoàn thành";
-                    case "cancelled": return "Đã huỷ";
-                    case "returned": return "Đã trả hàng";
-                    default: return order.order_status;
-                }
-            })(),
+            new_status_label: newStatusLabel,
         });
         return order.toObject();
     },
+    async getStatusStats() {
+        const keys = [
+            "all",
+            "pending",
+            "processing",
+            "shipping",
+            "delivering",
+            "delivered",
+            "cancelled",
+            "returned",
+            "cancel_requested",
+            "return_requested",
+        ];
+        const results = await Promise.all(keys.map((key) => {
+            if (key === "all") {
+                return orders_model_1.Order.countDocuments({});
+            }
+            // dùng buildStatusFilter cho từng key
+            const filter = buildStatusFilter(key);
+            return orders_model_1.Order.countDocuments(filter);
+        }));
+        const [all, pending, processing, shipping, delivering, delivered, cancelled, returned, cancelRequested, returnRequested,] = results;
+        return {
+            all,
+            pending,
+            processing,
+            shipping,
+            delivering,
+            delivered,
+            cancelled,
+            returned,
+            cancel_requested: cancelRequested,
+            return_requested: returnRequested,
+        };
+    }
 };

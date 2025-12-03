@@ -131,9 +131,7 @@ export const cartService = {
         console.log(">>> addItem updateOne result =", result);
         return this.getMyCart(userId);
     },
-    // price: giá gốc(niêm yết).
-    //     sale_price: giá đã giảm(có thể do promotion khi bạn set ở admin).
-    //         price_at_add: giá khách sẽ trả tại thời điểm thêm vào giỏ(để “khóa” giá).
+
     async updateItem(
         userId: Types.ObjectId,
         itemId: string,

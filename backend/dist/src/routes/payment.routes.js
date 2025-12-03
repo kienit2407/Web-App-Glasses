@@ -8,10 +8,9 @@ const express_1 = __importDefault(require("express"));
 const payment_controller_1 = require("../modules/client/controllers/payment.controller");
 const authMiddleware_1 = require("../middleware/authMiddleware");
 const router = express_1.default.Router();
-router.use(authMiddleware_1.authMidleWares.protectUserRoute);
-router.post("/vnpay/create", /*/*requireAuth,*/ /*pay.vnpCreate*/ payment_controller_1.paymentController.vnpCreate); // {order_id, returnUrl}
-router.get("/vnpay/return", /*pay.vnpReturn*/ payment_controller_1.paymentController.vnpReturn); // redirect from vnp
-router.post("/vnpay/ipn", /*pay.vnpIpn*/ payment_controller_1.paymentController.vnpIpn); // server-to-server
-// COD (nếu cần)
-router.post("/cod/confirm", /*/*requireAuth,*/ /*pay.codConfirm*/ payment_controller_1.paymentController.codConfirm);
+router.post("/vnpay/create", authMiddleware_1.authMidleWares.protectUserRoute, payment_controller_1.paymentController.vnpCreate);
+router.post("/cod/confirm", authMiddleware_1.authMidleWares.protectUserRoute, payment_controller_1.paymentController.codConfirm);
+// Callback từ VNPay: KHÔNG dùng auth, vì VNPay đâu có gửi JWT cho mình được
+router.get("/vnpay/return", payment_controller_1.paymentController.vnpReturn);
+router.post("/vnpay/ipn", payment_controller_1.paymentController.vnpIpn);
 exports.PAYMENT_ROUTES = router;
