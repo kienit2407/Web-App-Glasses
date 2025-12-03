@@ -7,6 +7,32 @@ exports.CARTEGORY_ROUTES = void 0;
 const express_1 = __importDefault(require("express"));
 const category_controller_1 = require("../modules/client/controllers/category.controller");
 const router = express_1.default.Router();
-router.get("/", /*cat.list*/ category_controller_1.categoryController.listCategories); // ?tree=1, ?active=1
-// router.get("/:catId", /*cat.detail*/)
+/**
+ * @swagger
+ * tags:
+ *   - name: Client - Categories
+ *     description: Danh mục sản phẩm
+ */
+/**
+ * @swagger
+ * /catalog/categories:
+ *   get:
+ *     summary: Lấy danh sách category
+ *     tags: [Client - Categories]
+ *     parameters:
+ *       - in: query
+ *         name: tree
+ *         schema:
+ *           type: integer
+ *         description: 1 = trả về dạng cây
+ *       - in: query
+ *         name: active
+ *         schema:
+ *           type: integer
+ *         description: 1 = chỉ lấy category active
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
+router.get("/", category_controller_1.categoryController.listCategories);
 exports.CARTEGORY_ROUTES = router;

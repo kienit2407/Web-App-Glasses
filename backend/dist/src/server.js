@@ -53,7 +53,7 @@ const START_SERVER = () => {
             },
             servers: [
                 {
-                    url: `http://localhost:${port}`,
+                    url: `${process.env.URL_BACKEND || `http://localhost:${port}`}`,
                     description: 'Local server',
                 },
             ],
@@ -69,14 +69,16 @@ const START_SERVER = () => {
         },
         // khi chạy bản build thì file là .js, không còn .ts
         apis: [
-            path_1.default.join(__dirname, 'routes/*.js'),
-            path_1.default.join(__dirname, 'routes/**/*.js'),
+            path_1.default.join(__dirname, 'routes/*.ts'),
+            path_1.default.join(__dirname, 'routes/**/*.ts'),
         ],
     };
     const specs = (0, swagger_jsdoc_1.default)(options);
     app.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(specs));
     // --- SERVE FRONTEND BUILD (static files) ---
-    const clientBuildPath = path_1.default.join(process.cwd(), '../frontend_web/dist');
+    // const clientBuildPath = path.join(process.cwd(), '../frontend_web/dist');
+    // console.log('Serving frontend from:', clientBuildPath);
+    const clientBuildPath = path_1.default.join(process.cwd(), 'client-dist');
     console.log('Serving frontend from:', clientBuildPath);
     // 1) serve file tĩnh (JS, CSS, image...)
     app.use(express_1.default.static(clientBuildPath));

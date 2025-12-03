@@ -56,7 +56,7 @@ const START_SERVER = () => {
             },
             servers: [
                 {
-                    url: `http://localhost:${port}`,
+                    url: `${process.env.URL_BACKEND || `http://localhost:${port}`}`,
                     description: 'Local server',
                 },
             ],
@@ -81,7 +81,9 @@ const START_SERVER = () => {
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
     // --- SERVE FRONTEND BUILD (static files) ---
-    const clientBuildPath = path.join(process.cwd(), '../frontend_web/dist');
+    // const clientBuildPath = path.join(process.cwd(), '../frontend_web/dist');
+    // console.log('Serving frontend from:', clientBuildPath);
+    const clientBuildPath = path.join(process.cwd(), 'client-dist');
     console.log('Serving frontend from:', clientBuildPath);
 
     // 1) serve file tĩnh (JS, CSS, image...)

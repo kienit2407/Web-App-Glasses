@@ -8,6 +8,23 @@ const express_1 = __importDefault(require("express"));
 const admin_dashboard_controller_1 = require("../../modules/admin/controllers/admin.dashboard.controller");
 const authMiddleware_1 = require("../../middleware/authMiddleware");
 const router = express_1.default.Router();
-router.get("/summary", authMiddleware_1.authMidleWares.protectUserRoute, // nếu có; không thì bỏ
-admin_dashboard_controller_1.getDashboardSummary);
+/**
+ * @swagger
+ * tags:
+ *   - name: Admin - Dashboard
+ *     description: Tổng quan số liệu bán hàng
+ */
+/**
+ * @swagger
+ * /admin/dashboard/summary:
+ *   get:
+ *     summary: Lấy summary dashboard (doanh thu, đơn hàng, users...)
+ *     tags: [Admin - Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
+router.get("/summary", authMiddleware_1.authMidleWares.protectUserRoute, admin_dashboard_controller_1.getDashboardSummary);
 exports.ADMIN_DASHBOARD_ROUTES = router;

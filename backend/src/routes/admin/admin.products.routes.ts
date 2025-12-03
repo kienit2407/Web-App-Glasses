@@ -4,121 +4,412 @@ import { adminProductController } from "../../modules/admin/controllers/admin.pr
 import { authMidleWares } from "../../middleware/authMiddleware"
 
 const router: Router = express.Router()
+
+/**
+ * @swagger
+ * tags:
+ *   - name: Admin - Products
+ *     description: Quản lý sản phẩm, variants và images
+ */
+
 router.use(
-    authMidleWares.protectUserRoute,
-    authMidleWares.protectAdminRoute
-)
-// GET /admin/products
-// → Lấy danh sách products (có filter q, status=active|inactive|draft, phân trang)
-router.get("/",
-    /*validate(create),*/ /*adminProduct.list*/
-    adminProductController.list
-)
-// POST /admin/products
-// → Tạo mới 1 product (multipart/form-data, field "thumbnail")
-//   - uploadMiddlewares.upload.single("thumbnail"): nhận 1 file thumbnail
-router.post("/",
-    /*validate(create),*/
-    /*adminProduct.create*/
-    uploadMiddlewares.upload.single("thumbnail"),
-    adminProductController.create
+  authMidleWares.protectUserRoute,
+  authMidleWares.protectAdminRoute
 )
 
-// GET /admin/products/:id
-// → Lấy chi tiết 1 product + đếm số variant (variant_count)
-router.get(
-    "/:id",
-    adminProductController.detail // <-- THÊM ROUTE CHI TIẾT
-);
+/**
+ * @swagger
+ * /admin/products:
+ *   get:
+ *     summary: Danh sách sản phẩm (admin) với filter + phân trang
+ *     tags: [Admin - Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *         description: active | inactive | draft
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
+router.get("/", adminProductController.list)
 
-// PATCH /admin/products/:id
-// → Cập nhật product (thông tin, thumbnail, is_active…)
-//   - Có thể gửi kèm file "thumbnail" để đổi ảnh
-router.patch(
-    "/:id",
-    /*validate(update),*/ /*adminProduct.update*/
-    uploadMiddlewares.upload.single("thumbnail"),
-    adminProductController.update
-)
-// DELETE /admin/products/:id
-// → Xoá product
-//   - Nếu không có ?force → xoá mềm: set is_active=false (+ optionally tắt variants)
-//   - Nếu có ?force=true → cố gắng xoá cứng, có check variant & orderItem
-router.delete(
-    "/:id", /*adminProduct.remove*/
-    adminProductController.remove
-)
-
-//===============VARIANT======================
-// GET /admin/products/:id/variants
-// → Lấy danh sách variants của 1 product (theo product_id)
-router.get( // lấy variant
-    "/:id/variants",
-    adminProductController.listVariants // <-- TUỲ CHỌN
-);
-// GET /admin/products/variants/:variantId
-// → Lấy chi tiết 1 variant theo variantId
-router.get( //lấy chi tiết
-    "/variants/:variantId",
-    adminProductController.variantDetail
-);
-// POST /admin/products/:id/variants
-// → Tạo 1 variant mới cho product :id
-//   - Body là thông tin variant (sku, price, size,...)
-//   - Ảnh sẽ upload ở route riêng bên dưới
+/**
+ * @swagger
+ * /admin/products:
+ *   post:
+ *     summary: Tạo sản phẩm mới (chưa có variants)
+ *     tags: [Admin - Products]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               product_name:
+ *                 type: string
+ *               category_id:
+ *                 type: string
+ *               brand_id:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               thumbnail:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Tạo sản phẩm thành công
+ */
 router.post(
-    "/:id/variants", /*validate(createVariant),*/ /*adminProduct.createVariant*/
-    adminProductController.createVariant
+  "/",
+  uploadMiddlewares.upload.single("thumbnail"),
+  adminProductController.create
 )
-// PATCH /admin/products/variants/:variantId
-// → Cập nhật thông tin 1 variant
-router.patch(
-    "/variants/:variantId",
-    /*validate(updateVariant),*/ /*adminProduct.updateVariant*/
-    adminProductController.updateVariant
-)
-// DELETE /admin/products/variants/:variantId
-// → Xoá 1 variant
-//   - Hiện tại service đang làm: xoá mềm (set is_active=false)
-//   - Sau này có thể nâng cấp thành: force soft/hard tương tự product
-router.delete(
-    "/variants/:variantId", /*adminProduct.removeVariant*/
-    adminProductController.removeVariant
-)
-// ================== VARIANT IMAGES ==================
 
+/**
+ * @swagger
+ * /admin/products/{id}:
+ *   get:
+ *     summary: Chi tiết sản phẩm (đếm số variant, ảnh...)
+ *     tags: [Admin - Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
+router.get("/:id", adminProductController.detail)
+
+/**
+ * @swagger
+ * /admin/products/{id}:
+ *   patch:
+ *     summary: Cập nhật thông tin sản phẩm
+ *     tags: [Admin - Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               product_name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               is_active:
+ *                 type: boolean
+ *               thumbnail:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
+ */
+router.patch(
+  "/:id",
+  uploadMiddlewares.upload.single("thumbnail"),
+  adminProductController.update
+)
+
+/**
+ * @swagger
+ * /admin/products/{id}:
+ *   delete:
+ *     summary: Xóa sản phẩm (mặc định xoá mềm)
+ *     tags: [Admin - Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: force
+ *         schema:
+ *           type: boolean
+ *         description: true = cố gắng xoá cứng
+ *     responses:
+ *       200:
+ *         description: Xóa thành công
+ */
+router.delete("/:id", adminProductController.remove)
+
+
+// ========== VARIANTS ==========
+
+/**
+ * @swagger
+ * /admin/products/{id}/variants:
+ *   get:
+ *     summary: Danh sách variants của 1 product
+ *     tags: [Admin - Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
+router.get("/:id/variants", adminProductController.listVariants)
+
+/**
+ * @swagger
+ * /admin/products/variants/{variantId}:
+ *   get:
+ *     summary: Chi tiết 1 variant
+ *     tags: [Admin - Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: variantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
+router.get("/variants/:variantId", adminProductController.variantDetail)
+
+/**
+ * @swagger
+ * /admin/products/{id}/variants:
+ *   post:
+ *     summary: Tạo variant mới cho 1 product
+ *     tags: [Admin - Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             description: Thông tin variant (sku, giá, màu, size...)
+ *     responses:
+ *       201:
+ *         description: Tạo variant thành công
+ */
+router.post("/:id/variants", adminProductController.createVariant)
+
+/**
+ * @swagger
+ * /admin/products/variants/{variantId}:
+ *   patch:
+ *     summary: Cập nhật variant
+ *     tags: [Admin - Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: variantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
+ */
+router.patch("/variants/:variantId", adminProductController.updateVariant)
+
+/**
+ * @swagger
+ * /admin/products/variants/{variantId}:
+ *   delete:
+ *     summary: Xóa (mềm) variant
+ *     tags: [Admin - Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: variantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Xóa thành công
+ */
+router.delete("/variants/:variantId", adminProductController.removeVariant)
+
+
+// ========== VARIANT IMAGES ==========
+
+/**
+ * @swagger
+ * /admin/products/variants/{variantId}/images:
+ *   get:
+ *     summary: Danh sách ảnh của 1 variant
+ *     tags: [Admin - Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: variantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
 router.get(
-    "/variants/:variantId/images",
-    adminProductController.listVariantImages
-);
+  "/variants/:variantId/images",
+  adminProductController.listVariantImages
+)
 
-// POST /admin/products/:id/variants/:variantId/images
-// → Upload nhiều ảnh cho 1 variant (tối đa 5 file "images")
-//   - uploadMiddlewares.upload.array("images", 5)
-//   - Controller upload lên Cloudinary, sau đó ghi vào ProductImage
-//   - Position tự tăng (gallery product/variant)
-
+/**
+ * @swagger
+ * /admin/products/{id}/variants/{variantId}/images:
+ *   post:
+ *     summary: Upload nhiều ảnh cho 1 variant
+ *     tags: [Admin - Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: variantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *     responses:
+ *       200:
+ *         description: Upload thành công
+ */
 router.post(
-    "/:id/variants/:variantId/images",
-    /*validate(upsertImage),*/ /*adminProduct.upsertVariantImage*/
-    uploadMiddlewares.upload.array("images", 5),
-    adminProductController.upsertVariantImage
-)
-// PATCH /admin/products/variants/:variantId/images/reorder
-// → Đổi thứ tự ảnh của 1 variant (reorder position)
-//   - Body: { items: [{ image_id, position }, ...] }
-router.patch(
-    "/variants/:variantId/images/reorder",
-    adminProductController.reorderVariantImages
-    /*validate(reorder),*/ /*adminProduct.reorderVariantImages*/
-)
-// DELETE /admin/products/images/:imageId
-// → Xoá 1 ảnh product/variant theo imageId (ProductImage)
-//   - Service hiện tại chỉ xoá record, có thể thêm xoá Cloudinary sau
-router.delete(
-    "/images/:imageId", /*adminProduct.deleteImage*/
-    adminProductController.deleteImage
+  "/:id/variants/:variantId/images",
+  uploadMiddlewares.upload.array("images", 5),
+  adminProductController.upsertVariantImage
 )
 
+/**
+ * @swagger
+ * /admin/products/variants/{variantId}/images/reorder:
+ *   patch:
+ *     summary: Đổi thứ tự ảnh của 1 variant
+ *     tags: [Admin - Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: variantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     image_id:
+ *                       type: string
+ *                     position:
+ *                       type: integer
+ *     responses:
+ *       200:
+ *         description: Cập nhật thứ tự thành công
+ */
+router.patch(
+  "/variants/:variantId/images/reorder",
+  adminProductController.reorderVariantImages
+)
+
+/**
+ * @swagger
+ * /admin/products/images/{imageId}:
+ *   delete:
+ *     summary: Xóa 1 ảnh product/variant theo imageId
+ *     tags: [Admin - Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: imageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Xóa thành công
+ */
+router.delete("/images/:imageId", adminProductController.deleteImage)
 
 export const ADMIN_PRODUCTS_ROUTES = router

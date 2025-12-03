@@ -7,15 +7,94 @@ exports.ADMIN_PAYMENTS_ROUTES = void 0;
 const express_1 = __importDefault(require("express"));
 const admin_payment_controller_1 = require("../../modules/admin/controllers/admin.payment.controller");
 const router = express_1.default.Router();
-// // tất cả route dưới đây chỉ admin được dùng
-// router.use(
-//     authMidleWares.protectUserRoute,
-//     authMidleWares.protectAdminRoute
-// );
-// GET /admin/payments?status=&provider=&user_id=&order_id=&code=&from_date=&to_date=&page=&limit=
+/**
+ * @swagger
+ * tags:
+ *   - name: Admin - Payments
+ *     description: Quản lý giao dịch thanh toán (VNPay / COD)
+ */
+/**
+ * @swagger
+ * /admin/payments:
+ *   get:
+ *     summary: Tìm kiếm giao dịch thanh toán
+ *     tags: [Admin - Payments]
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: provider
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: user_id
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: order_id
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: code
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: from_date
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: to_date
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
 router.get("/", admin_payment_controller_1.adminPaymentController.search);
-// GET /admin/payments/:id
+/**
+ * @swagger
+ * /admin/payments/{id}:
+ *   get:
+ *     summary: Chi tiết 1 giao dịch thanh toán
+ *     tags: [Admin - Payments]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
 router.get("/:id", admin_payment_controller_1.adminPaymentController.detail);
-// PATCH /admin/payments/:id/status   { status: "success" | "failed" | "refunded" }
+/**
+ * @swagger
+ * /admin/payments/{id}/status:
+ *   patch:
+ *     summary: Cập nhật trạng thái giao dịch (success/failed/refunded)
+ *     tags: [Admin - Payments]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [success, failed, refunded]
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
+ */
 router.patch("/:id/status", admin_payment_controller_1.adminPaymentController.updateStatus);
 exports.ADMIN_PAYMENTS_ROUTES = router;

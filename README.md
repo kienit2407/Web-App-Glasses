@@ -1,5 +1,13 @@
 ## App Name: Glasses Shop 
 ## App Project: Glasses Web App
+## Outcome of Project:
+- 🌐 Backend + Web:
+  - API docs (Swagger): https://web-app-glasses.up.railway.app/api-docs
+  - API backend: https://web-app-glasses.up.railway.app
+  - Web client: https://web-app-glasses-x57x.vercel.app
+
+- 📱 Mobile App (Flutter / Android):
+  - APK: https://drive.google.com/file/d/12I8_mCC-xWWNeGWlUX-rrqp3aKhObqGF/view?usp=sharing
 ---
 > **🕶️Glasses Shop** iGlasses Shop is a production-grade, full-stack e-commerce application built to learn and master Node.js, Flutter, real-time communication, and modern backend architecture. The project provides a complete buying experience with secure authentication, admin features, optimized API performance, and a smooth cross-platform UI.
 ---
@@ -35,6 +43,9 @@
 - Smooth navigation & animations
 - Connects directly to backend REST API
 - Persistent login using Secure Storage
+## 🤖 RAG
+- Using AI to advice suitable glasseses for Client's face 
+- Providing products fit Client's bubget
 ## ⚡ Performance, Security & DevOps
 - Redis caching for heavy queries
 - API rate-limiting using Arcjet
@@ -123,7 +134,7 @@ flutter run
 ```
 ---
 ### 🤝 Contact
-### ❓If u have any the question, don't scared anything. Let contact to me through my facebook or Email 😘 : 
+### ❓If u have any the question, don't scared anything. Let hit me up through my facebook or Email 😘 : 
 - 🔗 https://www.facebook.com/kin240705?locale=vi_VN
 - 📬 trungkien24072005@gmail.com
 ### Dear send to u a huge thanks. I'm truely, grateful to u ❤️

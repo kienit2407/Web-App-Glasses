@@ -1,19 +1,64 @@
-// src/routes/promotion.routes.ts
 import express, { Router } from "express";
 import { authMidleWares } from "../middleware/authMiddleware";
 import { promotionController } from "../modules/client/controllers/promotion.controller";
 
 const router: Router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Client - Promotions
+ *     description: Chương trình khuyến mãi (popup, center)
+ */
 
-router.use(authMidleWares.protectUserRoute)
-// GET /promotions/center  → list các chương trình khuyến mãi cho coupon center
+router.use(authMidleWares.protectUserRoute);
+
+/**
+ * @swagger
+ * /promotions/center:
+ *   get:
+ *     summary: Danh sách chương trình khuyến mãi trong "Coupon Center"
+ *     tags: [Client - Promotions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
 router.get("/center", promotionController.listCenter);
 
-// GET /promotions/highlight → lấy promo để show popup
+/**
+ * @swagger
+ * /promotions/highlight:
+ *   get:
+ *     summary: Lấy promotion nổi bật để show popup
+ *     tags: [Client - Promotions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
 router.get("/highlight", promotionController.getHighlight);
-router.use(authMidleWares.protectUserRoute);
-// POST /promotions/:id/seen → đánh dấu user đã xem popup
+
+/**
+ * @swagger
+ * /promotions/{id}/seen:
+ *   post:
+ *     summary: Đánh dấu user đã xem popup promotion
+ *     tags: [Client - Promotions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
 router.post("/:id/seen", promotionController.markHighlightSeen);
 
 export const PROMOTION_ROUTES = router;

@@ -9,15 +9,111 @@ const review_controller_1 = require("../modules/client/controllers/review.contro
 const upload_middlewares_1 = require("../middleware/upload.middlewares");
 const authMiddleware_1 = require("../middleware/authMiddleware");
 const router = express_1.default.Router();
+/**
+ * @swagger
+ * tags:
+ *   - name: Client - Reviews
+ *     description: Đánh giá sản phẩm
+ */
+/**
+ * @swagger
+ * /reviews/of/{productId}:
+ *   get:
+ *     summary: Danh sách review của 1 sản phẩm
+ *     tags: [Client - Reviews]
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
 router.get("/of/:productId", review_controller_1.reviewController.listOfProduct);
-// Bắt đầu áp dụng middleware xác thực cho TẤT CẢ các route bên dưới
 router.use(authMiddleware_1.authMidleWares.protectUserRoute);
-// 2. Các route CẦN Auth
-router.post("/", upload_middlewares_1.uploadMiddlewares.upload.fields([ /* ... */]), review_controller_1.reviewController.create);
-router.patch("/:id", upload_middlewares_1.uploadMiddlewares.upload.fields([ /* ... */]), review_controller_1.reviewController.update);
+/**
+ * @swagger
+ * /reviews:
+ *   post:
+ *     summary: Tạo review mới cho sản phẩm
+ *     tags: [Client - Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               order_item_id:
+ *                 type: string
+ *               rating:
+ *                 type: number
+ *               comment:
+ *                 type: string
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *     responses:
+ *       201:
+ *         description: Tạo review thành công
+ */
+router.post("/", upload_middlewares_1.uploadMiddlewares.upload.fields([]), review_controller_1.reviewController.create);
+/**
+ * @swagger
+ * /reviews/{id}:
+ *   patch:
+ *     summary: Cập nhật review
+ *     tags: [Client - Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
+ */
+router.patch("/:id", upload_middlewares_1.uploadMiddlewares.upload.fields([]), review_controller_1.reviewController.update);
+/**
+ * @swagger
+ * /reviews/{id}:
+ *   delete:
+ *     summary: Xóa review
+ *     tags: [Client - Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Xóa thành công
+ */
 router.delete("/:id", review_controller_1.reviewController.remove);
-// router.get("/of/:productId", /*review.listOfProduct*/reviewController.listOfProduct) // ?page&limit
-// router.post("/", /*requireAuth,*/ /*validate(createReview),*/ /*review.create*/reviewController.create)
-// router.patch("/:id", /*requireAuth,*/ /*review.update*/reviewController.update)
-// router.delete("/:id", /*requireAuth,*/ /*review.remove*/reviewController.remove)
 exports.REVIEW_ROUTES = router;

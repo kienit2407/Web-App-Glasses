@@ -422,3 +422,7 @@ Admin coupons & promotions (nếu cần):
 Tạo mã giảm giá, gán vào promotion.
 
 Ở giai đoạn này, vì bạn đã có BE admin + model + route gần như đầy đủ, FE admin chỉ là “bọc UI shadcn quanh API”.
+
+ frontend_web git:(master) ✗ rm -rf ../backend/client-dist
+➜  frontend_web git:(master) cp -R dist ../backend/client-dist
+flutter build apk --release --dart-define=IS_PROD=true

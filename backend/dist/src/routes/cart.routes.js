@@ -8,13 +8,101 @@ const express_1 = __importDefault(require("express"));
 const cart_controller_1 = require("../modules/client/controllers/cart.controller");
 const authMiddleware_1 = require("../middleware/authMiddleware");
 const router = express_1.default.Router();
+/**
+ * @swagger
+ * tags:
+ *   - name: Client - Cart
+ *     description: Giỏ hàng của user
+ */
 router.use(authMiddleware_1.authMidleWares.protectUserRoute);
-router.get("/", cart_controller_1.cartController.getMyCart); // lấy giỏ hàng
-router.post("/add-item", cart_controller_1.cartController.addItem); // thêm sản phẩm
+/**
+ * @swagger
+ * /cart:
+ *   get:
+ *     summary: Lấy giỏ hàng hiện tại của user
+ *     tags: [Client - Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
+router.get("/", cart_controller_1.cartController.getMyCart);
+/**
+ * @swagger
+ * /cart/add-item:
+ *   post:
+ *     summary: Thêm sản phẩm vào giỏ hàng
+ *     tags: [Client - Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               product_id:
+ *                 type: string
+ *               variant_id:
+ *                 type: string
+ *               quantity:
+ *                 type: integer
+ *             required:
+ *               - product_id
+ *               - variant_id
+ *               - quantity
+ *     responses:
+ *       200:
+ *         description: Thêm thành công
+ */
+router.post("/add-item", cart_controller_1.cartController.addItem);
+/**
+ * @swagger
+ * /cart/update/{itemId}:
+ *   patch:
+ *     summary: Cập nhật số lượng 1 item trong giỏ
+ *     tags: [Client - Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: itemId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               quantity:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
+ */
 router.patch("/update/:itemId", cart_controller_1.cartController.updateItem);
+/**
+ * @swagger
+ * /cart/remove/{itemId}:
+ *   delete:
+ *     summary: Xóa 1 item khỏi giỏ
+ *     tags: [Client - Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: itemId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Xóa thành công
+ */
 router.delete("/remove/:itemId", cart_controller_1.cartController.removeItem);
-// router.get("/", cartController.addItem) // lấy giỏ hàng hiện tại
-// router.post("/addItem", /*validate(addItem)*/cartController.addItem) // têm sản phẩm vào giỏ hàng
-// router.patch("/update/:itemId", /*validate(updateItem),*/ /*cart.updateItem*/cartController.updateItem)
-// router.delete("/remove/:itemId", cartController.removeItem)
 exports.CART_ROUTES = router;

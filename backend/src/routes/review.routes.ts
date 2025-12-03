@@ -1,40 +1,129 @@
-import express, { Router } from "express"
-import { reviewController } from "../modules/client/controllers/review.controller"
+import express, { Router } from "express";
+import { reviewController } from "../modules/client/controllers/review.controller";
 import { uploadMiddlewares } from "../middleware/upload.middlewares";
 import { authMidleWares } from "../middleware/authMiddleware";
 
-const router: Router = express.Router()
+const router: Router = express.Router();
 
-router.get(
-    "/of/:productId",
-    reviewController.listOfProduct
-);
+/**
+ * @swagger
+ * tags:
+ *   - name: Client - Reviews
+ *     description: Đánh giá sản phẩm
+ */
 
-// Bắt đầu áp dụng middleware xác thực cho TẤT CẢ các route bên dưới
-router.use(authMidleWares.protectUserRoute)
+/**
+ * @swagger
+ * /reviews/of/{productId}:
+ *   get:
+ *     summary: Danh sách review của 1 sản phẩm
+ *     tags: [Client - Reviews]
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
+router.get("/of/:productId", reviewController.listOfProduct);
 
-// 2. Các route CẦN Auth
+router.use(authMidleWares.protectUserRoute);
+
+/**
+ * @swagger
+ * /reviews:
+ *   post:
+ *     summary: Tạo review mới cho sản phẩm
+ *     tags: [Client - Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               order_item_id:
+ *                 type: string
+ *               rating:
+ *                 type: number
+ *               comment:
+ *                 type: string
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *     responses:
+ *       201:
+ *         description: Tạo review thành công
+ */
 router.post(
-    "/",
-    uploadMiddlewares.upload.fields([ /* ... */]),
-    reviewController.create
+  "/",
+  uploadMiddlewares.upload.fields([]),
+  reviewController.create
 );
 
+/**
+ * @swagger
+ * /reviews/{id}:
+ *   patch:
+ *     summary: Cập nhật review
+ *     tags: [Client - Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
+ */
 router.patch(
-    "/:id",
-    uploadMiddlewares.upload.fields([ /* ... */]),
-    reviewController.update
+  "/:id",
+  uploadMiddlewares.upload.fields([]),
+  reviewController.update
 );
 
-router.delete(
-    "/:id",
-    reviewController.remove
-);
+/**
+ * @swagger
+ * /reviews/{id}:
+ *   delete:
+ *     summary: Xóa review
+ *     tags: [Client - Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Xóa thành công
+ */
+router.delete("/:id", reviewController.remove);
 
-// router.get("/of/:productId", /*review.listOfProduct*/reviewController.listOfProduct) // ?page&limit
-// router.post("/", /*requireAuth,*/ /*validate(createReview),*/ /*review.create*/reviewController.create)
-// router.patch("/:id", /*requireAuth,*/ /*review.update*/reviewController.update)
-// router.delete("/:id", /*requireAuth,*/ /*review.remove*/reviewController.remove)
-
-export const REVIEW_ROUTES = router
-
+export const REVIEW_ROUTES = router;
