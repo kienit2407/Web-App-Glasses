@@ -11,6 +11,12 @@
 ---
 > **🕶️Glasses Shop** iGlasses Shop is a production-grade, full-stack e-commerce application built to learn and master Node.js, Flutter, real-time communication, and modern backend architecture. The project provides a complete buying experience with secure authentication, admin features, optimized API performance, and a smooth cross-platform UI.
 ---
+## 🔐 Test Account (Admin)
+
+- 📧 `admin1234@gmail.com`
+- 🔑 `Admin123456`
+
+---
 ## 🚀 Features (Main Functionalities)
 ## 🔐 Authentication & User Management
 - JWT Access/Refresh token flow
@@ -38,7 +44,7 @@
 - Manage orders
 - Real-time notifications (orders, low-stock, etc...)
 ## 📱 Mobile App (Flutter)
-- Built with Bloc for predictable state management
+- Built with Riverpod for predictable state management
 - Responsive UI
 - Smooth navigation & animations
 - Connects directly to backend REST API

@@ -36,6 +36,7 @@ class RegionSelectPage extends ConsumerStatefulWidget {
 }
 
 class _RegionSelectPageState extends ConsumerState<RegionSelectPage> {
+  late ScrollController _scrollController;
   _RegionStep _step = _RegionStep.province;
 
   List<SimpleGeo> _provinces = [];
@@ -61,9 +62,15 @@ class _RegionSelectPageState extends ConsumerState<RegionSelectPage> {
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
+
     _loadInitial();
   }
-
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
   Future<void> _loadInitial() async {
     final repo = ref.read(addressRepositoryProvider);
 
@@ -213,43 +220,47 @@ class _RegionSelectPageState extends ConsumerState<RegionSelectPage> {
 
           // --- PHẦN LIST VIEW ---
           Expanded(
-            child: ListView.separated(
-              itemCount: currentList.length,
-              separatorBuilder: (_, __) => const Divider(height: 1, indent: 16),
-              itemBuilder: (context, index) {
-                final item = currentList[index];
-
-                // Kiểm tra xem item này có đang được chọn không
-                bool isSelected = false;
-                if (_step == _RegionStep.province)
-                  isSelected = item.code == _selectedProvince?.code;
-                if (_step == _RegionStep.district)
-                  isSelected = item.code == _selectedDistrict?.code;
-                if (_step == _RegionStep.ward)
-                  isSelected = item.code == _selectedWard?.code;
-
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  title: Text(
-                    item.name,
-                    style: TextStyle(
-                      color: isSelected
-                          ? AppColor.buttonprimaryCol
-                          : Colors.black87,
-                      fontWeight: isSelected
-                          ? FontWeight.w500
-                          : FontWeight.normal,
+            child: Scrollbar(
+              controller: _scrollController,
+              child: ListView.separated(
+                controller: _scrollController,
+                itemCount: currentList.length,
+                separatorBuilder: (_, __) => const Divider(height: 1, indent: 16),
+                itemBuilder: (context, index) {
+                  final item = currentList[index];
+              
+                  // Kiểm tra xem item này có đang được chọn không
+                  bool isSelected = false;
+                  if (_step == _RegionStep.province)
+                    isSelected = item.code == _selectedProvince?.code;
+                  if (_step == _RegionStep.district)
+                    isSelected = item.code == _selectedDistrict?.code;
+                  if (_step == _RegionStep.ward)
+                    isSelected = item.code == _selectedWard?.code;
+              
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    title: Text(
+                      item.name,
+                      style: TextStyle(
+                        color: isSelected
+                            ? AppColor.buttonprimaryCol
+                            : Colors.black87,
+                        fontWeight: isSelected
+                            ? FontWeight.w500
+                            : FontWeight.normal,
+                      ),
                     ),
-                  ),
-                  trailing: isSelected
-                      ? const Icon(
-                          Icons.check,
-                          color: AppColor.buttonprimaryCol,
-                        )
-                      : null,
-                  onTap: () => _onSelectItem(item),
-                );
-              },
+                    trailing: isSelected
+                        ? const Icon(
+                            Icons.check,
+                            color: AppColor.buttonprimaryCol,
+                          )
+                        : null,
+                    onTap: () => _onSelectItem(item),
+                  );
+                },
+              ),
             ),
           ),
         ],

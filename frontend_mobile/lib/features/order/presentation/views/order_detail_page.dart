@@ -215,7 +215,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
 
               const SizedBox(height: 12),
 
-              // 2. STEPPER NGANG (Giống ảnh 1)
+              // 2. STEPPER NGANG 
               _buildHorizontalStepper(status),
 
               const SizedBox(height: 12),

@@ -2,17 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-.ant-image-img {
-  max-width: 100%;
-  height: auto;
-}
-
-.ant-image-preview-img {
-  margin: auto;
-}
 
 @layer base {
   :root {

@@ -229,7 +229,7 @@ const OrderDetail = () => {
                                 </Link>
                             </Button>
                             <Modal
-                                title={null}                 // bỏ title cho gọn, hoặc để chuỗi ngắn
+                                title={null}       
                                 open={isModalOpen}
                                 onCancel={handleCancel}
                                 footer={null}
@@ -242,12 +242,17 @@ const OrderDetail = () => {
                                     alignItems: "center",
                                 }}
                             >
-                                <QRCode
-                                    value={orderUrl}
-                                    size={150}
+                                <div className="flex flex-col items-center gap-4">
+                                    <QRCode
+                                        value={orderUrl}
+                                        size={150}
 
-                                    icon="/favicon.ico"
-                                ></QRCode>
+                                        icon="/glasses.png"
+                                    ></QRCode>
+                                    <div className="text-sm font-semibold text-blue-500">
+                                        {order.order_number}
+                                    </div>
+                                </div>
                             </Modal>
                         </div>
                     </div>

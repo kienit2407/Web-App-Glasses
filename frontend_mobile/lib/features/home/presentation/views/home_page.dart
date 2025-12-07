@@ -10,6 +10,7 @@ import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:frontend_mobile/features/home/data/models/banner_model.dart';
 import 'package:frontend_mobile/features/home/data/models/brand_model.dart';
 import 'package:frontend_mobile/features/home/data/models/product_list_item.dart';
+import 'package:frontend_mobile/features/home/presentation/widgets/brand_section.dart';
 import 'package:frontend_mobile/features/product_detail/presentation/views/product_detail_page.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
@@ -134,7 +135,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               ),
               if (state.brands.isNotEmpty)
-                SliverToBoxAdapter(child: _buildBrandStrip(state.brands)),
+                SliverToBoxAdapter(child: BrandSection(brands: state.brands)),
               const SliverToBoxAdapter(child: SizedBox(height: 8)),
               SliverToBoxAdapter(
                 child: Padding(

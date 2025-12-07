@@ -274,7 +274,7 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                             ),
                           )
                         : Text(
-                          '${isEdit ? 'Xong' : 'Tạo mới'}',
+                          isEdit ? 'Xong' : 'Tạo mới',
                         style: TextStyle(fontWeight: FontWeight.w600),),
                   ),
                 ),

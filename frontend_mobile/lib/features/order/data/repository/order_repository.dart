@@ -50,7 +50,7 @@ class OrderRepository {
     final res = await dioClient.dio.get('/orders/$id');
     final body = res.data as Map<String, dynamic>;
     final data = body['data'] as Map<String, dynamic>;
-    return data; // { order: {...}, items: [...] } giống web
+    return data;
   }
   Future<Map<String, int>> getStats() async {
     final res = await dioClient.dio.get('/orders/stats');
