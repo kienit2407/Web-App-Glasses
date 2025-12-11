@@ -68,7 +68,7 @@ export const AnimatedProductCard = ({ product }: Props) => {
       <Card className="group overflow-hidden hover:shadow-elegant transition-all duration-300 h-full flex flex-col border-0">
         <Link to={`/products/${slug}/${product_id}`}>
           {/* Khu logo brand phía trên */}
-          <div className="h-12 pt-5 flex items-center justify-center bg-white">
+          <div className="h-19 pt-5 flex items-center justify-center bg-white">
             {brand_logo_url ? (
               <img
                 src={brand_logo_url}

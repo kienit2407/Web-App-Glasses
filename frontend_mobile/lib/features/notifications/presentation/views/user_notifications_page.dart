@@ -19,15 +19,14 @@ class UserNotificationsPage extends ConsumerWidget {
     final state = ref.watch(userNotificationControllerProvider);
     final controller = ref.read(userNotificationControllerProvider.notifier);
 
-    // show error snackbar nếu có
-    if (state.errorMessage != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(state.errorMessage!)),
-        );
-      });
-    }
+    
+    final authState = ref.watch(authControllerProvider);
+    final authUser = authState.valueOrNull;
 
+    // Nếu chưa đăng nhập -> hiển thị giao diện guest
+    if (authUser == null) {
+      return _buildGuestAccount(context);
+    }
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColor.buttonprimaryCol,
@@ -39,56 +38,56 @@ class UserNotificationsPage extends ConsumerWidget {
         centerTitle: true,
         actions: [
           if (state.items.isNotEmpty)
-        Row(
-          children: [
-            TextButton(
-              onPressed: () => controller.markAllRead(),
-              child: const Text(
-                'Đọc hết',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-            TextButton(
-              onPressed: () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) {
-                    return AlertDialog(
-                      title: const Text('Xoá tất cả thông báo?'),
-                      content: const Text(
-                        'Thao tác này sẽ xoá toàn bộ thông báo hiện có, bạn có chắc không?',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(false),
-                          child: const Text('Huỷ'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(true),
-                          child: const Text(
-                            'Xoá hết',
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                );
-
-                if (confirm == true) {
-                  await controller.deleteAll();
-                }
-              },
-              child: const Text(
-                'Xoá hết',
-                style: TextStyle(
-                  color: Colors.red,          // chữ đỏ
-                  fontWeight: FontWeight.w600,
+            Row(
+              children: [
+                TextButton(
+                  onPressed: () => controller.markAllRead(),
+                  child: const Text(
+                    'Đọc hết',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
-              ),
+                TextButton(
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) {
+                        return AlertDialog(
+                          title: const Text('Xoá tất cả thông báo?'),
+                          content: const Text(
+                            'Thao tác này sẽ xoá toàn bộ thông báo hiện có, bạn có chắc không?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(false),
+                              child: const Text('Huỷ', style: TextStyle(color: AppColor.textpriCol),),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(true),
+                              child: const Text(
+                                'Xoá hết',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+
+                    if (confirm == true) {
+                      await controller.deleteAll();
+                    }
+                  },
+                  child: const Text(
+                    'Xoá hết',
+                    style: TextStyle(
+                      color: Colors.red, // chữ đỏ
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
         ],
       ),
       body: state.isLoading
@@ -111,7 +110,7 @@ class UserNotificationsPage extends ConsumerWidget {
                       ],
                     )
                   : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 120),
                       itemCount: state.items.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 4),
                       itemBuilder: (context, index) {
@@ -120,6 +119,72 @@ class UserNotificationsPage extends ConsumerWidget {
                       },
                     ),
             ),
+    );
+  }
+
+  Widget _buildGuestAccount(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xfff5f5f5),
+      appBar: AppBar(
+        title: const Text(
+          'Thông báo',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: AppColor.buttonprimaryCol,
+        foregroundColor: Colors.white,
+        centerTitle: true,
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.person_outline, size: 80, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text(
+                'Bạn chưa đăng nhập',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Đăng nhập để xem đơn hàng, voucher và quản lý tài khoản.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 24),
+              // 2 nút nằm NGANG nhau
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppColor.buttonprimaryCol),
+                        foregroundColor: AppColor.buttonprimaryCol,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: () => context.goNamed('signup'),
+                      child: const Text('Đăng ký'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => context.goNamed('signin'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColor.buttonprimaryCol,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text('Đăng nhập'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -225,10 +290,7 @@ class _NotificationTile extends ConsumerWidget {
                     const SizedBox(height: 4),
                     Text(
                       _timeFormat.format(item.createdAt),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey,
-                      ),
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                   ],
                 ),

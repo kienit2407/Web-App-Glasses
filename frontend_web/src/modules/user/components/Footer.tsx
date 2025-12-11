@@ -8,10 +8,13 @@ import { useEffect } from "react";
 export const Footer = () => {
   const { settings } = useShopSettingsStore();
   const { isLoading, fetchCategories, listCategories, fetchBrands, listBrands } = useCatalog()
+  console.log(settings)
   useEffect(() => {
     fetchCategories()
     fetchBrands()
   }, [fetchCategories, fetchBrands])
+
+  
   return (
     <footer className="border-t border-blue-700 border-border bg-white mt-20">
       <div className="container mx-auto px-4 py-12">
@@ -110,7 +113,7 @@ export const Footer = () => {
                 <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
                 {settings?.shipping_origin ? (
                   <span>
-                    {settings.ward_name}, {settings.district_name}, {settings.province_name}
+                    {settings.shipping_origin.ward_name}, {settings.shipping_origin.district_name}, {settings.shipping_origin.province_name}
                   </span>
                 ) : ('Chưa được cấu hình')}
 

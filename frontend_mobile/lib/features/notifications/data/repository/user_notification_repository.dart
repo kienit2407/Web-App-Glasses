@@ -5,10 +5,12 @@ import 'package:frontend_mobile/features/notifications/data/models/user_notifica
 class NotificationPageResult {
   final List<UserNotification> items;
   final int total;
+  final int unreadCount;
 
   NotificationPageResult({
     required this.items,
     required this.total,
+    required this.unreadCount,
   });
 }
 
@@ -23,25 +25,31 @@ class UserNotificationRepository {
   }) async {
     final res = await dioClient.dio.get(
       '/notifications',
-      queryParameters: {
-        'page': page,
-        'limit': limit,
-      },
+      queryParameters: {'page': page, 'limit': limit},
     );
 
     final data = res.data['data'] as Map<String, dynamic>? ?? {};
     final rawItems = (data['items'] as List<dynamic>? ?? []);
 
-    // Nếu chỉ muốn thông báo đơn hàng thì filter ở đây:
+    // Nếu chỉ muốn thông báo đơn hàng thì filter ở đây
     final items = rawItems
         .map((e) => UserNotification.fromJson(e as Map<String, dynamic>))
-        .where((n) => n.meta.orderId != null) // 👈 chỉ đơn hàng
+        .where((n) => n.meta.orderId != null)
         .toList();
 
     final pagination = data['pagination'] as Map<String, dynamic>? ?? {};
     final total = pagination['total'] as int? ?? items.length;
 
-    return NotificationPageResult(items: items, total: total);
+    // Nếu BE trả về unread_count thì lấy luôn (giống web)
+    final unreadFromServer = data['unread_count'] as int?;
+    final unreadCount =
+        unreadFromServer ?? items.where((n) => !n.isRead).length;
+
+    return NotificationPageResult(
+      items: items,
+      total: total,
+      unreadCount: unreadCount,
+    );
   }
 
   Future<void> markRead(String id) async {

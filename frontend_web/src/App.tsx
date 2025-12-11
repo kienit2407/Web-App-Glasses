@@ -43,6 +43,7 @@ import { AdminNotificationsPage } from "./modules/admin/pages/AdminNotifications
 import { AdminSupportPage } from "./modules/admin/pages/AdminSupportPage"
 import PaymentResult from "./modules/user/pages/PaymentResult"
 import { VirtualTryOnPage } from "./modules/user/pages/VirtualTryOn"
+import OAuthCallback from "./modules/user/pages/OAuthCallback"
 
 const queryClient = new QueryClient() // dùng để quản lý cache dữ liệu api
 
@@ -77,6 +78,7 @@ const App = () => {
               <Route path="/virtual-tryon" element={<VirtualTryOnPage />} />
               <Route path="/products/:slug/:productId" element={<ProductDetail />} />
               <Route path="/payment-result" element={<PaymentResult />} />
+              <Route path="/oauth/callback" element={<OAuthCallback />} />
               <Route
                 path="/cart"
                 element={
@@ -88,9 +90,7 @@ const App = () => {
               <Route
                 path="/coupon"
                 element={
-                  <RequireAuth>
-                    <CouponCenter />
-                  </RequireAuth>
+                  <CouponCenter />
                 }
               />
               {/* redirect /account -> /account/profile */}

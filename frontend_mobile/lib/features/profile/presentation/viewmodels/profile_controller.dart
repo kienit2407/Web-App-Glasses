@@ -34,8 +34,8 @@ class ProfileController extends StateNotifier<ProfileState> {
 
       state = state.copyWith(user: updatedUser, savingProfile: false);
     } catch (e) {
+      print('[ProfileController] updateProfile error: $e');
       state = state.copyWith(savingProfile: false, errorMessage: e.toString());
-      rethrow;
     }
   }
 

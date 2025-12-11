@@ -1,0 +1,55 @@
+name: Build Android APK
+
+on:
+  push:
+    # branches: [ master ]
+    # paths:
+    #   - 'frontend_mobile/**'              # chỉ khi file trong mobile đổi
+    #   - '.github/workflows/android-apk.yml'  # hoặc khi bạn sửa workflow
+  workflow_dispatch:                      # vẫn cho phép chạy bằng tay
+
+permissions:
+  contents: write
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    # Mặc định mọi lệnh `run:` đều chạy trong thư mục frontend_mobile
+    defaults:
+      run:
+        working-directory: frontend_mobile
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          # flutter-version: '3.24.0'   # nếu muốn khoá version thì mở dòng này
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      # LƯU Ý: path ở đây là từ root repo -> phải thêm "frontend_mobile/"
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: frontend_mobile/build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: "Build #${{ github.run_number }}"
+          files: frontend_mobile/build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

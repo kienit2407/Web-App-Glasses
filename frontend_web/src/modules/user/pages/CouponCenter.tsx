@@ -71,7 +71,7 @@ const CouponCenter = () => {
     const [highlight, setHighlight] = useState<HighlightPromotion | null>(null);
     const [highlightOpen, setHighlightOpen] = useState(false);
     const [markingSeen, setMarkingSeen] = useState(false);
-    const {user} = useAuth()
+    const { user } = useAuth()
     // ====== fetch coupon center (coupon) ======
     const fetchCoupons = async () => {
         try {
@@ -99,28 +99,28 @@ const CouponCenter = () => {
         }
     };
 
-    // ====== fetch highlight promotion cho popup ======
-    const fetchHighlight = async () => {
-        try {
-            const res = await API.get("/promotions/highlight");
-            const data = res.data?.data as {
-                promotion: HighlightPromotion | null;
-                already_seen: boolean;
-            };
+    // // ====== fetch highlight promotion cho popup ======
+    // const fetchHighlight = async () => {
+    //     try {
+    //         const res = await API.get("/promotions/highlight");
+    //         const data = res.data?.data as {
+    //             promotion: HighlightPromotion | null;
+    //             already_seen: boolean;
+    //         };
 
-            if (data?.promotion && !data.already_seen) {
-                setHighlight(data.promotion);
-                setHighlightOpen(true);
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    };
+    //         if (data?.promotion && !data.already_seen) {
+    //             setHighlight(data.promotion);
+    //             setHighlightOpen(true);
+    //         }
+    //     } catch (err) {
+    //         console.error(err);
+    //     }
+    // };
 
     useEffect(() => {
         const load = async () => {
             setLoading(true);
-            await Promise.all([fetchCoupons(), fetchPromotions(), fetchHighlight()]);
+            await Promise.all([fetchCoupons(), fetchPromotions()]);
             setLoading(false);
         };
         load();
@@ -129,8 +129,10 @@ const CouponCenter = () => {
     const handleSave = async (coupon: CouponCenterItem) => {
         if (coupon.is_saved) return;
         try {
-            if(!user) {
+            if (!user) {
                 navigate('/login')
+                message.success("Bạn cần đăng nhập để lưu voucher");
+                return
             }
 
             setSavingId(coupon._id);
@@ -270,11 +272,11 @@ const CouponCenter = () => {
                                                 )}
                                                 <div className="p-3 flex-1 flex flex-col">
                                                     <div className="flex items-center justify-between gap-2">
-                                
+
                                                         <Tag color="volcano" className="text-[14px]">
                                                             {p.title}
                                                         </Tag>
-                                                        
+
                                                     </div>
 
                                                     {p.description && (
@@ -371,7 +373,7 @@ const CouponCenter = () => {
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-5">
-                                                        <Tag  color="blue">Voucher</Tag>
+                                                        <Tag color="blue">Voucher</Tag>
                                                         <Tooltip
                                                             title={
                                                                 c.is_saved
@@ -421,7 +423,7 @@ const CouponCenter = () => {
                     </>
                 )}
 
-            
+
                 <Modal
                     open={highlightOpen}
                     onCancel={handleCloseHighlight}
