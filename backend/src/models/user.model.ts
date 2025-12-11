@@ -23,12 +23,12 @@ const AddressSchema = new Schema<IAddress>({
 
 // Schemaa phương thuwc đnăg nhập
 export interface IAuthProvider {
-    provider: 'password' | 'google'
-    provider_id?: string
+    provider: 'password' | 'google' | 'github'
+    provider_id?: string | null
 }
 const AuthProviderSchema = new Schema<IAuthProvider>({
     provider: { type: String, required: true, trim: true },
-    provider_id: { type: String, required: true, trim: true }
+    provider_id: { type: String, default: null, trim: true }
 }, { _id: false }) // k cần
 
 
@@ -85,7 +85,7 @@ export const User = model<IUser>("users", new Schema<IUser>({
     },
     auth_provider: {
         type: [AuthProviderSchema],
-        default: null
+        default: []
     },
     avatar_url: { type: String, default: null, trim: true },
     avatar_id: { type: String, default: null, trim: true },

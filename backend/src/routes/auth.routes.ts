@@ -4,7 +4,10 @@ import { authValidator } from "../validation/auth.validation";
 import { authMidleWares } from "../middleware/authMiddleware";
 
 const router: Router = express.Router();
-
+router.get("/google", authController.oauthGoogle)
+router.get("/google/callback", authController.oauthGoogleCallback)
+router.get("/github", authController.oauthGithub);
+router.get("/github/callback", authController.oauthGithubCallback);
 /**
  * @swagger
  * tags:

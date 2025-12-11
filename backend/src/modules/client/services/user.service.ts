@@ -1,4 +1,3 @@
-// src/service/user.service.ts
 import { Types } from "mongoose";
 import bcrypt from "bcryptjs";
 import { User, IUser } from "../../../models/user.model";

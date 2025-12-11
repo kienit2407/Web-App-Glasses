@@ -4,14 +4,6 @@ import { promotionController } from "../modules/client/controllers/promotion.con
 
 const router: Router = express.Router();
 
-/**
- * @swagger
- * tags:
- *   - name: Client - Promotions
- *     description: Chương trình khuyến mãi (popup, center)
- */
-
-router.use(authMidleWares.protectUserRoute);
 
 /**
  * @swagger
@@ -26,6 +18,15 @@ router.use(authMidleWares.protectUserRoute);
  *         description: Thành công
  */
 router.get("/center", promotionController.listCenter);
+
+/**
+ * @swagger
+ * tags:
+ *   - name: Client - Promotions
+ *     description: Chương trình khuyến mãi (popup, center)
+ */
+
+router.use(authMidleWares.protectUserRoute);
 
 /**
  * @swagger

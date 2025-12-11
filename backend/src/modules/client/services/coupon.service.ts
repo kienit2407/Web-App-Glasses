@@ -165,7 +165,7 @@ export const couponService = {
     },
 
     // ===== LIST cho Coupon Center: list tất cả coupon đang hoạt động + flag is_saved =====
-    async listAvailableForUser(userId: Types.ObjectId) {
+    async listAvailableForUser(userId?: Types.ObjectId | null) {
         const now = new Date();
 
         const coupons = await Coupon.find({
@@ -176,13 +176,30 @@ export const couponService = {
 
         if (coupons.length === 0) return [];
 
+        // Nếu chưa đăng nhập -> trả list coupon + is_saved/is_used = false hết
+        if (!userId) {
+            return coupons.map((c) => ({
+                _id: c._id,
+                code: c.code,
+                type: c.type,
+                value: c.value,
+                max_discount: c.max_discount,
+                min_order: c.min_order,
+                start_date: c.start_date,
+                end_date: c.end_date,
+                is_active: c.is_active,
+                is_saved: false,
+                is_used: false,
+            }));
+        }
+
+        // Có userId -> join UserCoupon như cũ
         const couponIds = coupons.map((c) => c._id);
 
         const userCoupons = await UserCoupon.find({
             user_id: userId,
             coupon_id: { $in: couponIds },
-        })
-            .lean();
+        }).lean();
 
         const map = new Map<string, any>();
         userCoupons.forEach((uc) => {
@@ -206,7 +223,6 @@ export const couponService = {
             };
         });
     },
-
     // ===== LIST ví voucher của user (cho /users/me/coupons, có thể truyền subtotal) =====
     async listMyCoupons(userId: Types.ObjectId, subtotal?: number) {
         const rows = await UserCoupon.find({ user_id: userId })

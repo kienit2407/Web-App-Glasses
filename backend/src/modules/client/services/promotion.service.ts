@@ -6,7 +6,7 @@ import { UserPromotionView } from "../../../models/user.promotion.view.model";
 
 export const promotionService = {
     // 1) List cho CouponCenter – chỉ cần khuyến mãi đang/ sắp chạy
-    async listForCenter(userId: Types.ObjectId) {
+    async listForCenter() {
         const now = new Date();
 
         const promotions = await Promotion.find({

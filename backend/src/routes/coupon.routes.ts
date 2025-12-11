@@ -4,14 +4,7 @@ import { authMidleWares } from "../middleware/authMiddleware";
 
 const router: Router = express.Router();
 
-/**
- * @swagger
- * tags:
- *   - name: Client - Coupons
- *     description: Coupon dành cho user
- */
 
-router.use(authMidleWares.protectUserRoute);
 
 /**
  * @swagger
@@ -26,7 +19,14 @@ router.use(authMidleWares.protectUserRoute);
  *         description: Thành công
  */
 router.get("/", couponController.listAvailable);
+/**
+ * @swagger
+ * tags:
+ *   - name: Client - Coupons
+ *     description: Coupon dành cho user
+ */
 
+router.use(authMidleWares.protectUserRoute);
 /**
  * @swagger
  * /coupons/{code}/check:

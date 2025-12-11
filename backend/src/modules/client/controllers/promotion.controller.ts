@@ -9,12 +9,12 @@ import {
 import { promotionService } from "../services/promotion.service";
 
 export const listCenter = TryCatch(async (req: Request, res: Response) => {
-    if (!req.user?._id) {
-        throw new UnauthorizedException("Unauthorized");
-    }
-    const userId = new Types.ObjectId(req.user._id);
+    // if (!req.user?._id) {
+    //     throw new UnauthorizedException("Unauthorized");
+    // }
+    // const userId = new Types.ObjectId(req.user._id);
 
-    const items = await promotionService.listForCenter(userId);
+    const items = await promotionService.listForCenter();
 
     return res.json({ data: { items } });
 });

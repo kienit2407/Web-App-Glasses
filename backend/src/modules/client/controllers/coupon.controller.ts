@@ -10,12 +10,12 @@ import { couponService } from "../services/coupon.service";
 
 // GET /coupons  -> Coupon Center
 export const listAvailable = TryCatch(async (req: Request, res: Response) => {
-    if (!req.user?._id) {
-        throw new UnauthorizedException("Unauthorized");
-    }
-    const userId = new Types.ObjectId(req.user._id);
+    // if (!req.user?._id) {
+    //     throw new UnauthorizedException("Unauthorized");
+    // }
+    // const userId = new Types.ObjectId(req.user._id);
 
-    const items = await couponService.listAvailableForUser(userId);
+    const items = await couponService.listAvailableForUser();
 
     return res.json({ data: { items } });
 });
