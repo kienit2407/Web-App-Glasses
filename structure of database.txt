@@ -426,3 +426,51 @@ Tạo mã giảm giá, gán vào promotion.
  frontend_web git:(master) ✗ rm -rf ../backend/client-dist
 ➜  frontend_web git:(master) cp -R dist ../backend/client-dist
 flutter build apk --release --dart-define=IS_PROD=true
+
+src/
+  app/ hoặc pages/      # (Next.js) routing
+  components/           # component dùng chung
+  features/             # nhóm theo tính năng (auth, products, cart)
+    auth/
+      components/
+      hooks/
+      services/
+  hooks/                # custom hooks
+  lib/                  # hàm helper, utils
+  services/             # gọi API, client
+  store/                # Redux/Zustand/MobX, ...
+  styles/               # global styles, CSS, tailwind config
+  types/                # TypeScript types, interface
+
+
+
+  src/
+  features/
+    auth/
+      components/
+        LoginForm.tsx
+      hooks/
+        useLogin.ts
+      services/
+        authApi.ts
+    products/
+      components/
+        ProductList.tsx
+        ProductCard.tsx
+      hooks/
+        useProducts.ts
+      services/
+        productApi.ts
+  components/          # common components
+    Layout/
+      MainLayout.tsx
+  lib/                 # helper, utils
+  store/               # global state
+  pages/ or app/       # Next.js routing
+
+
+FE  ->  BE (/auth/google)
+BE  ->  Google
+Google -> BE (/auth/google/callback)
+BE  ->  FE (/oauth/callback)
+FE  ->  BE (/users/me)

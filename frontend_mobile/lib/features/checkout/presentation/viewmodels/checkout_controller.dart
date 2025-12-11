@@ -179,8 +179,9 @@ class CheckoutController extends StateNotifier<CheckoutState> {
         return {'orderId': orderId, 'paymentUrl': url};
       }
     } catch (e) {
+      print('[CheckoutController] placeOrder error: $e');
       state = state.copyWith(isPlacingOrder: false, errorMessage: e.toString());
-      rethrow;
+      return {};
     }
   }
 }

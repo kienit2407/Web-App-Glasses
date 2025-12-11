@@ -31,6 +31,7 @@ const Home = () => {
     fetchHomeProducts()
     fetchBrands()
   }, [fetchHomeProducts, fetchCategories, fetchBrands])
+  
   useEffect(() => {
     const run = async () => {
       try {
@@ -46,8 +47,7 @@ const Home = () => {
     run()
   }, [])
 
-  const banners: { _id: string; banner_url: string; position: number }[] =
-    (shopSettings?.banner_list || []).sort(
+  const banners: { _id: string; banner_url: string; position: number }[] = (shopSettings?.banner_list || []).sort(
       (a: any, b: any) => a.position - b.position
     )
   const mainFeatured = featuredProducts[0]

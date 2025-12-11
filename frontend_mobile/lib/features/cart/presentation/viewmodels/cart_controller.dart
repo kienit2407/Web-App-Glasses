@@ -40,8 +40,9 @@ class CartController extends StateNotifier<CartState> {
         selectedItemIds: selected,
       );
     } catch (e) {
-      state = state.copyWith(isUpdating: false);
-      rethrow;
+      print('[CartController] addToCart error: $e');
+      state = state.copyWith(isUpdating: false, errorMessage: e.toString());
+      
     }
   }
 

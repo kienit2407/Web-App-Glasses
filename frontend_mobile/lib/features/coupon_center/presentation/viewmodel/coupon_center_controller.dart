@@ -16,12 +16,12 @@ class CouponCenterController extends StateNotifier<CouponCenterState> {
     try {
       final coupons = await _repo.getCoupons();
       final promotions = await _repo.getPromotions();
-      final highlight = await _repo.getHighlight();
+      // final highlight = await _repo.getHighlight();
       state = state.copyWith(
         isLoading: false,
         coupons: coupons,
         promotions: promotions,
-        highlight: highlight,
+        // highlight: highlight,
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
@@ -38,8 +38,12 @@ class CouponCenterController extends StateNotifier<CouponCenterState> {
           .toList();
       state = state.copyWith(coupons: updated, clearSavingId: true);
     } catch (e) {
+      // log cho dev
+
+      print('[CouponCenterController] saveCoupon error: $e');
+
+      // cập nhật state cho UI
       state = state.copyWith(clearSavingId: true, errorMessage: e.toString());
-      rethrow;
     }
   }
 
