@@ -115,7 +115,7 @@ class _SignupPageState extends State<SignupPage> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _iconMethod(AppIcon.googleIcon, () => {}),
-        _iconMethod(AppIcon.apppleIcon, () => {}),
+        _iconMethod(AppIcon.githubIcon, () => {}),
       ],
     );
   }

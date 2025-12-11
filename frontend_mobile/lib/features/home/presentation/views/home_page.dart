@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:frontend_mobile/core/assets/app_image.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:frontend_mobile/core/routes/bottom_navigation_bar.dart';
@@ -106,106 +107,97 @@ class _HomePageState extends ConsumerState<HomePage> {
         automaticallyImplyLeading: false,
       ),
       backgroundColor: const Color(0xfff5f5f5),
-      body: SafeArea(
-        top: true,
-        child: RefreshIndicator.adaptive(
-          onRefresh: () =>
-              ref.read(catalogControllerProvider.notifier).refresh(),
-          child: CustomScrollView(
-            slivers: [
-              const SliverToBoxAdapter(child: SizedBox(height: 8)),
-              if (state.banners.isNotEmpty)
-                SliverToBoxAdapter(child: _buildBannerCarousel(state.banners)),
-              const SliverToBoxAdapter(child: SizedBox(height: 8)),
-              if (state.banners.isNotEmpty)
-                SliverToBoxAdapter(child: _buildDotIndicator(state.banners)),
-              const SliverToBoxAdapter(child: SizedBox(height: 8)),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  child: Text(
-                    'Thương hiệu chính hãng',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+      body: RefreshIndicator.adaptive(
+        onRefresh: () => ref.read(catalogControllerProvider.notifier).refresh(),
+        child: CustomScrollView(
+          slivers: [
+            const SliverToBoxAdapter(child: SizedBox(height: 8)),
+            if (state.banners.isNotEmpty)
+              SliverToBoxAdapter(child: _buildBannerCarousel(state.banners)),
+            const SliverToBoxAdapter(child: SizedBox(height: 8)),
+            if (state.banners.isNotEmpty)
+              SliverToBoxAdapter(child: _buildDotIndicator(state.banners)),
+            const SliverToBoxAdapter(child: SizedBox(height: 8)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                child: Text(
+                  'Thương hiệu chính hãng',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              if (state.brands.isNotEmpty)
-                SliverToBoxAdapter(child: BrandSection(brands: state.brands)),
-              const SliverToBoxAdapter(child: SizedBox(height: 8)),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  child: Text(
-                    'Gợi ý hôm nay',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+            ),
+            if (state.brands.isNotEmpty)
+              SliverToBoxAdapter(child: BrandSection(brands: state.brands)),
+            const SliverToBoxAdapter(child: SizedBox(height: 8)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                child: Text(
+                  'Gợi ý hôm nay',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              if (state.isLoading && state.products.isEmpty)
-                const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator.adaptive()),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  sliver: SliverGrid(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final product = state.products[index];
-                      return _ProductCard(product: product);
-                    }, childCount: state.products.length),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                          childAspectRatio: 0.63,
+            ),
+            if (state.isLoading && state.products.isEmpty)
+              const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator.adaptive()),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                sliver: SliverMasonryGrid.count(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  itemBuilder: (context, index) {
+                    final product = state.products[index];
+                    return _ProductCard(product: product);
+                  },
+                  childCount: state.products.length,
+                ),
+              ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Center(
+                  child: state.hasMore
+                      ? ElevatedButton(
+                          onPressed: state.isLoadingMore
+                              ? null
+                              : () => ref
+                                    .read(catalogControllerProvider.notifier)
+                                    .loadMore(),
+                          child: state.isLoadingMore
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Xem thêm'),
+                        )
+                      : const Text(
+                          'Bạn đã xem hết sản phẩm',
+                          style: TextStyle(color: Colors.grey),
                         ),
-                  ),
-                ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Center(
-                    child: state.hasMore
-                        ? ElevatedButton(
-                            onPressed: state.isLoadingMore
-                                ? null
-                                : () => ref
-                                      .read(catalogControllerProvider.notifier)
-                                      .loadMore(),
-                            child: state.isLoadingMore
-                                ? const SizedBox(
-                                    height: 18,
-                                    width: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text('Xem thêm'),
-                          )
-                        : const Text(
-                            'Bạn đã xem hết sản phẩm',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+            SliverPadding(padding: const EdgeInsets.only(bottom: 100)),
+          ],
         ),
       ),
     );
@@ -524,20 +516,21 @@ class _ProductCard extends StatelessWidget {
         ),
         clipBehavior: Clip.hardEdge,
         child: Column(
+          mainAxisSize: MainAxisSize.min, // <-- cho nó cao theo nội dung
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ====== Logo brand (giống web: strip trên) ======
             if (product.brandLogoUrl != null || product.brandName != null)
               Container(
-                height: 32,
+                height: 50,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                alignment: Alignment.centerLeft,
+                alignment: Alignment.bottomCenter,
                 child:
                     product.brandLogoUrl != null &&
                         product.brandLogoUrl!.isNotEmpty
                     ? Image.network(
                         product.brandLogoUrl!,
-                        height: 20,
+                        height: 50,
                         fit: BoxFit.contain,
                       )
                     : Text(
@@ -551,69 +544,62 @@ class _ProductCard extends StatelessWidget {
               ),
 
             // ====== Ảnh + badge giảm giá / sắp hết ======
-            Expanded(
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: Image.network(
-                        product.thumbnailUrl,
-                        fit: BoxFit.cover,
+            Stack(
+              children: [
+                AspectRatio(
+                  aspectRatio: 1,
+                  child: Image.network(product.thumbnailUrl, fit: BoxFit.cover),
+                ),
+
+                // badge -% góc trái trên
+                if (product.hasDiscount)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '-${product.discountPercent}%',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
 
-                  // badge -% góc trái trên
-                  if (product.hasDiscount)
-                    Positioned(
-                      top: 8,
-                      left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.redAccent,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '-${product.discountPercent}%',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
+                // badge sắp hết hàng
+                if (product.totalStock < 10)
+                  Positioned(
+                    bottom: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Còn ${product.totalStock}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
                         ),
                       ),
                     ),
-
-                  // badge sắp hết hàng
-                  if (product.totalStock < 10)
-                    Positioned(
-                      bottom: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'Còn ${product.totalStock}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+                  ),
+              ],
             ),
 
             // ====== Tên sản phẩm ======
@@ -630,17 +616,9 @@ class _ProductCard extends StatelessWidget {
             // ====== Giá (gốc gạch + giá hiện tại) ======
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 0, 8, 2),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (originalPriceText != null)
-                    Text(
-                      originalPriceText,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey,
-                        decoration: TextDecoration.lineThrough,
-                      ),
-                    ),
                   if (originalPriceText != null) const SizedBox(width: 4),
                   Text(
                     currentPriceText,
@@ -650,6 +628,15 @@ class _ProductCard extends StatelessWidget {
                       fontSize: 14,
                     ),
                   ),
+                  if (originalPriceText != null)
+                    Text(
+                      originalPriceText,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
                 ],
               ),
             ),

@@ -37,6 +37,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     final unread = notifState.unreadCount;
 
     return Scaffold(
+      extendBody: true,
       body: Stack(
         children: [
           IndexedStack(index: _index, children: _pages),

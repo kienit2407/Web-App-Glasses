@@ -1,12 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { z } from 'zod'
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Mail, Lock, Eye, EyeOff, User } from "lucide-react";
-
+import { GitHubIcon, GoogleIcon } from "@/assets/icons";
 import { Link, replace, useLocation, useNavigate } from "react-router-dom";
 import { Spinner } from "@/components/ui/spinner";
-import { Button, Card, Form, Input, Tabs } from 'antd';
+import { Button, Card, Divider, Form, Input, Tabs } from 'antd';
 import { useAuth } from "@/hooks/use-auth";
+import { API_BASE_URL } from "@/app/config";
+import { openPopup } from "@/utils/window";
 
 type LoginFormValues = {
   email: string;
@@ -23,8 +26,8 @@ type RegisterFormValues = {
 const Login = () => {
   const location = useLocation() // Lấy location hiện tại CỦA TRANG LOGIN
   const from = location.state?.from?.pathname || "/" // lấy cái vị trí mà user đang ở chỗ mà muốn vào nhưng bị đang nhập chặn. lại
-
-  const { login, signup, isLoading, user } = useAuth()
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const { login, signup, isLoading, user, setAccessToken, fetchMe } = useAuth()
   const navigate = useNavigate()
 
 
@@ -39,6 +42,7 @@ const Login = () => {
       } else {
         // Ngược lại (user thường, HOẶC admin bị đá từ một trang con)
         // cứ trả họ về đúng nơi họ muốn (biến `from`)
+
         navigate(from, { replace: true });
       }
     }
@@ -51,6 +55,46 @@ const Login = () => {
   const handleRegisterFinish = async (values: RegisterFormValues) => {
     if (isLoading) return;
     await signup(values);
+  };
+  const handleLoginWithGoogle = () => {
+    const params = new URLSearchParams();
+    if (from) params.set("from", from);
+    const url = `${API_BASE_URL}/auth/google?${params.toString()}`;
+    openPopup(url, "Google Login", 500, 600);
+    // window.location.href = `${API_BASE_URL}/auth/google?${params.toString()}`;
+  };
+  // Listen cho message từ popup
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.origin !== API_BASE_URL) return; // tránh XSS
+      const data = event.data as any;
+      if (data?.type === "OAUTH_SUCCESS") {
+        const { accessToken, from } = data.payload;
+        (async () => {
+          setAccessToken(accessToken);
+          await fetchMe();
+          navigate(from || "/", { replace: true });
+        })();
+      }
+      if (data?.type === "OAUTH_ERROR") {
+      console.log("OAuth error:", data.payload);
+      // toast 1 cái, còn popup thì đã tự window.close() rồi
+      // vd:
+      // toast.error("Bạn đã huỷ đăng nhập Google");
+    }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [setAccessToken, fetchMe, navigate]);
+
+
+
+  const handleLoginWithGithub = () => {
+    const params = new URLSearchParams();
+    if (from) params.set("from", from);
+    // window.location.href = `${API_BASE_URL}/auth/github?${params.toString()}`;
+    const url = `${API_BASE_URL}/auth/github?${params.toString()}`;
+    openPopup(url, "Github Login", 500, 600);
   };
   const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*/;
   const tabItems = [
@@ -78,9 +122,10 @@ const Login = () => {
               ]}
             >
               <Input
-                prefix={<Mail className="w-4 h-4 text-muted-foreground" />}
+                prefix={<Mail className="w-4 h-8 text-muted-foreground" />}
                 placeholder="email@example.com"
                 disabled={isLoading}
+                className="!rounded-2xl text-sm font-semibold"
               />
             </Form.Item>
 
@@ -98,9 +143,10 @@ const Login = () => {
               ]}
             >
               <Input.Password
-                prefix={<Lock className="w-4 h-4 text-muted-foreground" />}
+                prefix={<Lock className="w-4 h-8 text-muted-foreground" />}
                 placeholder="••••••••"
                 disabled={isLoading}
+                className="!rounded-2xl text-sm font-semibold"
               />
             </Form.Item>
 
@@ -112,16 +158,44 @@ const Login = () => {
                 Quên mật khẩu?
               </button>
             </div>
-
             <Button
-              type="primary"
+              // Thêm các class sau:
+              // 1. bg-gradient-to-r from-... to-... : Định nghĩa màu gradient
+              // 2. border-none: Xóa viền mặc định của Antd
+              // 3. text-white: Đổi màu chữ thành trắng
+              // 4. hover:opacity-80: Hiệu ứng khi di chuột (làm mờ đi chút thay vì đổi màu)
+              className="h-[40px] border-none !text-white !bg-gradient-to-tl from-[#00c6ff] to-[#0072ff] rounded-2xl"
               htmlType="submit"
-              loading={isLoading}
               block
             >
-              Đăng nhập
+              {isLoading ? <Spinner /> : 'Đăng nhập'}
             </Button>
           </Form>
+          <Divider ><span className="text-sm text-gray-500 font-normal">
+            Hoặc
+          </span></Divider>
+
+          <div className="flex flex-col gap-3 w-full">
+            {/* Nút Google: Thường là nền trắng, chữ đen, có viền */}
+            <Button
+              className="h-[40px] flex items-center justify-center gap-2 border-gray-300 shadow-sm hover:bg-gray-50 rounded-2xl"
+              block // AntD: block = width 100%
+              onClick={handleLoginWithGoogle}
+            >
+              <GoogleIcon size={20} />
+              <span>Đăng nhập bằng Google</span>
+            </Button>
+
+            {/* Nút GitHub: Thường là nền đen, chữ trắng */}
+            <Button
+              className="h-[40px] flex items-center justify-center gap-2 border-gray-300 shadow-sm hover:bg-gray-50 rounded-2xl"
+              block
+              onClick={handleLoginWithGithub}
+            >
+              <GitHubIcon size={20} />
+              <span>Đăng nhập bằng GitHub</span>
+            </Button>
+          </div>
         </Card>
       ),
     },
@@ -152,9 +226,10 @@ const Login = () => {
               ]}
             >
               <Input
-                prefix={<User className="w-4 h-4 text-muted-foreground" />}
+                prefix={<User className="w-4 h-8 text-muted-foreground" />}
                 placeholder="Nguyễn Văn A"
                 disabled={isLoading}
+                className="!rounded-2xl text-sm font-semibold"
               />
             </Form.Item>
 
@@ -168,9 +243,10 @@ const Login = () => {
               ]}
             >
               <Input
-                prefix={<Mail className="w-4 h-4 text-muted-foreground" />}
+                prefix={<Mail className="w-4 h-8 text-muted-foreground" />}
                 placeholder="email@example.com"
                 disabled={isLoading}
+                className="!rounded-2xl text-sm font-semibold"
               />
             </Form.Item>
 
@@ -188,9 +264,10 @@ const Login = () => {
               ]}
             >
               <Input.Password
-                prefix={<Lock className="w-4 h-4 text-muted-foreground" />}
+                prefix={<Lock className="w-4 h-8 text-muted-foreground !rounded-2xl" />}
                 placeholder="••••••••"
                 disabled={isLoading}
+                className="!rounded-2xl text-sm font-semibold"
               />
             </Form.Item>
 
@@ -198,9 +275,10 @@ const Login = () => {
               type="primary"
               htmlType="submit"
               loading={isLoading}
+              className="h-[40px] border-none !text-white !bg-gradient-to-tl from-[#00c6ff] to-[#0072ff] rounded-2xl"
               block
             >
-              Đăng ký
+              {isLoading ? <Spinner /> : 'Đăng nhập'}
             </Button>
 
             <p className="text-center text-xs text-muted-foreground mt-4">
@@ -220,6 +298,31 @@ const Login = () => {
               </button>
             </p>
           </Form>
+          <Divider ><span className="text-sm text-gray-500 font-normal">
+            Hoặc
+          </span></Divider>
+
+          <div className="flex flex-col gap-4 w-full">
+            {/* Nút Google: Thường là nền trắng, chữ đen, có viền */}
+            <Button
+              className="h-[40px] flex items-center justify-center gap-2 border-gray-300 shadow-sm hover:bg-gray-50 rounded-2xl"
+              block // AntD: block = width 100%
+              onClick={handleLoginWithGoogle}
+            >
+              <GoogleIcon size={20} />
+              <span>Đăng ký bằng Google</span>
+            </Button>
+
+            {/* Nút GitHub: Thường là nền đen, chữ trắng */}
+            <Button
+              className="h-[40px] flex items-center justify-center gap-2 border-gray-300 shadow-sm hover:bg-gray-50 rounded-2xl"
+              block
+              onClick={handleLoginWithGithub}
+            >
+              <GitHubIcon size={20} />
+              <span>Đăng ký bằng GitHub</span>
+            </Button>
+          </div>
         </Card>
       ),
     },

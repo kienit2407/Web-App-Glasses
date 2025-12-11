@@ -1,11 +1,14 @@
 // lib/features/coupon_center/presentation/views/coupon_center_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend_mobile/core/common/alert_dialog.dart';
 import 'package:frontend_mobile/core/common/count_down_promo.dart';
 import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
+import 'package:frontend_mobile/core/utils/animated_dialog.dart';
 import 'package:frontend_mobile/features/coupon_center/data/models/coupon_center_models.dart';
 import 'package:go_router/go_router.dart';
+import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 class CouponCenterPage extends ConsumerWidget {
   const CouponCenterPage({super.key});
@@ -20,15 +23,6 @@ class CouponCenterPage extends ConsumerWidget {
     final controller = ref.read(couponCenterControllerProvider.notifier);
     final authState = ref.watch(authControllerProvider);
     final authUser = authState.valueOrNull;
-
-    // show error snack nếu có
-    if (state.errorMessage != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
-      });
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -46,7 +40,7 @@ class CouponCenterPage extends ConsumerWidget {
           : RefreshIndicator.adaptive(
               onRefresh: () => controller.loadAll(),
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 120),
                 children: [
                   const Text(
                     'Lưu voucher và theo dõi các chương trình khuyến mãi đang diễn ra.',
@@ -64,16 +58,16 @@ class CouponCenterPage extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    GridView.builder(
+                    // extent
+                    // builder
+                    MasonryGridView.count(
                       shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                            childAspectRatio: 0.48, // 👈 thử 0.7–0.75, khá giống UI bạn chụp
-                          ),
+                      padding: EdgeInsets.zero,
+                      physics:
+                          const NeverScrollableScrollPhysics(), // vì đang nằm trong ListView
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
                       itemCount: state.promotions.length,
                       itemBuilder: (context, index) {
                         final p = state.promotions[index];
@@ -84,6 +78,24 @@ class CouponCenterPage extends ConsumerWidget {
                       },
                     ),
                     const SizedBox(height: 16),
+                    // GridView.builder(
+                    //   shrinkWrap: true,
+                    //   gridDelegate:
+                    //       const SliverGridDelegateWithFixedCrossAxisCount(
+                    //         crossAxisCount: 2,
+                    //         crossAxisSpacing: 8,
+                    //         mainAxisSpacing: 8,
+                    //         childAspectRatio: 0.48,
+                    //       ),
+                    //   itemCount: state.promotions.length,
+                    //   itemBuilder: (context, index) {
+                    //     final p = state.promotions[index];
+                    //     return _PromotionCard(
+                    //       promotion: p,
+                    //       formatPrice: _formatPrice,
+                    //     );
+                    //   },
+                    // ),
                   ],
 
                   // Vouchers
@@ -113,14 +125,13 @@ class CouponCenterPage extends ConsumerWidget {
                                 if (authUser == null) {
                                   // Chưa đăng nhập -> chuyển qua màn login
                                   if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Vui lòng đăng nhập để lưu voucher',
-                                        ),
+                                    showAnimatedDialog(
+                                      context: context,
+                                      dialog: AppAlertDialog(
+                                        content: "Bạn cần đăng nhập để lưu voucher",
+                                        title: 'Warning!',
                                       ),
                                     );
-                                    context.goNamed('signin');
                                   }
                                   return;
                                 }
@@ -176,7 +187,6 @@ class _PromotionCard extends StatelessWidget {
 
     return Card(
       clipBehavior: Clip.hardEdge,
-      margin: const EdgeInsets.all(4),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: Colors.orange.shade200),
@@ -186,11 +196,11 @@ class _PromotionCard extends StatelessWidget {
         children: [
           if (promotion.bannerUrl != null)
             AspectRatio(
-              aspectRatio: 3 / 4,          // banner full, tỷ lệ 16:9
+              aspectRatio: 3 / 4, // banner full, tỷ lệ 16:9
               child: Image.network(
                 promotion.bannerUrl!,
                 width: double.infinity,
-                fit: BoxFit.cover,          // fill + crop
+                fit: BoxFit.cover, // fill + crop
               ),
             ),
           Padding(
@@ -214,10 +224,7 @@ class _PromotionCard extends StatelessWidget {
                     promotion.description!,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.black54,
-                    ),
+                    style: const TextStyle(fontSize: 11, color: Colors.black54),
                   ),
                 ],
                 const SizedBox(height: 6),

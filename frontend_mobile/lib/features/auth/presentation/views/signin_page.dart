@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:frontend_mobile/core/assets/app_icon.dart';
 import 'package:frontend_mobile/core/common/app_button.dart';
+import 'package:frontend_mobile/core/contants/url_config.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:frontend_mobile/core/di/service_local.dart';
 import 'package:frontend_mobile/core/theme/app_color.dart';
@@ -46,6 +48,79 @@ class _SigninPageState extends ConsumerState<SigninPage> {
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    try {
+      // 1) Mở popup web auth trỏ tới BE /auth/google?client=mobile
+      final authUrl = '${UrlConfig.baseUrl}/auth/google?platform=mobile';
+
+      final result = await FlutterWebAuth2.authenticate(
+        url: authUrl,
+        callbackUrlScheme: 'myshop', // phải trùng scheme deep link
+      );
+
+      // result sẽ là: myshop://oauth-callback?accessToken=...&refreshToken=...
+      final uri = Uri.parse(result);
+      final accessToken = uri.queryParameters['accessToken'];
+      final refreshToken = uri.queryParameters['refreshToken'];
+
+      if (accessToken == null || refreshToken == null) {
+        throw Exception('Thiếu accessToken / refreshToken');
+      }
+
+      // 2) Gọi AuthController để lưu token + lấy profile
+      await ref
+          .read(authControllerProvider.notifier)
+          .signInWithExternalTokens(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+          );
+
+      if (!mounted) return;
+      context.go('/home');
+    } catch (e) {
+      // if (!mounted) return;
+      // ScaffoldMessenger.of(
+      //   context,
+      // ).showSnackBar(SnackBar(content: Text('Đăng nhập Google thất bại: $e')));
+    }
+  }
+  Future<void> _signInWithGithub() async {
+    try {
+      // 1) Mở popup web auth trỏ tới BE /auth/google?client=mobile
+      final authUrl = '${UrlConfig.baseUrl}/auth/github?platform=mobile';
+
+      final result = await FlutterWebAuth2.authenticate(
+        url: authUrl,
+        callbackUrlScheme: 'myshop', // phải trùng scheme deep link
+      );
+
+      // result sẽ là: myshop://oauth-callback?accessToken=...&refreshToken=...
+      final uri = Uri.parse(result);
+      final accessToken = uri.queryParameters['accessToken'];
+      final refreshToken = uri.queryParameters['refreshToken'];
+
+      if (accessToken == null || refreshToken == null) {
+        throw Exception('Thiếu accessToken / refreshToken');
+      }
+
+      // 2) Gọi AuthController để lưu token + lấy profile
+      await ref
+          .read(authControllerProvider.notifier)
+          .signInWithExternalTokens(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+          );
+
+      if (!mounted) return;
+      context.go('/home');
+    } catch (e) {
+      // if (!mounted) return;
+      // ScaffoldMessenger.of(
+      //   context,
+      // ).showSnackBar(SnackBar(content: Text('Đăng nhập Github thất bại: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -56,7 +131,8 @@ class _SigninPageState extends ConsumerState<SigninPage> {
           elevation: 0, // Bỏ bóng đổ
           leading: IconButton(
             icon: const Icon(
-              Iconsax.arrow_left_2_copy, // Dùng icon arrow của Iconsax cho đồng bộ
+              Iconsax
+                  .arrow_left_2_copy, // Dùng icon arrow của Iconsax cho đồng bộ
               color: AppColor.textpriCol, // Màu đen/xám theo theme text
             ),
             onPressed: () {
@@ -65,7 +141,7 @@ class _SigninPageState extends ConsumerState<SigninPage> {
                 context.pop();
               } else {
                 // Nếu không còn trang trước (ví dụ chạy thẳng vào login), về trang chủ hoặc onboarding
-                context.go('/');
+                context.go('/home');
               }
             },
           ),
@@ -122,8 +198,7 @@ class _SigninPageState extends ConsumerState<SigninPage> {
           style: TextButton.styleFrom(
             padding: EdgeInsets.zero,
             minimumSize: Size(0, 0),
-            tapTargetSize:
-                MaterialTapTargetSize.shrinkWrap, 
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           onPressed: () {
             context.pushReplacementNamed('signup');
@@ -146,8 +221,8 @@ class _SigninPageState extends ConsumerState<SigninPage> {
       spacing: 25,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _iconMethod(AppIcon.googleIcon, () => {}),
-        _iconMethod(AppIcon.apppleIcon, () => {}),
+        _iconMethod(AppIcon.googleIcon, _signInWithGoogle),
+        _iconMethod(AppIcon.githubIcon, _signInWithGithub),
       ],
     );
   }

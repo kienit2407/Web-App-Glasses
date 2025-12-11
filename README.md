@@ -7,7 +7,18 @@
   - Web client: https://web-app-glasses-x57x.vercel.app
 
 - 📱 Mobile App (Flutter / Android):
-  - APK: https://drive.google.com/file/d/12I8_mCC-xWWNeGWlUX-rrqp3aKhObqGF/view?usp=sharing
+  ## Tải app Android (APK)
+
+ Method 1: Qua GitHub Actions
+- Vào tab **Actions**
+- Chọn workflow **Build Android APK**
+- Chọn run mới nhất
+- Kéo xuống cuối → mục **Artifacts** → tải `app-release-apk`
+
+  Method 2: Qua Releases
+- Vào tab **Releases**
+- Chọn release mới nhất
+- Tải file `app-release.apk`
 ---
 > **🕶️Glasses Shop** iGlasses Shop is a production-grade, full-stack e-commerce application built to learn and master Node.js, Flutter, real-time communication, and modern backend architecture. The project provides a complete buying experience with secure authentication, admin features, optimized API performance, and a smooth cross-platform UI.
 ---

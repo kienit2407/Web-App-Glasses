@@ -85,6 +85,12 @@ class AuthRepository {
     return userJson;
   }
 
+  Future<Map<String, dynamic>> getProfile() async {
+    final meRes = await _dio.get('/users/me');
+    final meBody = meRes.data as Map<String, dynamic>;
+    return meBody['data'] as Map<String, dynamic>;
+  }
+
   Future<void> logout() async {
     await _tokenStorage.clearToken();
   }

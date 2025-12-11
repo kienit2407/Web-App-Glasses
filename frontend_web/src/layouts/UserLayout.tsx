@@ -18,7 +18,7 @@ export const UserLayout = () => {
     useEffect(() => {
         const run = async () => {
             try {
-                const res = await API.get("admin/settings");
+                const res = await API.get("/shop-settings");
                 setSettings(res.data?.data || null);
             } catch (err) {
                 console.error("Load settings lỗi:", err);

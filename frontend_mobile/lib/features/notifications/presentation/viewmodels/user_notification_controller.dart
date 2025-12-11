@@ -4,12 +4,11 @@ import 'package:frontend_mobile/features/notifications/data/models/user_notifica
 import 'package:frontend_mobile/features/notifications/data/repository/user_notification_repository.dart';
 import 'package:frontend_mobile/features/notifications/presentation/viewmodels/user_notification_state.dart';
 
-class UserNotificationController
-    extends StateNotifier<UserNotificationState> {
+class UserNotificationController extends StateNotifier<UserNotificationState> {
   final UserNotificationRepository _repo;
 
   UserNotificationController(this._repo)
-      : super(UserNotificationState.initial()) {
+    : super(UserNotificationState.initial()) {
     loadPage(1);
   }
 
@@ -19,23 +18,20 @@ class UserNotificationController
   Future<void> loadPage(int page) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final res =
-          await _repo.getNotifications(page: page, limit: state.pageSize);
-
-      final unread = _calcUnread(res.items);
+      final res = await _repo.getNotifications(
+        page: page,
+        limit: state.pageSize,
+      );
 
       state = state.copyWith(
         isLoading: false,
         items: res.items,
         page: page,
         total: res.total,
-        unreadCount: unread,
+        unreadCount: res.unreadCount, // lấy từ BE
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
@@ -43,52 +39,66 @@ class UserNotificationController
 
   Future<void> markRead(UserNotification item) async {
     if (item.isRead) return;
-    // update local
+
+    // optional: cập nhật local cho mượt
     final updated = state.items
         .map((n) => n.id == item.id ? n.copyWith(isRead: true) : n)
         .toList();
     state = state.copyWith(
       items: updated,
-      unreadCount: _calcUnread(updated),
+      // tạm giảm 1, tí nữa refresh lại vẫn chuẩn theo BE
+      unreadCount: state.unreadCount > 0 ? state.unreadCount - 1 : 0,
     );
 
     try {
       await _repo.markRead(item.id);
+      await refresh(); // 👈 sync chuẩn với BE
     } catch (_) {
-      // nếu fail thì thôi, lần sau load lại
+      await refresh(); // lỗi thì cũng sync lại
     }
   }
 
   Future<void> markAllRead() async {
+    // update local cho thấy UI phản hồi ngay
     final updated = state.items.map((n) => n.copyWith(isRead: true)).toList();
     state = state.copyWith(items: updated, unreadCount: 0);
 
     try {
       await _repo.markAllRead();
-    } catch (_) {}
+      await refresh(); //  sync lại theo BE
+    } catch (_) {
+      await refresh();
+    }
   }
 
   Future<void> deleteOne(UserNotification item) async {
     final updated = state.items.where((n) => n.id != item.id).toList();
+    final newUnread = item.isRead
+        ? state.unreadCount
+        : (state.unreadCount > 0 ? state.unreadCount - 1 : 0);
+
     state = state.copyWith(
       items: updated,
       total: state.total > 0 ? state.total - 1 : 0,
-      unreadCount: _calcUnread(updated),
+      unreadCount: newUnread,
     );
 
     try {
       await _repo.deleteOne(item.id);
-    } catch (_) {}
+      await refresh(); //  luôn sync lại
+    } catch (_) {
+      await refresh();
+    }
   }
 
   Future<void> deleteAll() async {
-    state = state.copyWith(
-      items: [],
-      total: 0,
-      unreadCount: 0,
-    );
+    // local
+    state = state.copyWith(items: [], total: 0, unreadCount: 0);
     try {
       await _repo.deleteAll();
-    } catch (_) {}
+      await refresh(); //  bảo đảm sau khi BE xử lý xong, state khớp 100%
+    } catch (_) {
+      await refresh();
+    }
   }
 }

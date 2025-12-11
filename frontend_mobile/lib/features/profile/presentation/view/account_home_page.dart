@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_mobile/core/assets/app_image.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
@@ -37,7 +38,7 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
     // Đã đăng nhập -> như cũ
     final state = ref.watch(profileControllerProvider);
     final user = state.user;
-  
+
     final ordersState = ref.watch(ordersControllerProvider);
     final counts = ordersState.statusCounts;
 
@@ -48,10 +49,12 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
     final deliveredCount = counts['delivered'] ?? 0;
     final cancelledCount = counts['cancelled'] ?? 0;
     return Scaffold(
+
       backgroundColor: const Color(0xfff5f5f5),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
+            systemOverlayStyle: SystemUiOverlayStyle.light,
             actions: [
               IconButton(
                 icon: const Icon(Iconsax.message_question),
@@ -60,22 +63,30 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
             ],
             pinned: true,
             expandedHeight: 150,
+
             backgroundColor: AppColor.buttonprimaryCol,
             foregroundColor: Colors.white,
             flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.none,
               background: GestureDetector(
                 onTap: () => context.pushNamed('account-settings'),
                 child: InkWell(
                   child: Container(
+                    width: double.infinity,
+                    height: double.infinity,
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Color(0xfff9735b), Color(0xfffdc46b)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white24,
+                          Colors.white,
+                        ],
+                        begin: Alignment.centerRight,
+                        end: Alignment.centerLeft,
                       ),
                       image: DecorationImage(
-                        image: AssetImage(AppImage.bgProfile),
-                        fit: BoxFit.cover,
+                        image: AssetImage(AppImage.nitro2),
+
+                        fit: BoxFit.fill,
                       ),
                     ),
                     child: Padding(
@@ -90,27 +101,42 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
                         children: [
                           Stack(
                             children: [
-                              CircleAvatar(
-                                radius: 32,
-                                backgroundColor: Colors.white,
-                                backgroundImage:
-                                    (user?.avatarUrl != null &&
-                                        user!.avatarUrl!.isNotEmpty)
-                                    ? NetworkImage(user.avatarUrl!) as ImageProvider
-                                    : null,
-                                child:
-                                    (user?.avatarUrl == null ||
-                                        user!.avatarUrl!.isEmpty)
-                                    ? Text(
-                                        _initials(
-                                          user?.displayName ?? user?.email ?? 'U',
-                                        ),
-                                        style: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      )
-                                    : null,
+                              Align(
+                                alignment: Alignment.center,
+                                child: CircleAvatar(
+                                  radius: 32,
+                                  backgroundColor: Colors.white,
+                                  backgroundImage:
+                                      (user?.avatarUrl != null &&
+                                          user!.avatarUrl!.isNotEmpty)
+                                      ? NetworkImage(user.avatarUrl!)
+                                            as ImageProvider
+                                      : null,
+                                  child:
+                                      (user?.avatarUrl == null ||
+                                          user!.avatarUrl!.isEmpty)
+                                      ? Text(
+                                          _initials(
+                                            user?.displayName ??
+                                                user?.email ??
+                                                'U',
+                                          ),
+                                          style: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                              ),
+                              Positioned(
+                                top: 28,
+                                left: -6,
+                                child: Image.asset(
+                                  AppImage.avtFrame,
+                                  width: 77,
+                                  height: 77,
+                                ),
                               ),
                             ],
                           ),
@@ -121,9 +147,11 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  user?.displayName ?? user?.email ?? 'Người dùng',
+                                  user?.displayName ??
+                                      user?.email ??
+                                      'Người dùng',
                                   style: const TextStyle(
-                                    color: Colors.white,
+                                    color: Colors.black,
                                     fontSize: 18,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -132,7 +160,7 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
                                 Text(
                                   user?.email ?? '',
                                   style: const TextStyle(
-                                    color: Colors.white70,
+                                    color: Colors.black54,
                                     fontSize: 13,
                                   ),
                                 ),
@@ -314,7 +342,7 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
     return Scaffold(
       backgroundColor: const Color(0xfff5f5f5),
       appBar: AppBar(
-        title: const Text('Tài khoản'),
+        title: const Text('Tài khoản', style: TextStyle(fontWeight: FontWeight.w600),),
         backgroundColor: AppColor.buttonprimaryCol,
         foregroundColor: Colors.white,
         centerTitle: true,
@@ -343,14 +371,21 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => context.goNamed('signup'),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                          color: AppColor.buttonprimaryCol,
+                        ),
+                        foregroundColor: AppColor.buttonprimaryCol,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: () => context.pushNamed('signup'),
                       child: const Text('Đăng ký'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => context.goNamed('signin'),
+                      onPressed: () => context.pushNamed('signin'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColor.buttonprimaryCol,
                         foregroundColor: Colors.white,

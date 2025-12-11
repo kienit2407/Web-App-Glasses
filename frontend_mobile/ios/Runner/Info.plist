@@ -32,6 +32,7 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -45,5 +46,20 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- 🔥 Thêm từ đây trở xuống -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.yourcompany.frontend-mobile</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>myshop</string>
+			</array>
+		</dict>
+	</array>
+	<!-- 🔥 Đến đây -->
 </dict>
 </plist>
