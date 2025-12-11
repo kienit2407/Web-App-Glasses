@@ -1,6 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_mobile/features/home/data/repository/catalog_repository.dart';
-
 
 import 'catalog_state.dart';
 
@@ -33,7 +33,6 @@ class CatalogController extends StateNotifier<CatalogState> {
         total: pageData.total,
       );
     } catch (e) {
-      // TODO: bạn có thể log hoặc show snackbar
       state = state.copyWith(isLoading: false);
     }
   }
@@ -68,6 +67,7 @@ class CatalogController extends StateNotifier<CatalogState> {
 
   Future<void> refresh() async {
     state = const CatalogState(limit: 12); // reset
+    debugPrint('[CatalogController] refresh called');
     await loadInitial();
   }
 }

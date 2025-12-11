@@ -1,4 +1,22 @@
 // lib/features/auth/data/models/user_model.dart
+class AuthProviderInfo {
+  final String provider;
+  final String providerId;
+
+  AuthProviderInfo({required this.provider, required this.providerId});
+
+  factory AuthProviderInfo.fromJson(Map<String, dynamic> json) {
+    return AuthProviderInfo(
+      provider: json['provider'] as String? ?? '',
+      providerId: json['provider_id'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'provider': provider, 'provider_id': providerId};
+  }
+}
+
 class DeliveringAddress {
   final String id;
   final String recipientName;
@@ -73,7 +91,7 @@ class UserModel {
   final String id;
   final String email;
   final String? displayName;
-  final String? authProvider;
+  final List<AuthProviderInfo> authProviders;
   final String? avatarUrl;
   final String? avatarId;
   final List<String> roles;
@@ -88,7 +106,7 @@ class UserModel {
     required this.id,
     required this.email,
     this.displayName,
-    this.authProvider,
+    required this.authProviders,
     this.avatarUrl,
     this.avatarId,
     required this.roles,
@@ -104,11 +122,14 @@ class UserModel {
     final addressesJson =
         (json['delivering_addresses'] as List<dynamic>? ?? []);
 
+    final authProvidersJson = (json['auth_provider'] as List<dynamic>? ?? []);
     return UserModel(
       id: json['_id'] as String? ?? '',
       email: json['email'] as String? ?? '',
       displayName: json['display_name'] as String?,
-      authProvider: json['auth_provider'] as String?,
+      authProviders: authProvidersJson
+          .map((e) => AuthProviderInfo.fromJson(e as Map<String, dynamic>))
+          .toList(),
       avatarUrl: json['avatar_url'] as String?,
       avatarId: json['avatar_id'] as String?,
       roles:
@@ -138,7 +159,7 @@ class UserModel {
       '_id': id,
       'email': email,
       'display_name': displayName,
-      'auth_provider': authProvider,
+      'auth_provider': authProviders.map((e) => e.toJson()).toList(),
       'avatar_url': avatarUrl,
       'avatar_id': avatarId,
       'roles': roles,

@@ -1,4 +1,6 @@
 // lib/main_shell.dart
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_mobile/core/assets/app_image.dart';
@@ -37,6 +39,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     final unread = notifState.unreadCount;
 
     return Scaffold(
+      extendBody: true,
       body: Stack(
         children: [
           IndexedStack(index: _index, children: _pages),
@@ -45,70 +48,82 @@ class _MainShellState extends ConsumerState<MainShell> {
       ),
       bottomNavigationBar: Transform.translate(
         offset: const Offset(0, 20),
-        child: Container(
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage(AppImage.bgNav),
-              fit: BoxFit.cover,
-            ),
-          ),
-          child: NavigationBarTheme(
-            data: NavigationBarThemeData(
-              iconTheme: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return const IconThemeData(color: Colors.white);
-                }
-                return const IconThemeData(color: Colors.white70);
-              }),
-              labelTextStyle: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  );
-                }
-                return const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                );
-              }),
-            ),
-            child: NavigationBar(
-              backgroundColor: Colors.transparent,
-              surfaceTintColor: Colors.transparent,
-              indicatorColor: AppColor.buttonprimaryCol.withOpacity(0.2),
-              selectedIndex: _index,
-              onDestinationSelected: (i) => setState(() => _index = i),
-              destinations: [
-                const NavigationDestination(
-                  icon: Icon(Iconsax.home_copy),
-                  selectedIcon: Icon(Iconsax.home_1),
-                  label: 'Trang chủ',
+        child: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 35, sigmaY: 35),
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: AppColor.textpriCol.withOpacity(.4), width: .4),
                 ),
-                const NavigationDestination(
-                  icon: Icon(Iconsax.discount_shape_copy),
-                  selectedIcon: Icon(Iconsax.discount_shape),
-                  label: 'Khuyến mãi',
+                color: Colors.white.withOpacity(.7),
+                // image: DecorationImage(
+                //   image: AssetImage(AppImage.bgNav),
+                //   fit: BoxFit.cover,
+                // ),
+              ),
+              child: NavigationBarTheme(
+                data: NavigationBarThemeData(
+                  iconTheme: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return const IconThemeData(
+                        color: AppColor.buttonprimaryCol
+                      );
+                    }
+                    return const IconThemeData(color: Color(0xff6C757D));
+                  }),
+                  labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return const TextStyle(
+                        color: AppColor.buttonprimaryCol,
+                        fontSize: 10,
+                      );
+                    }
+                    return const TextStyle(
+                      color: Color(0xff6C757D),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    );
+                  }),
                 ),
-                NavigationDestination(
-                  icon: _NavIconWithBadge(
-                    icon: Iconsax.notification_copy,
-                    count: unread,
-                  ),
-                  selectedIcon: _NavIconWithBadge(
-                    icon: Iconsax.notification,
-                    count: unread,
-                  ),
-                  label: 'Thông báo',
+                child: NavigationBar(
+                  labelPadding: EdgeInsets.zero,
+                  backgroundColor: Colors.transparent,
+                  surfaceTintColor: Colors.transparent,
+                  overlayColor: WidgetStatePropertyAll(Colors.transparent),
+                  indicatorColor: Colors.transparent,
+                  selectedIndex: _index,
+                  onDestinationSelected: (i) => setState(() => _index = i),
+                  destinations: [
+                    const NavigationDestination(
+                      icon: Icon(Iconsax.home_copy),
+                      selectedIcon: Icon(Iconsax.home_1),
+                      label: 'Trang chủ',
+                    ),
+                    const NavigationDestination(
+                      icon: Icon(Iconsax.discount_shape_copy),
+                      selectedIcon: Icon(Iconsax.discount_shape),
+                      label: 'Khuyến mãi',
+                    ),
+                    NavigationDestination(
+                      icon: _NavIconWithBadge(
+                        icon: Iconsax.notification_copy,
+                        count: unread,
+                      ),
+                      selectedIcon: _NavIconWithBadge(
+                        icon: Iconsax.notification,
+                        count: unread,
+                      ),
+                      label: 'Thông báo',
+                    ),
+                    const NavigationDestination(
+                      icon: Icon(Iconsax.user_copy),
+                      selectedIcon: Icon(Iconsax.user),
+                      label: 'Tài khoản',
+                    ),
+                  ],
                 ),
-                const NavigationDestination(
-                  icon: Icon(Iconsax.user_copy),
-                  selectedIcon: Icon(Iconsax.user),
-                  label: 'Tài khoản',
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -118,10 +133,7 @@ class _MainShellState extends ConsumerState<MainShell> {
 }
 
 class _NavIconWithBadge extends StatelessWidget {
-  const _NavIconWithBadge({
-    required this.icon,
-    required this.count,
-  });
+  const _NavIconWithBadge({required this.icon, required this.count});
 
   final IconData icon;
   final int count;
@@ -147,10 +159,7 @@ class _NavIconWithBadge extends StatelessWidget {
               color: Colors.red,
               borderRadius: BorderRadius.circular(999),
             ),
-            constraints: const BoxConstraints(
-              minWidth: 14,
-              minHeight: 14,
-            ),
+            constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
             child: Text(
               display,
               textAlign: TextAlign.center,

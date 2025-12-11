@@ -349,7 +349,7 @@ export const Navbar = () => {
                   }`}
               />
             </div>
-        
+
           </div>
 
           <div className="hidden md:flex items-center gap-3">
@@ -368,7 +368,7 @@ export const Navbar = () => {
               items={notifItems}
               unreadCount={notifUnread}
               loading={notifLoading}
-              hasMore={false}           
+              hasMore={false}
               onLoadMore={undefined}
               onItemClick={async (item) => {
                 if (!item.isRead) {
@@ -402,9 +402,11 @@ export const Navbar = () => {
                 </Button>
               </Link>
             ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button className="flex items-center gap-2 px-2" variant="ghost">
+              <DropdownMenu
+
+              >
+                <DropdownMenuTrigger asChild >
+                  <Button className="flex items-center gap-2 px-2 hover:bg-blue-50 focus:text-blue-700 data-[state=open]:bg-blue-100 transition-colors" variant="ghost" >
                     <Avatar className="h-7 w-7">
                       <AvatarImage src={user.avatar_url} alt={user.display_name} />
                       <AvatarFallback>{getInitials(user.display_name)}</AvatarFallback>
@@ -430,20 +432,24 @@ export const Navbar = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={goAccount}>
+                  <DropdownMenuItem onClick={goAccount}
+                    className="focus:bg-blue-100 focus:text-blue-700 cursor-pointer"
+                  >
                     <UserCircle className="mr-2 h-4 w-4" />
                     <span>Tài khoản của tôi</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={goOrders}>
+                  </DropdownMenuItem >
+                  <DropdownMenuItem onClick={goOrders} className="focus:bg-blue-100 focus:text-blue-700 cursor-pointer">
                     <Package className="mr-2 h-4 w-4" />
                     <span>Đơn hàng</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={goCoupon}>
+                  </DropdownMenuItem >
+                  <DropdownMenuItem onClick={goCoupon} className="focus:bg-blue-100 focus:text-blue-700 cursor-pointer">
                     <Ticket className="mr-2 h-4 w-4" />
                     <span>Voucher của tôi</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={onLogout}>
+                  <DropdownMenuItem onClick={onLogout}
+                    className="focus:bg-red-100 focus:text-red-600 cursor-pointer"
+                  >
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Đăng xuất</span>
                   </DropdownMenuItem>
@@ -466,9 +472,36 @@ export const Navbar = () => {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden py-4 space-y-3 border-t border-border mt-2">
-            <Badge count={12} size="small">
-              <Bell className="h-[18px] w-[18px]" />
-            </Badge>
+            {user ? (<NotificationBell
+              items={notifItems}
+              unreadCount={notifUnread}
+              loading={notifLoading}
+              hasMore={false}
+              onLoadMore={undefined}
+              onItemClick={async (item) => {
+                if (!item.isRead) {
+                  // optimistic update
+                  markReadLocal(item.id);
+                  await markRead(item.id);
+                }
+                navigate(`/orders/${item.meta.order_id}`);
+
+              }}
+              onViewAll={() => {
+                navigate("/account/notifications");
+              }}
+              onMarkAllRead={async () => {
+                markAllReadLocal();
+                await markAllRead();
+              }}
+              onOpenChange={(open) => {
+                if (open && user) {
+                  // mỗi lần mở dropdown, đảm bảo sync lại với server
+                  fetchFirstPage();
+                }
+              }}
+            />) : null}
+
 
             <Link to="/" className="block py-2 text-foreground hover:text-primary">
               Trang chủ
@@ -495,18 +528,14 @@ export const Navbar = () => {
             </Link>
 
             <Link
-              to="/about"
-              className="block py-2 text-foreground hover:text-primary"
+              to="/coupon"
+              className={`${baseNavItem} ${isActivePath("/coupon")
+                ? "text-primary"
+                : "text-foreground hover:text-primary"
+                }`}
             >
-              Về chúng tôi
+              Khuyến mãi
             </Link>
-            <Link
-              to="/contact"
-              className="block py-2 text-foreground hover:text-primary"
-            >
-              Liên hệ
-            </Link>
-
             <div className="flex gap-2 pt-2">
               <Link to="/cart" className="flex-1">
                 <Button variant="outline" className="w-full">

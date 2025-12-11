@@ -141,7 +141,7 @@ export const ProfileTab = () => {
                         </Upload>
 
                         <Text type="secondary" className="text-xs">
-                            Dung lượng &lt 2MB, định dạng: JPG, PNG
+                            Dung lượng ít hơn 2MB, định dạng: JPG, PNG
                         </Text>
                     </Space>
 

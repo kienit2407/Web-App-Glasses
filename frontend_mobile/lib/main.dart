@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
@@ -21,6 +22,11 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 void main() async {
   // guardiantee to fluter started first!
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    systemNavigationBarColor: Colors.transparent, // Làm trong suốt thanh dưới đáy Android
+    statusBarColor: Colors.transparent,
+  ));
   // 1. Tạo DioClient & TokenStorage một lần
   final dioClient = await DioClient.create();
   final tokenStorage = TokenStorage();

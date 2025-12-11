@@ -7,7 +7,7 @@
   - Web client: https://web-app-glasses-x57x.vercel.app
 
 - 📱 Mobile App (Flutter / Android):
-  - APK: https://drive.google.com/file/d/12I8_mCC-xWWNeGWlUX-rrqp3aKhObqGF/view?usp=sharing
+  - Download that side of readme 👉🏻
 ---
 > **🕶️Glasses Shop** iGlasses Shop is a production-grade, full-stack e-commerce application built to learn and master Node.js, Flutter, real-time communication, and modern backend architecture. The project provides a complete buying experience with secure authentication, admin features, optimized API performance, and a smooth cross-platform UI.
 ---
@@ -102,6 +102,7 @@
 | 💻🌐 Flutter | Cross-Platform |
 | 🌊🔄 Riverpod | State Management |
 | 🔑📦 Hive | Storage Token |
+| 🛣️🚦 Go Router | Navigate Screen |
 | 📡🔗 Dio | HTTP Networking |
 ---
 ### 🏆 This is a studying place where i learn about node.js and i can build a server by myself

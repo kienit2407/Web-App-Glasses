@@ -1,6 +1,7 @@
 import { cloudinaryClient } from "../../../config/cloudinary";
 import { IBannerImage, IShippingOrigin, ShopSettings } from "../../../models/shop.setting.model";
 import { uploadImageBuffer } from "../../../utils/cloudinary.helper";
+import { geoService } from "../../client/services/geo.service";
 
 export const settingsService = {
     async getSettings() {
@@ -15,12 +16,25 @@ export const settingsService = {
         const settings = await this.getSettings();
         const obj = settings.toObject();
 
-        // sort banner theo position cho chắc
+        // sort banner
         obj.banner_list = (obj.banner_list || []).sort(
             (a: IBannerImage, b: IBannerImage) => a.position - b.position
         );
 
-        return obj;
+        const normalized = await geoService.getAddressDetails(
+            obj.shipping_origin!.province_code,
+            obj.shipping_origin!.district_code,
+            obj.shipping_origin!.ward_code
+        );
+
+        return {
+            ...obj,
+            shipping_origin: {
+                ...obj.shipping_origin,
+                ...normalized,
+                // => có: province_name, district_name, ward_name, full_location
+            },
+        };
     },
     // Dùng cho AdminSettings / FE user
     async getShippingOrigin(): Promise<IShippingOrigin | null> {

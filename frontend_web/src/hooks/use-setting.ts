@@ -6,6 +6,10 @@ export interface ShippingOrigin {
     district_code: string;
     ward_code: string;
     address_line: string;
+    district_name :string
+    full_location : string
+    province_name: string
+    ward_name: string
 }
 
 export interface ShopSettings {

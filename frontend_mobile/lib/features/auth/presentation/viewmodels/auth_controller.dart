@@ -1,10 +1,8 @@
-
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:frontend_mobile/core/network/token_storage.dart';
 import 'package:frontend_mobile/features/auth/data/repositories/auth_repository.dart';
-import 'package:frontend_mobile/features/auth/data/models/user_model.dart'; 
+import 'package:frontend_mobile/features/auth/data/models/user_model.dart';
 
 class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
   AuthController(this.ref) : super(const AsyncLoading()) {
@@ -19,6 +17,7 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
   bool get isLoggedIn => state.hasValue && state.value != null;
 
   Future<void> _bootstrap() async {
+    print('[AuthController] bootstrap called');
     try {
       final refresh = await _tokenStorage.getRefreshToken();
       if (refresh == null || refresh.isEmpty) {
@@ -34,7 +33,7 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
       state = const AsyncData(null);
     }
   }
-  
+
   Future<void> signIn(String email, String password) async {
     state = const AsyncLoading();
     try {
@@ -42,8 +41,33 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
       final user = UserModel.fromJson(userJson);
       state = AsyncData(user);
     } catch (e, st) {
+      // Cập nhật state để UI biết là có lỗi (nếu muốn show message đẹp)
       state = AsyncError(e, st);
-      rethrow;
+
+      // LOG CHO DEV THÔI, KHÔNG rethrow
+      // ignore: avoid_print
+      print('SignIn error: $e');
+
+      // KHÔNG rethrow;  <-- xóa dòng này
+    }
+  }
+
+  Future<void> signInWithExternalTokens({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      await _tokenStorage.saveToken(accessToken, refreshToken);
+
+      final userJson = await _authRepo.getProfile();
+      final user = UserModel.fromJson(userJson);
+      state = AsyncData(user);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      // log cho dễ debug, và rethrow để UI biết là fail
+      // ignore: avoid_print
+      print('signInWithExternalTokens error: $e');
     }
   }
 
