@@ -44,6 +44,7 @@ import { AdminSupportPage } from "./modules/admin/pages/AdminSupportPage"
 import PaymentResult from "./modules/user/pages/PaymentResult"
 import { VirtualTryOnPage } from "./modules/user/pages/VirtualTryOn"
 import OAuthCallback from "./modules/user/pages/OAuthCallback"
+import ScrollToTop from "./modules/admin/components/ScrollToTop"
 
 const queryClient = new QueryClient() // dùng để quản lý cache dữ liệu api
 
@@ -70,6 +71,7 @@ const App = () => {
       <TooltipProvider>
         <Sonner position="top-right" richColors />
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             {/* USER LAYOUT (navbar + footer) */}
             <Route element={<UserLayout />}>

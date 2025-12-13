@@ -25,13 +25,13 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   final List<String> _suggestions = [];
   final List<String> _recent = []; // sẽ load từ SharedPreferences
 
-  // 🔹 KEY dùng để lưu trong SharedPreferences
+
   static const _recentKey = 'search_recent_keywords';
 
   @override
   void initState() {
     super.initState();
-    _loadRecent(); // 👉 load lịch sử ngay khi mở màn
+    _loadRecent(); // load lịch sử ngay khi mở màn
   }
 
   @override
@@ -139,7 +139,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   final kw = _recent[index];
                   return ListTile(
                     leading: const Icon(Icons.history, size: 18),
-                    title: Text(kw, style: const TextStyle(fontSize: 14)),
+                    title: Text(kw, style: const TextStyle(fontSize: 12)),
                     onTap: () => _onSubmit(kw),
                   );
                 },
@@ -183,9 +183,11 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       title: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
               child: Container(
+                alignment: Alignment.center,
                 height: 36,
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -193,17 +195,20 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const Icon(Icons.search, size: 18, color: Colors.grey),
                     const SizedBox(width: 4),
                     Expanded(
                       child: TextField(
+                        style: TextStyle(fontSize: 12),
                         cursorColor: AppColor.buttonprimaryCol,
                         cursorWidth: 2,
                         controller: _controller,
                         autofocus: true,
                         decoration: const InputDecoration(
                           hintText: 'Tìm kiếm sản phẩm',
+                          hintStyle: TextStyle(fontSize: 12),
                           border: InputBorder.none,
                           isDense: true,
                         ),
@@ -240,14 +245,14 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
   Widget _buildHighlightedText(String text, String query) {
     if (query.isEmpty) {
-      return Text(text, style: const TextStyle(fontSize: 14));
+      return Text(text, style: const TextStyle(fontSize: 13));
     }
 
     final normalizedText = _normalizeViLib(text);
     final normalizedQuery = _normalizeViLib(query);
 
     if (!normalizedText.contains(normalizedQuery)) {
-      return Text(text, style: const TextStyle(fontSize: 14));
+      return Text(text, style: const TextStyle(fontSize: 13));
     }
 
     final start = normalizedText.indexOf(normalizedQuery);
@@ -255,12 +260,12 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
     return RichText(
       text: TextSpan(
-        style: const TextStyle(color: Colors.black, fontSize: 14),
+        style: const TextStyle(color: Colors.black, fontSize: 13),
         children: [
           TextSpan(text: text.substring(0, start)),
           TextSpan(
             text: text.substring(start, end),
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           TextSpan(text: text.substring(end)),
         ],

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:frontend_mobile/core/di/providers.dart' show cartControllerProvider;
+import 'package:frontend_mobile/core/di/providers.dart'
+    show cartControllerProvider;
 import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:frontend_mobile/features/cart/data/models/cart_models.dart';
 import 'package:frontend_mobile/features/cart/presentation/viewmodels/cart_state.dart';
@@ -44,7 +45,10 @@ class _CartPageState extends ConsumerState<CartPage> {
     if (cart == null || cart.items.isEmpty) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Giỏ hàng', style: TextStyle(fontWeight: FontWeight.w600)),
+          title: const Text(
+            'Giỏ hàng',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          ),
           centerTitle: true,
           elevation: 0,
           backgroundColor: AppColor.buttonprimaryCol,
@@ -96,11 +100,15 @@ class _CartPageState extends ConsumerState<CartPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Giỏ hàng ($totalItems)', overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600),),
+        title: Text(
+          'Giỏ hàng ($totalItems)',
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+        ),
         centerTitle: true,
         elevation: 0,
         backgroundColor: AppColor.buttonprimaryCol,
-          foregroundColor: Colors.white,
+        foregroundColor: Colors.white,
       ),
       backgroundColor: const Color(0xfff5f5f5),
       body: RefreshIndicator(
@@ -182,9 +190,10 @@ class _CartPageState extends ConsumerState<CartPage> {
                           Text(
                             _formatPrice(selectedAmount),
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: AppColor.buttonprimaryCol,
+                              
                             ),
                           ),
                         ],
@@ -218,7 +227,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                       ),
                       child: Text(
                         'Mua hàng (${selectedItems.length})',
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Colors.white, fontSize: 13),
                       ),
                     ),
                   ],
@@ -243,7 +252,7 @@ class _CartPageState extends ConsumerState<CartPage> {
       key: ValueKey(item.itemId),
       endActionPane: ActionPane(
         motion: const DrawerMotion(),
-        extentRatio: 0.25, // phần trăm chiều rộng action
+        extentRatio: 0.2, // Giảm tỷ lệ kéo để gọn hơn
         children: [
           SlidableAction(
             onPressed: (_) {
@@ -255,208 +264,200 @@ class _CartPageState extends ConsumerState<CartPage> {
             foregroundColor: Colors.white,
             icon: Icons.delete_outline,
             label: 'Xoá',
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(10),
+              bottomLeft: Radius.circular(10),
+            ),
           ),
         ],
       ),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        // Giảm margin và padding để item khít nhau hơn
+        padding: const EdgeInsets.fromLTRB(8, 12, 12, 12),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(8), // Shopee bo góc nhẹ hơn
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
         child: Row(
-          crossAxisAlignment:
-              CrossAxisAlignment.center, // ảnh + checkbox nằm giữa
+          crossAxisAlignment: CrossAxisAlignment.center, // Căn lề trên
           children: [
-            // checkbox
-            Padding(
-              padding: EdgeInsetsGeometry.zero,
-              child: Checkbox(
-                activeColor: AppColor.buttonprimaryCol,
-                value: selected,
-                onChanged: (_) => controller.toggleSelectItem(item.itemId),
+            // 1. CHECKBOX "SHOPEE STYLE" (Nhỏ gọn)
+            SizedBox(
+              width: 30, // Giới hạn chiều rộng vùng bấm
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Transform.scale(
+                  scale: 0.9, // Thu nhỏ kích thước checkbox
+                  child: Checkbox(
+                    activeColor: AppColor.buttonprimaryCol,
+                    materialTapTargetSize:
+                        MaterialTapTargetSize.shrinkWrap, // Bỏ padding thừa
+                    visualDensity: VisualDensity.compact, // Thu gọn density
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    value: selected,
+                    onChanged: (_) => controller.toggleSelectItem(item.itemId),
+                  ),
+                ),
               ),
             ),
 
-            // ảnh
+            // 2. ẢNH SẢN PHẨM
             ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(4), // Bo góc nhẹ
               child: Image.network(
-                item.thumbnailUrl ??
-                    'https://via.placeholder.com/80x80?text=No+Image',
-                width: 70,
-                height: 70,
+                item.thumbnailUrl!,
+                width: 80, // Ảnh to hơn xíu cho rõ
+                height: 80,
                 fit: BoxFit.cover,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
 
-            // info + qty + subtotal
+            // 3. THÔNG TIN + SỐ LƯỢNG
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // tên
+                  // Tên sản phẩm
                   Text(
                     item.productName,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                      fontWeight:
+                          FontWeight.w400, // Shopee dùng font thường cho tên
+                      height: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 4),
-
-                  // thuộc tính
-                  if (item.frameShape != null || item.frameColor != null)
-                    Text(
-                      [
-                        if (item.frameShape != null) item.frameShape,
-                        if (item.frameColor != null) item.frameColor,
-                      ].join(' • '),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColor.buttomSecondCol,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-
                   const SizedBox(height: 6),
 
-                  // giá / đơn vị
-                  Row(
-                    children: [
-                      if (item.hasDiscount)
-                        Text(
-                          _formatPrice(item.originalUnitPrice),
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey,
-                            decoration: TextDecoration.lineThrough,
-                          ),
-                        ),
-                      if (item.hasDiscount) const SizedBox(width: 4),
-                      Text(
-                        _formatPrice(item.unitPrice),
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: AppColor.buttonprimaryCol,
-                        ),
+                  // Phân loại hàng (Biến thể) - Style box xám
+                  if (item.frameShape != null || item.frameColor != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
                       ),
-                      if (item.discountPercent > 0) ...[
-                        const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            '-${item.discountPercent}%',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                      decoration: BoxDecoration(
+                        color: const Color(0xfff5f5f5), // Nền xám nhạt
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              [
+                                if (item.frameShape != null) item.frameShape,
+                                if (item.frameColor != null) item.frameColor,
+                              ].join(' , '),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        ),
-                      ],
-                    ],
-                  ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.keyboard_arrow_down,
+                            size: 14,
+                            color: Colors.grey,
+                          ),
+                        ],
+                      ),
+                    ),
 
                   const SizedBox(height: 8),
 
-                  // qty + subtotal (stepper nhỏ lại, không icon thùng rác)
+                  // Giá và Bộ tăng giảm nằm cùng hàng
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // stepper nhỏ
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove, size: 14),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 10,
-                                minHeight: 10,
-                              ),
-                              onPressed: state.isUpdating || item.quantity <= 1
-                                  ? null
-                                  : () {
-                                      controller.updateItemQuantity(
-                                        item.itemId,
-                                        item.quantity - 1,
-                                      );
-                                    },
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 5,
-                              ),
-                              child: Text(
-                                '${item.quantity}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.add, size: 14),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 10,
-                                minHeight: 10,
-                              ),
-                              onPressed: state.isUpdating
-                                  ? null
-                                  : () {
-                                      controller.updateItemQuantity(
-                                        item.itemId,
-                                        item.quantity + 1,
-                                      );
-                                    },
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Spacer(),
+                      // Cụm giá
                       Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Thành tiền',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColor.buttomThirdCol,
-                              fontWeight: FontWeight.w600,
+                          if (item.hasDiscount)
+                            Text(
+                              _formatPrice(item.originalUnitPrice),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey,
+                                decoration: TextDecoration.lineThrough,
+                              ),
                             ),
-                          ),
                           Text(
-                            _formatPrice(item.subtotal),
+                            _formatPrice(item.unitPrice),
                             style: TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w600, // Giá đậm vừa phải
                               color: AppColor.buttonprimaryCol,
                             ),
                           ),
                         ],
+                      ),
+
+                      // Bộ tăng giảm số lượng (Compact)
+                      Container(
+                        height: 26, // Chiều cao cố định nhỏ gọn
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        child: Row(
+                          children: [
+                            _buildQtyBtn(
+                              icon: Icons.remove,
+                              onTap: state.isUpdating || item.quantity <= 1
+                                  ? null
+                                  : () => controller.updateItemQuantity(
+                                      item.itemId,
+                                      item.quantity - 1,
+                                    ),
+                            ),
+                            Container(
+                              width: 32, // Chiều rộng cố định cho số
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                border: Border.symmetric(
+                                  vertical: BorderSide(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                '${item.quantity}',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            _buildQtyBtn(
+                              icon: Icons.add,
+                              onTap: state.isUpdating
+                                  ? null
+                                  : () => controller.updateItemQuantity(
+                                      item.itemId,
+                                      item.quantity + 1,
+                                    ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -464,6 +465,22 @@ class _CartPageState extends ConsumerState<CartPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // Widget con cho nút +/- để code gọn hơn
+  Widget _buildQtyBtn({required IconData icon, VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: SizedBox(
+        width: 26,
+        height: 26,
+        child: Icon(
+          icon,
+          size: 14,
+          color: onTap == null ? Colors.grey[300] : Colors.grey[600],
         ),
       ),
     );

@@ -3,11 +3,7 @@ class ReviewUser {
   final String displayName;
   final String? avatarUrl;
 
-  ReviewUser({
-    required this.id,
-    required this.displayName,
-    this.avatarUrl,
-  });
+  ReviewUser({required this.id, required this.displayName, this.avatarUrl});
 
   factory ReviewUser.fromJson(Map<String, dynamic> json) {
     return ReviewUser(
@@ -22,10 +18,7 @@ class ReviewImage {
   final String url;
   final String? urlId;
 
-  ReviewImage({
-    required this.url,
-    this.urlId,
-  });
+  ReviewImage({required this.url, this.urlId});
 
   factory ReviewImage.fromJson(Map<String, dynamic> json) {
     return ReviewImage(
@@ -57,16 +50,36 @@ class ReviewModel {
   });
 
   factory ReviewModel.fromJson(Map<String, dynamic> json) {
+    // XỬ LÝ USER AN TOÀN
+    ReviewUser? parsedUser;
+    if (json['user_id'] is Map<String, dynamic>) {
+      // Trường hợp 1: Backend trả về object user đầy đủ (thường là khi GET)
+      parsedUser = ReviewUser.fromJson(json['user_id']);
+    } else if (json['user_id'] is String) {
+      // Trường hợp 2: Backend chỉ trả về ID dạng chuỗi (thường là khi POST/CREATE)
+      parsedUser = ReviewUser(
+        id: json['user_id'],
+        displayName:
+            'Tôi', // Tạm thời để tên mặc định vì server chưa trả về tên
+        avatarUrl: null,
+      );
+    }
+
     return ReviewModel(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
-      user: json['user_id'] != null
-          ? ReviewUser.fromJson(json['user_id'] as Map<String, dynamic>)
-          : null,
+      user: parsedUser,
       rating: (json['rating'] as num).toInt(),
       comment: json['comment'] ?? '',
-      images: (json['images'] as List<dynamic>? ?? [])
-          .map((e) => ReviewImage.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      // XỬ LÝ ẢNH AN TOÀN HƠN
+      images: (json['images'] as List<dynamic>? ?? []).map((e) {
+        if (e is Map<String, dynamic>) {
+          return ReviewImage.fromJson(e);
+        } else if (e is String) {
+          // Đề phòng server trả về mảng string url ["http...", "http..."]
+          return ReviewImage(url: e);
+        }
+        return ReviewImage(url: '');
+      }).toList(),
       videoUrl: json['video_url'],
       isEdited: json['is_edited'] ?? false,
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),

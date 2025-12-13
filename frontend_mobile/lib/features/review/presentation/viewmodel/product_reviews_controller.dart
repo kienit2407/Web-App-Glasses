@@ -38,11 +38,9 @@ class ProductReviewsController extends StateNotifier<ProductReviewsState> {
       state = state.copyWith(isLoading: true, clearError: true);
 
       final items = await _repo.fetchOfProduct(productId);
-
       final total = items.fold<int>(0, (sum, r) => sum + r.rating);
       final avg = items.isNotEmpty ? total / items.length : 0.0;
 
-      // tìm review của user hiện tại
       final currentUserId = _currentUserId;
       ReviewModel? myReview;
       if (currentUserId != null) {
@@ -80,10 +78,11 @@ class ProductReviewsController extends StateNotifier<ProductReviewsState> {
       state = state.copyWith(isLoading: true, clearError: true);
 
       final my = state.myReview;
-      ReviewModel newReview;
+      ReviewModel rawNewReview;
 
+      // Nếu chưa có review của người dùng -> tạo mới
       if (my == null) {
-        newReview = await _repo.create(
+        rawNewReview = await _repo.create(
           productId: productId,
           rating: rating,
           comment: comment,
@@ -91,7 +90,8 @@ class ProductReviewsController extends StateNotifier<ProductReviewsState> {
           videoFile: videoFile,
         );
       } else {
-        newReview = await _repo.update(
+        // Nếu đã có review -> cập nhật
+        rawNewReview = await _repo.update(
           reviewId: my.id,
           rating: rating,
           comment: comment,
@@ -100,9 +100,31 @@ class ProductReviewsController extends StateNotifier<ProductReviewsState> {
         );
       }
 
+      // Tiến hành cập nhật thông tin người dùng và cập nhật lại danh sách đánh giá
+      final currentUser = _ref.read(authControllerProvider).valueOrNull;
+      final completeReview = ReviewModel(
+        id: rawNewReview.id,
+        user: rawNewReview.user?.avatarUrl == null && currentUser != null
+            ? ReviewUser(
+                id: currentUser.id ?? rawNewReview.user?.id ?? '',
+                displayName:
+                    currentUser.displayName ??
+                    rawNewReview.user?.displayName ??
+                    'Tôi',
+                avatarUrl: currentUser.avatarUrl,
+              )
+            : rawNewReview.user,
+        rating: rawNewReview.rating,
+        comment: rawNewReview.comment,
+        images: rawNewReview.images,
+        videoUrl: rawNewReview.videoUrl,
+        isEdited: rawNewReview.isEdited,
+        createdAt: rawNewReview.createdAt,
+      );
+
       final items = [
-        newReview,
-        ...state.items.where((r) => r.id != newReview.id),
+        completeReview,
+        ...state.items.where((r) => r.id != completeReview.id),
       ];
 
       final total = items.fold<int>(0, (sum, r) => sum + r.rating);
@@ -112,28 +134,12 @@ class ProductReviewsController extends StateNotifier<ProductReviewsState> {
         isLoading: false,
         items: items,
         avgRating: avg,
-        myReview: newReview,
+        myReview: completeReview,
       );
-    } on DioException catch (e) {
-      // lỗi network / BE trả != 200
-      final msg =
-          (e.response?.data is Map &&
-              (e.response?.data as Map)['msg'] is String)
-          ? (e.response?.data as Map)['msg'] as String
-          : 'Gửi đánh giá thất bại';
-      state = state.copyWith(isLoading: false, errorMessage: msg);
-    } catch (e, s) {
-      // lỗi parse / lỗi logic FE sau khi BE đã OK
-      print('createOrUpdate local error: $e');
-      print(s);
-
-      // BE đã update thành công (vì DioException không ném),
-      // mình fallback bằng cách fetch lại từ server:
-      await fetch();
-
+    } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        // KHÔNG set errorMessage để khỏi show "Gửi đánh giá thất bại"
+        errorMessage: 'Gửi đánh giá thất bại',
       );
     }
   }

@@ -37,8 +37,8 @@ class CheckoutPage extends ConsumerWidget {
       return Scaffold(
         appBar: AppBar(
           title: const Text(
-            'Checkout',
-            style: TextStyle(fontWeight: FontWeight.w600),
+            'Thanh toán',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
           ),
           foregroundColor: Colors.white,
           backgroundColor: AppColor.buttonprimaryCol,
@@ -47,13 +47,17 @@ class CheckoutPage extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Bạn chưa có địa chỉ nhận hàng'),
+              const Text('Bạn chưa có địa chỉ nhận hàng', style: TextStyle(fontSize: 12),),
               const SizedBox(height: 12),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColor.buttonprimaryCol,
+                  foregroundColor: Colors.white
+                ),
                 onPressed: () {
                   context.push('/address-form');
                 },
-                child: const Text('Thêm địa chỉ'),
+                child: const Text('Thêm địa chỉ', style: TextStyle(fontSize: 12),),
               ),
             ],
           ),
@@ -77,8 +81,8 @@ class CheckoutPage extends ConsumerWidget {
       backgroundColor: const Color(0xfffafafa),
       appBar: AppBar(
         title: const Text(
-          'Checkout',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          'Thanh toán',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
         foregroundColor: Colors.white,
         backgroundColor: AppColor.buttonprimaryCol,
@@ -347,7 +351,7 @@ class _ItemsCard extends StatelessWidget {
             const ListTile(
               title: Text(
                 'Sản phẩm',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ),
             const Divider(height: 1),
@@ -358,6 +362,7 @@ class _ItemsCard extends StatelessWidget {
                   item.name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12),
                 ),
                 subtitle: Text('SL: ${item.quantity}'),
                 trailing: Text(
@@ -415,7 +420,7 @@ class _VoucherCard extends StatelessWidget {
           children: [
             const Text(
               'Voucher',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
             const SizedBox(height: 8),
             Row(
@@ -425,6 +430,7 @@ class _VoucherCard extends StatelessWidget {
                     cursorColor: AppColor.buttonprimaryCol,
                     decoration: const InputDecoration(
                       hintText: 'Nhập mã giảm giá',
+                      hintStyle: TextStyle(fontSize: 12),
                       isDense: true,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(10)),
@@ -448,7 +454,7 @@ class _VoucherCard extends StatelessWidget {
                   onPressed: onApply,
                   child: const Text(
                     'Áp dụng',
-                    style: TextStyle(fontWeight: FontWeight.w500),
+                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
                   ),
                 ),
               ],
@@ -467,7 +473,7 @@ class _VoucherCard extends StatelessWidget {
                     spacing: 4,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text('Chọn voucher của bạn'),
+                      const Text('Chọn voucher của bạn', style: TextStyle(fontSize: 12),),
                       Icon(Iconsax.arrow_right_1_copy, size: 16, fontWeight: FontWeight.w600,),
                     ],
                   ),
@@ -569,7 +575,7 @@ class _NoteCard extends StatelessWidget {
           children: [
             const Text(
               'Lời nhắn cho shop',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -577,6 +583,7 @@ class _NoteCard extends StatelessWidget {
               maxLines: 2,
               decoration: const InputDecoration(
                 hintText: 'Ghi chú (không bắt buộc)',
+                hintStyle: TextStyle(fontSize: 12),
                 isDense: true,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.all(Radius.circular(10)),
@@ -618,7 +625,7 @@ class _PaymentMethodCard extends StatelessWidget {
           children: [
             const Text(
               'Phương thức thanh toán',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
             RadioListTile<PaymentMethodMobile>(
               selectedTileColor: AppColor.buttonprimaryCol,
@@ -629,7 +636,7 @@ class _PaymentMethodCard extends StatelessWidget {
               onChanged: (val) {
                 if (val != null) onChange(val);
               },
-              title: const Text('Thanh toán khi nhận hàng (COD)'),
+              title: const Text('Thanh toán khi nhận hàng (COD)', style: TextStyle(fontSize: 12),),
             ),
             RadioListTile<PaymentMethodMobile>(
               value: PaymentMethodMobile.vnpay,
@@ -639,7 +646,7 @@ class _PaymentMethodCard extends StatelessWidget {
               onChanged: (val) {
                 if (val != null) onChange(val);
               },
-              title: const Text('Thanh toán qua VNPay'),
+              title: const Text('Thanh toán qua VNPay', style: TextStyle(fontSize: 12),),
             ),
           ],
         ),
@@ -717,11 +724,11 @@ class _PriceSummaryCard extends StatelessWidget {
     bool isTotal = false,
     bool isSmall = false,
   }) {
-    final baseStyle = TextStyle(fontSize: isSmall ? 11 : 13);
+    final baseStyle = TextStyle(fontSize: isSmall ? 10 : 12);
     final valueStyle = baseStyle.copyWith(
       color: valueColor,
       fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-      fontSize: isTotal ? 16 : (isSmall ? 11 : 13),
+      fontSize: isTotal ? 14 : (isSmall ? 10 : 12),
     );
 
     return Row(
@@ -752,7 +759,7 @@ class _BottomSummaryBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: const BoxDecoration(
           color: Colors.white,
           boxShadow: [

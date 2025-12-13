@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "@/hooks/use-auth";
+import { API_BASE_URL } from "@/app/config";
 
-const SOCKET_URL = "http://localhost:8017";
+const SOCKET_URL = API_BASE_URL;
 
 export const useSocket = () => {
     const { user } = useAuth();

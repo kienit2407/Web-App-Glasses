@@ -54,7 +54,7 @@ const signIn = TryCatch(async (req: Request, res: Response, next: NextFunction) 
 const logOut = TryCatch(async (req: Request, res: Response, _next: NextFunction) => {
   const platform = getPlatformFromReq(req)
   const rawRefresh = getRefreshFromRequest(req, platform) // Từ web hoặc mobile
-
+  console.log(`[Logout] Platform: ${platform}, RefreshToken: ${rawRefresh ? 'Có hàng' : 'NULL'}`)
   await authService.logOut(rawRefresh, platform, res)
 
   return sendAsSuccess(

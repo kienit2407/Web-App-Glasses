@@ -72,7 +72,10 @@ router.use(authMidleWares.protectUserRoute);
  */
 router.post(
   "/",
-  uploadMiddlewares.upload.fields([]),
+  uploadMiddlewares.upload.fields([
+    { name: 'images', maxCount: 5 }, // Cho phép tối đa 5 ảnh
+    { name: 'video', maxCount: 5 }   // Cho phép 1 video
+  ]),
   reviewController.create
 );
 
@@ -102,7 +105,10 @@ router.post(
  */
 router.patch(
   "/:id",
-  uploadMiddlewares.upload.fields([]),
+  uploadMiddlewares.upload.fields([
+    { name: 'images', maxCount: 5 }, // Cho phép tối đa 5 ảnh
+    { name: 'video', maxCount: 5 }   // Cho phép 1 video
+  ]),
   reviewController.update
 );
 

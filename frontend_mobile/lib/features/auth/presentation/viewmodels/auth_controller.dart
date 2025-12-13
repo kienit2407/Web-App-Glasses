@@ -40,6 +40,9 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
       final userJson = await _authRepo.signIn(email: email, password: password);
       final user = UserModel.fromJson(userJson);
       state = AsyncData(user);
+      ref.invalidate(profileControllerProvider);
+      ref.invalidate(cartControllerProvider);
+      ref.invalidate(userNotificationControllerProvider);
     } catch (e, st) {
       // Cập nhật state để UI biết là có lỗi (nếu muốn show message đẹp)
       state = AsyncError(e, st);
@@ -63,6 +66,9 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
       final userJson = await _authRepo.getProfile();
       final user = UserModel.fromJson(userJson);
       state = AsyncData(user);
+      ref.invalidate(profileControllerProvider);
+      ref.invalidate(cartControllerProvider);
+      ref.invalidate(userNotificationControllerProvider);
     } catch (e, st) {
       state = AsyncError(e, st);
       // log cho dễ debug, và rethrow để UI biết là fail
@@ -74,5 +80,8 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
   Future<void> signOut() async {
     await _authRepo.logout();
     state = const AsyncData(null);
+    ref.invalidate(profileControllerProvider);
+    ref.invalidate(cartControllerProvider);
+    ref.invalidate(userNotificationControllerProvider);
   }
 }

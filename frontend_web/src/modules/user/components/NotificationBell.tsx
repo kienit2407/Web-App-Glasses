@@ -170,7 +170,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
             <Badge count={unreadCount} size="default" overflowCount={99}>
                 <button
                     type="button"
-                    className="relative inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-slate-100 transition"
+                    className="relative inline-flex h-10 w-10 bg-slate-200  items-center justify-center rounded-full hover:bg-blue-100 transition"
                 >
                     <Bell className="h-[18px] w-[18px]" />
                 </button>

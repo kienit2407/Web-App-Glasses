@@ -2,6 +2,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_mobile/core/assets/app_image.dart';
 import 'package:frontend_mobile/core/theme/app_color.dart';
@@ -23,7 +24,8 @@ class MainShell extends ConsumerStatefulWidget {
 
 class _MainShellState extends ConsumerState<MainShell> {
   int _index = 0;
-
+  // 1. Thêm biến trạng thái để kiểm soát việc Hiện/Ẩn
+  bool _isVisible = true;
   final _pages = const [
     HomePage(),
     CouponCenterPage(),
@@ -33,6 +35,10 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Lấy padding đáy (Vùng Home Indicator của iPhone)
+    final double bottomPadding = MediaQuery.of(context).padding.bottom;
+    // 2. Định nghĩa chiều cao thực tế của thanh Bar (không tính padding)
+    const double navBarHeight = 55.0;
     ref.watch(userNotificationSocketListenerProvider);
 
     final notifState = ref.watch(userNotificationControllerProvider);
@@ -40,21 +46,52 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     return Scaffold(
       extendBody: true,
-      body: Stack(
-        children: [
-          IndexedStack(index: _index, children: _pages),
-          const PromotionHighlightEntryMobile(),
-        ],
+      body: NotificationListener<UserScrollNotification>(
+        onNotification: (notification) {
+          // Nếu không phải là HomePage (index 0) thì không làm gì cả, return luôn
+          if (_index != 0) {
+            return true;
+          }
+          // Chỉ xử lý khi cuộn dọc (Axis.vertical)
+          // để tránh bị ẩn khi lướt ngang cái Banner Carousel
+          if (notification.metrics.axis == Axis.vertical) {
+            // Nếu vuốt lên (Scroll xuôi - Reverse) -> Ẩn Menu
+            if (notification.direction == ScrollDirection.reverse) {
+              if (_isVisible) setState(() => _isVisible = false);
+            }
+            // Nếu vuốt xuống (Scroll ngược - Forward) -> Hiện Menu
+            else if (notification.direction == ScrollDirection.forward) {
+              if (!_isVisible) setState(() => _isVisible = true);
+            }
+          }
+          return true; // Cho phép sự kiện tiếp tục lan truyền
+        },
+        child: Stack(
+          children: [
+            IndexedStack(index: _index, children: _pages),
+            PromotionHighlightEntryMobile(),
+          ],
+        ),
       ),
-      bottomNavigationBar: Transform.translate(
-        offset: const Offset(0, 20),
+      bottomNavigationBar: AnimatedContainer(
+        duration: const Duration(milliseconds: 300), // Thời gian trượt (0.3s)
+        curve: Curves.easeInOut, // Hiệu ứng mượt mà
+        height: _isVisible
+            ? (navBarHeight + bottomPadding)
+            : 0, // Mẹo: Thay đổi chiều cao hoặc dịch chuyển
+        // Dùng transform để đẩy nó xuống dưới màn hình khi ẩn
+        transform: Matrix4.translationValues(0, _isVisible ? 0 : 100, 0),
         child: ClipRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 35, sigmaY: 35),
             child: Container(
+              alignment: Alignment.topCenter,
               decoration: BoxDecoration(
                 border: Border(
-                  top: BorderSide(color: AppColor.textpriCol.withOpacity(.4), width: .4),
+                  top: BorderSide(
+                    color: AppColor.textpriCol.withOpacity(.4),
+                    width: .4,
+                  ),
                 ),
                 color: Colors.white.withOpacity(.7),
                 // image: DecorationImage(
@@ -67,7 +104,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                   iconTheme: WidgetStateProperty.resolveWith((states) {
                     if (states.contains(WidgetState.selected)) {
                       return const IconThemeData(
-                        color: AppColor.buttonprimaryCol
+                        color: AppColor.buttonprimaryCol,
                       );
                     }
                     return const IconThemeData(color: Color(0xff6C757D));
@@ -87,13 +124,21 @@ class _MainShellState extends ConsumerState<MainShell> {
                   }),
                 ),
                 child: NavigationBar(
+                  height: navBarHeight,
                   labelPadding: EdgeInsets.zero,
                   backgroundColor: Colors.transparent,
                   surfaceTintColor: Colors.transparent,
                   overlayColor: WidgetStatePropertyAll(Colors.transparent),
                   indicatorColor: Colors.transparent,
                   selectedIndex: _index,
-                  onDestinationSelected: (i) => setState(() => _index = i),
+                  onDestinationSelected: (i) {
+                    setState(() {
+                      _index = i;
+                      // QUAN TRỌNG: Khi chuyển tab bất kỳ,
+                      // BẮT BUỘC phải hiện lại Nav Bar ngay lập tức
+                      _isVisible = true;
+                    });
+                  },
                   destinations: [
                     const NavigationDestination(
                       icon: Icon(Iconsax.home_copy),

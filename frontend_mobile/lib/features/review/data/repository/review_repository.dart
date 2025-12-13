@@ -9,6 +9,7 @@ class ReviewRepository {
 
   ReviewRepository({required this.dioClient});
 
+  // --- GET LIST ---
   Future<List<ReviewModel>> fetchOfProduct(String productId) async {
     try {
       final res = await dioClient.dio.get(
@@ -17,38 +18,15 @@ class ReviewRepository {
       );
 
       final rawData = res.data['data'];
-
-      List<dynamic> items;
-
-      if (rawData is List) {
-        // case: { data: [ ... ] }
-        items = rawData;
-      } else if (rawData is Map<String, dynamic>) {
-        // case: { data: { items: [ ... ], ... } }
-        final inner = rawData['items'];
-        if (inner is List) {
-          items = inner;
-        } else {
-          items = const [];
-        }
-      } else {
-        items = const [];
-      }
+      List<dynamic> items = rawData is List
+          ? rawData
+          : (rawData is Map<String, dynamic> ? rawData['items'] : []);
 
       return items
           .map((e) => ReviewModel.fromJson(e as Map<String, dynamic>))
           .toList();
-    } on DioException catch (e) {
-      // log cho dễ debug
-      print(
-        'fetchOfProduct DioException: '
-        '${e.response?.statusCode} ${e.response?.data}',
-      );
-      throw _mapDioException(e);
-    } catch (e, s) {
-      print('fetchOfProduct parse error: $e');
-      print(s);
-      throw Exception('Lỗi khi xử lý dữ liệu đánh giá');
+    } catch (e) {
+      throw e;
     }
   }
 
@@ -61,6 +39,55 @@ class ReviewRepository {
   }) async {
     final formData = FormData();
 
+    formData.fields.addAll([
+      MapEntry('rating', rating.toString()),
+      MapEntry('comment', comment),
+      MapEntry('product_id', productId),
+    ]);
+
+    // Thêm ảnh vào formData
+    for (final img in images) {
+      formData.files.add(
+        MapEntry(
+          'images', // Key này phải khớp với { name: 'images' } ở Backend
+          await MultipartFile.fromFile(
+            img.path,
+            filename: img.path.split('/').last,
+          ),
+        ),
+      );
+    }
+
+    // Thêm video vào formData
+    if (videoFile != null) {
+      formData.files.add(
+        MapEntry(
+          'video', // Key này phải khớp với { name: 'video' } ở Backend
+          await MultipartFile.fromFile(
+            videoFile.path,
+            filename: videoFile.path.split('/').last,
+          ),
+        ),
+      );
+    }
+
+    try {
+      final res = await dioClient.dio.post('/reviews', data: formData);
+      return ReviewModel.fromJson(res.data['data']);
+    } on DioException catch (e) {
+      throw _mapDioException(e);
+    }
+  }
+
+  // --- UPDATE ---
+  Future<ReviewModel> update({
+    required String reviewId,
+    required int rating,
+    required String comment,
+    List<File> images = const [],
+    File? videoFile,
+  }) async {
+    final formData = FormData();
     formData.fields.addAll([
       MapEntry('rating', rating.toString()),
       MapEntry('comment', comment),
@@ -90,100 +117,51 @@ class ReviewRepository {
       );
     }
 
-    final res = await dioClient.dio.post(
-      '/reviews/of-product/$productId',
-      data: formData,
-      options: Options(contentType: 'multipart/form-data'),
-    );
-
-    return ReviewModel.fromJson(res.data['data']);
-  }
-
-  Future<ReviewModel> update({
-    required String reviewId,
-    required int rating,
-    required String comment,
-    List<File> images = const [],
-    File? videoFile,
-  }) async {
     try {
-      final formData = FormData();
-      formData.fields.addAll([
-        MapEntry('rating', rating.toString()),
-        MapEntry('comment', comment),
-      ]);
-
-      for (final img in images) {
-        formData.files.add(
-          MapEntry(
-            'images',
-            await MultipartFile.fromFile(
-              img.path,
-              filename: img.path.split('/').last,
-            ),
-          ),
-        );
-      }
-
-      if (videoFile != null) {
-        formData.files.add(
-          MapEntry(
-            'video',
-            await MultipartFile.fromFile(
-              videoFile.path,
-              filename: videoFile.path.split('/').last,
-            ),
-          ),
-        );
-      }
-
       final res = await dioClient.dio.patch(
         '/reviews/$reviewId',
         data: formData,
-        options: Options(contentType: 'multipart/form-data'),
       );
-
-      print(
-        'updateReview response: ${res.data}',
-      ); 
-
-      final data = res.data['data'];
-
-      if (data is Map<String, dynamic>) {
-        return ReviewModel.fromJson(data);
-      } else {
-        throw Exception('Unexpected updateReview data: ${res.data}');
-      }
+      return ReviewModel.fromJson(res.data['data']);
     } on DioException catch (e) {
-      print(
-        'updateReview DioException: '
-        '${e.response?.statusCode} ${e.response?.data}',
-      );
       throw _mapDioException(e);
-    } catch (e, s) {
-      print('updateReview parse/local error: $e');
-      print(s);
-      throw Exception('Lỗi khi xử lý dữ liệu cập nhật đánh giá');
     }
   }
 
-Exception _mapDioException(DioException e) {
-  final status = e.response?.statusCode;
-  switch (status) {
-    case 400:
-      return BadRequestException('Yêu cầu không hợp lệ');
-    case 401:
-      return UnauthorizedException('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
-    case 404:
-      return NotFoundException('Không tìm thấy dữ liệu');
-    case 500:
-      return ServerException('Lỗi máy chủ');
-    default:
-      return NetworkException('Lỗi kết nối hoặc phản hồi không mong đợi');
-  }
-}
-
+  // --- DELETE ---
   Future<void> delete(String reviewId) async {
-    await dioClient.dio.delete('/reviews/$reviewId');
+    try {
+      await dioClient.dio.delete('/reviews/$reviewId');
+    } on DioException catch (e) {
+      throw _mapDioException(e);
+    }
+  }
+
+  Exception _mapDioException(DioException e) {
+    final status = e.response?.statusCode;
+    final data = e.response?.data;
+
+    String serverMsg = '';
+    if (data is Map && data['msg'] != null) serverMsg = data['msg'];
+    if (data is Map && data['message'] != null) serverMsg = data['message'];
+
+    switch (status) {
+      case 400:
+        return BadRequestException(
+          serverMsg.isNotEmpty ? serverMsg : 'Yêu cầu không hợp lệ',
+        );
+      case 401:
+        return UnauthorizedException('Vui lòng đăng nhập lại.');
+      case 404:
+        return NotFoundException('Không tìm thấy dữ liệu');
+      case 413:
+        return BadRequestException('File ảnh/video quá lớn');
+      case 500:
+        return ServerException('Lỗi máy chủ');
+      default:
+        return NetworkException(
+          serverMsg.isNotEmpty ? serverMsg : 'Lỗi kết nối',
+        );
+    }
   }
 }

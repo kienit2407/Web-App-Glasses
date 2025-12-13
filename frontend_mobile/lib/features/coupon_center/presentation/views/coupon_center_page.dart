@@ -23,14 +23,19 @@ class CouponCenterPage extends ConsumerWidget {
     final controller = ref.read(couponCenterControllerProvider.notifier);
     final authState = ref.watch(authControllerProvider);
     final authUser = authState.valueOrNull;
-
+    // Kiểm tra nếu data đã được tải và cần gọi lại
+    if (!state.isLoading && state.coupons.isEmpty && state.promotions.isEmpty) {
+     print("qweqw");
+      controller.loadCouponsAndPromotions();
+    
+    }
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColor.buttonprimaryCol,
         foregroundColor: Colors.white,
         title: const Text(
           'Ưu đãi & Voucher',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
         centerTitle: true,
       ),
@@ -38,128 +43,141 @@ class CouponCenterPage extends ConsumerWidget {
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator.adaptive())
           : RefreshIndicator.adaptive(
-              onRefresh: () => controller.loadAll(),
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 120),
-                children: [
-                  const Text(
-                    'Lưu voucher và theo dõi các chương trình khuyến mãi đang diễn ra.',
-                    style: TextStyle(fontSize: 13, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 16),
+              onRefresh: () => controller.loadCouponsAndPromotions(),
+              // 1. Đổi ListView thành CustomScrollView
+              child: CustomScrollView(
+                // Thêm padding cho toàn bộ danh sách ở đây nếu muốn,
+                // hoặc thêm padding trong từng Sliver
+                slivers: [
+                  // 2. Phần Text giới thiệu đầu trang -> Dùng SliverToBoxAdapter
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Lưu voucher và theo dõi các chương trình khuyến mãi đang diễn ra.',
+                            style: TextStyle(fontSize: 13, color: Colors.grey),
+                          ),
+                          const SizedBox(height: 16),
 
-                  // Promotions
-                  if (state.promotions.isNotEmpty) ...[
-                    const Text(
-                      'Chương trình khuyến mãi',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                          // Tiêu đề khuyến mãi
+                          if (state.promotions.isNotEmpty)
+                            const Text(
+                              'Chương trình khuyến mãi',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    // extent
-                    // builder
-                    MasonryGridView.count(
-                      shrinkWrap: true,
-                      padding: EdgeInsets.zero,
-                      physics: const NeverScrollableScrollPhysics(), // vì đang nằm trong ListView
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                      itemCount: state.promotions.length,
-                      itemBuilder: (context, index) {
-                        final p = state.promotions[index];
-                        return _PromotionCard(
-                          promotion: p,
-                          formatPrice: _formatPrice,
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    // GridView.builder(
-                    //   shrinkWrap: true,
-                    //   gridDelegate:
-                    //       const SliverGridDelegateWithFixedCrossAxisCount(
-                    //         crossAxisCount: 2,
-                    //         crossAxisSpacing: 8,
-                    //         mainAxisSpacing: 8,
-                    //         childAspectRatio: 0.48,
-                    //       ),
-                    //   itemCount: state.promotions.length,
-                    //   itemBuilder: (context, index) {
-                    //     final p = state.promotions[index];
-                    //     return _PromotionCard(
-                    //       promotion: p,
-                    //       formatPrice: _formatPrice,
-                    //     );
-                    //   },
-                    // ),
-                  ],
-
-                  // Vouchers
-                  const Text(
-                    'Voucher của shop',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 8),
-                  if (state.coupons.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 32),
-                      child: Center(
-                        child: Text(
-                          'Hiện tại shop chưa có voucher nào.',
-                          style: TextStyle(fontSize: 13, color: Colors.black54),
+
+                  // 3. Phần Grid -> Dùng SliverMasonryGrid (Thay vì MasonryGridView)
+                  // Nó sẽ cuộn chung với trang, không cần shrinkWrap, không bị nháy
+                  if (state.promotions.isNotEmpty)
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      sliver: SliverGrid(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final p = state.promotions[index];
+                          return _PromotionCard(
+                            promotion: p,
+                            formatPrice: _formatPrice,
+                          );
+                        }, childCount: state.promotions.length),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childAspectRatio:
+                              0.45, // Điều chỉnh tỉ lệ giữa các phần tử trong grid
                         ),
                       ),
-                    )
-                  else
-                    Column(
-                      children: state.coupons
-                          .map(
-                            (c) => _CouponCard(
-                              coupon: c,
-                              saving: state.savingCouponId == c.id,
-                              onSave: () async {
-                                if (authUser == null) {
-                                  // Chưa đăng nhập -> chuyển qua màn login
-                                  if (context.mounted) {
-                                    showAnimatedDialog(
-                                      context: context,
-                                      dialog: AppAlertDialog(
-                                        content: "Bạn cần đăng nhập để lưu voucher",
-                                        title: 'Warning!',
-                                      ),
-                                    );
-                                  }
-                                  return;
-                                }
-
-                                try {
-                                  await controller.saveCoupon(c);
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Đã lưu voucher vào kho của bạn',
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                } catch (_) {
-                                  // lỗi đã show bằng snackbar phía trên
-                                }
-                              },
-                              formatPrice: _formatPrice,
-                            ),
-                          )
-                          .toList(),
                     ),
 
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Các voucher đã lưu có thể xem lại và sử dụng ở trang "Voucher của tôi" hoặc trong bước thanh toán.',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  // 4. Phần Voucher (Danh sách dọc bên dưới) -> Dùng SliverToBoxAdapter
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 16, 12, 120),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Voucher của shop',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          if (state.coupons.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 32),
+                              child: Center(
+                                child: Text(
+                                  'Hiện tại shop chưa có voucher nào.',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            Column(
+                              children: state.coupons
+                                  .map(
+                                    (c) => _CouponCard(
+                                      coupon: c,
+                                      saving: state.savingCouponId == c.id,
+                                      onSave: () async {
+                                        // ... (Giữ nguyên logic cũ của bạn) ...
+                                        if (authUser == null) {
+                                          if (context.mounted) {
+                                            showAnimatedDialog(
+                                              context: context,
+                                              dialog: AppAlertDialog(
+                                                content:
+                                                    "Bạn cần đăng nhập để lưu voucher",
+                                                title: 'Warning!',
+                                              ),
+                                            );
+                                          }
+                                          return;
+                                        }
+
+                                        try {
+                                          await controller.saveCoupon(c);
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'Đã lưu voucher vào kho của bạn',
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        } catch (_) {}
+                                      },
+                                      formatPrice: _formatPrice,
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Các voucher đã lưu có thể xem lại và sử dụng ở trang "Voucher của tôi" hoặc trong bước thanh toán.',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -186,6 +204,7 @@ class _PromotionCard extends StatelessWidget {
 
     return Card(
       clipBehavior: Clip.hardEdge,
+      color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: Colors.orange.shade200),
@@ -199,7 +218,7 @@ class _PromotionCard extends StatelessWidget {
               child: Image.network(
                 promotion.bannerUrl!,
                 width: double.infinity,
-                fit: BoxFit.cover, // fill + crop
+                fit: BoxFit.fitHeight, // fill + crop
               ),
             ),
           Padding(
@@ -285,6 +304,7 @@ class _CouponCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: Colors.blue.shade200),
@@ -337,7 +357,10 @@ class _CouponCard extends StatelessWidget {
                         color: Colors.white,
                       ),
                     )
-                  : Text(coupon.isSaved ? 'Đã lưu' : 'Lưu'),
+                  : Text(
+                      coupon.isSaved ? 'Đã lưu' : 'Lưu',
+                      style: TextStyle(fontSize: 13),
+                    ),
             ),
           ],
         ),

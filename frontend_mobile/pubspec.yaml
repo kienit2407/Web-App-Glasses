@@ -64,6 +64,13 @@ dependencies:
   socket_io_client: ^3.1.3
   flutter_staggered_grid_view: ^0.7.0
   flutter_web_auth_2: ^4.1.0
+  file_picker: ^10.3.7
+  image_cropper: ^11.0.0
+  keyboard_actions: ^4.2.1
+  permission_handler: ^12.0.1
+  device_info_plus: ^12.3.0
+  cached_network_image: ^3.4.1
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
@@ -93,7 +100,12 @@ flutter:
     - assets/icons/
     - assets/fonts/
   #   - images/a_dot_ham.jpeg
-
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/logo_app.png"
+  min_sdk_android: 21 # Tuỳ chọn
+  # remove_alpha_ios: true # Nếu icon có nền trong suốt thì bật cái này cho iOS
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

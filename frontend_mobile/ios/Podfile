@@ -39,5 +39,26 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+    
+    # === THÊM ĐOẠN NÀY VÀO (BẮT BUỘC) ===
+    target.build_configurations.each do |config|
+      # Bật các quyền mà bạn cần dùng
+      # Nếu thiếu dòng này, permission_handler sẽ luôn trả về Denied/PermanentlyDenied
+      
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
+        '$(inherited)',
+
+        ## Bật quyền truy cập thư viện ảnh
+        'PERMISSION_PHOTOS=1',
+
+        ## Bật quyền Camera (nếu bạn có dùng)
+        'PERMISSION_CAMERA=1',
+        
+        ## Bật quyền Microphone (nếu bạn có dùng)
+        'PERMISSION_MICROPHONE=1',
+      ]
+    end
+    # ====================================
+    
   end
 end

@@ -94,6 +94,7 @@
 | 🔵📘 TypeScript | Web Platform |
 | 🐜👀 Styling Design | Ant UI |
 | 🔄📦 React Query | Server State |
+| 🐻🔄 Zuztand | State Management |
 | 🌐🔌 Axios | Api Client |
 
 #### 📱Mobile

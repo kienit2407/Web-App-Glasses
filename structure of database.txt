@@ -225,3 +225,6 @@ BE  ->  Google
 Google -> BE (/auth/google/callback)
 BE  ->  FE (/oauth/callback)
 FE  ->  BE (/users/me)
+
+
+dart run flutter_launcher_icons

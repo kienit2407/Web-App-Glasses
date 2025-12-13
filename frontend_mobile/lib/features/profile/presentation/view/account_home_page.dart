@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -49,258 +50,306 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
     final deliveredCount = counts['delivered'] ?? 0;
     final cancelledCount = counts['cancelled'] ?? 0;
     return Scaffold(
-
       backgroundColor: const Color(0xfff5f5f5),
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            systemOverlayStyle: SystemUiOverlayStyle.light,
-            actions: [
-              IconButton(
-                icon: const Icon(Iconsax.message_question),
-                onPressed: () => context.pushNamed('ai-chat'),
-              ),
-            ],
-            pinned: true,
-            expandedHeight: 150,
+      body: RefreshIndicator.adaptive(
+        edgeOffset: 40,
+        color: Colors.white,
+        onRefresh: () =>
+            ref.read(profileControllerProvider.notifier).loadProfile(),
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              systemOverlayStyle: SystemUiOverlayStyle.light,
+              actions: [
+                IconButton(
+                  icon: const Icon(Iconsax.message_question),
+                  onPressed: () => context.pushNamed('ai-chat'),
+                ),
+              ],
+              pinned: true,
+              expandedHeight: 150,
 
-            backgroundColor: AppColor.buttonprimaryCol,
-            foregroundColor: Colors.white,
-            flexibleSpace: FlexibleSpaceBar(
-              collapseMode: CollapseMode.none,
-              background: GestureDetector(
-                onTap: () => context.pushNamed('account-settings'),
-                child: InkWell(
-                  child: Container(
-                    width: double.infinity,
-                    height: double.infinity,
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.white24,
-                          Colors.white,
-                        ],
-                        begin: Alignment.centerRight,
-                        end: Alignment.centerLeft,
-                      ),
-                      image: DecorationImage(
-                        image: AssetImage(AppImage.nitro2),
+              backgroundColor: AppColor.buttonprimaryCol,
+              foregroundColor: Colors.white,
+              flexibleSpace: FlexibleSpaceBar(
+                collapseMode: CollapseMode.none,
+                background: GestureDetector(
+                  onTap: () => context.pushNamed('account-settings'),
+                  child: InkWell(
+                    child: Container(
+                      width: double.infinity,
+                      height: double.infinity,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Color(0xff251E4C),
+                            Color(0xff341D5C),
+                            Color(0xff6B2E7C),
+                          ],
+                          begin: Alignment.centerRight,
+                          end: Alignment.centerLeft,
+                        ),
+                        image: DecorationImage(
+                          image: AssetImage(AppImage.nitro1),
 
-                        fit: BoxFit.fill,
+                          fit: BoxFit.fill,
+                        ),
                       ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.only(
-                        left: 16,
-                        right: 16,
-                        bottom: 24,
-                        top: 56,
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Stack(
-                            children: [
-                              Align(
-                                alignment: Alignment.center,
-                                child: CircleAvatar(
-                                  radius: 32,
-                                  backgroundColor: Colors.white,
-                                  backgroundImage:
-                                      (user?.avatarUrl != null &&
-                                          user!.avatarUrl!.isNotEmpty)
-                                      ? NetworkImage(user.avatarUrl!)
-                                            as ImageProvider
-                                      : null,
-                                  child:
-                                      (user?.avatarUrl == null ||
-                                          user!.avatarUrl!.isEmpty)
-                                      ? Text(
-                                          _initials(
-                                            user?.displayName ??
-                                                user?.email ??
-                                                'U',
-                                          ),
-                                          style: const TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        )
-                                      : null,
-                                ),
-                              ),
-                              Positioned(
-                                top: 28,
-                                left: -6,
-                                child: Image.asset(
-                                  AppImage.avtFrame,
-                                  width: 77,
-                                  height: 77,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                          left: 16,
+                          right: 16,
+                          bottom: 24,
+                          top: 56,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Stack(
                               children: [
-                                Text(
-                                  user?.displayName ??
-                                      user?.email ??
-                                      'Người dùng',
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: CircleAvatar(
+                                    radius: 32,
+                                    backgroundColor: Colors.white,
+                                    backgroundImage:
+                                        (user?.avatarUrl != null &&
+                                            user!.avatarUrl!.isNotEmpty)
+                                        ? NetworkImage(user.avatarUrl!)
+                                              as ImageProvider
+                                        : null,
+                                    child:
+                                        (user?.avatarUrl == null ||
+                                            user!.avatarUrl!.isEmpty)
+                                        ? Text(
+                                            _initials(
+                                              user?.displayName ??
+                                                  user?.email ??
+                                                  'U',
+                                            ),
+                                            style: const TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          )
+                                        : null,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  user?.email ?? '',
-                                  style: const TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 13,
+                                Positioned(
+                                  top: 0,
+                                  left: 0,
+                                  child: Image.asset(
+                                    AppImage.avtFrame2,
+                                    width: 77,
+                                    height: 77,
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    user?.displayName ??
+                                        user?.email ??
+                                        'Người dùng',
+                                    style: const TextStyle(
+                                      color: Color(0xffA15EAB),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    user?.email ?? '',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          // --- ĐƠN MUA CỦA TÔI ---
-          SliverToBoxAdapter(
-            child: Column(
-              children: [
-                const SizedBox(height: 8),
-                _sectionHeader(
-                  title: 'Đơn mua của tôi',
-                  actionText: 'Xem lịch sử',
-                  onTap: () => context.pushNamed('orders'),
-                ),
-                Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 8,
+            // --- ĐƠN MUA CỦA TÔI ---
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  const SizedBox(height: 8),
+                  _sectionHeader(
+                    title: 'Đơn mua của tôi',
+                    actionText: 'Xem lịch sử',
+                    onTap: () => context.pushNamed('orders'),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _orderShortcut(
-                        icon: Icons.pending_actions_outlined,
-                        label: 'Chờ xác nhận',
-                        badgeCount: pendingCount,
-                        onTap: () => context.pushNamed(
-                          'orders',
-                          extra: {'status': 'pending'},
+                  Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 8,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _orderShortcut(
+                          icon: Icons.pending_actions_outlined,
+                          label: 'Chờ xác nhận',
+                          badgeCount: pendingCount,
+                          onTap: () => context.pushNamed(
+                            'orders',
+                            extra: {'status': 'pending'},
+                          ),
                         ),
-                      ),
-                      _orderShortcut(
-                        icon: Icons.local_shipping_outlined,
-                        label: 'Đang giao',
-                        badgeCount: shippingCount,
-                        onTap: () => context.pushNamed(
-                          'orders',
-                          extra: {'status': 'shipping'},
+                        _orderShortcut(
+                          icon: Icons.local_shipping_outlined,
+                          label: 'Đang giao',
+                          badgeCount: shippingCount,
+                          onTap: () => context.pushNamed(
+                            'orders',
+                            extra: {'status': 'shipping'},
+                          ),
                         ),
-                      ),
-                      _orderShortcut(
-                        icon: Icons.check_circle_outline,
-                        label: 'Hoàn thành',
-                        badgeCount: deliveredCount, // 👈
-                        onTap: () => context.pushNamed(
-                          'orders',
-                          extra: {'status': 'delivered'},
+                        _orderShortcut(
+                          icon: Icons.check_circle_outline,
+                          label: 'Hoàn thành',
+                          badgeCount: deliveredCount, // 👈
+                          onTap: () => context.pushNamed(
+                            'orders',
+                            extra: {'status': 'delivered'},
+                          ),
                         ),
-                      ),
-                      _orderShortcut(
-                        icon: Icons.cancel_outlined,
-                        label: 'Đã hủy',
-                        badgeCount: cancelledCount,
-                        onTap: () => context.pushNamed(
-                          'orders',
-                          extra: {'status': 'cancelled'},
+                        _orderShortcut(
+                          icon: Icons.cancel_outlined,
+                          label: 'Đã hủy',
+                          badgeCount: cancelledCount,
+                          onTap: () => context.pushNamed(
+                            'orders',
+                            extra: {'status': 'cancelled'},
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
+                  const SizedBox(height: 8),
 
-                // --- VÍ & ƯU ĐÃI ---
-                _sectionHeader(title: 'Ví & Ưu đãi', onTap: null),
-                Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 8,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _simpleShortcut(
-                        icon: Icons.card_giftcard_outlined,
-                        label: 'Voucher của tôi',
-                        onTap: () => context.pushNamed('my-coupons'),
-                      ),
-                      _simpleShortcut(
-                        icon: Icons.location_on_outlined,
-                        label: 'Địa chỉ giao hàng',
-                        onTap: () => context.pushNamed('my-addresses'),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // --- THIẾT LẬP TÀI KHOẢN ---
-                _sectionHeader(title: 'Thiết lập tài khoản', onTap: null),
-                Container(
-                  color: Colors.white,
-                  child: Column(
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.person_outline),
-                        title: const Text('Thông tin & bảo mật'),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => context.pushNamed('account-settings'),
-                      ),
-                      const Divider(height: 1),
-                      ListTile(
-                        leading: const Icon(Icons.logout, color: Colors.red),
-                        title: const Text(
-                          'Đăng xuất',
-                          style: TextStyle(color: Colors.red),
+                  // --- VÍ & ƯU ĐÃI ---
+                  _sectionHeader(title: 'Ví & Ưu đãi', onTap: null),
+                  Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 8,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _simpleShortcut(
+                          icon: Icons.card_giftcard_outlined,
+                          label: 'Voucher của tôi',
+                          onTap: () => context.pushNamed('my-coupons'),
                         ),
-                        onTap: () async {
-                          await ref
-                              .read(authControllerProvider.notifier)
-                              .signOut();
-
-                          if (context.mounted) {
-                            context.goNamed(
-                              'home',
-                            ); // quay về tab Home, lúc này là khách
-                          }
-                        },
-                      ),
-                    ],
+                        _simpleShortcut(
+                          icon: Icons.location_on_outlined,
+                          label: 'Địa chỉ giao hàng',
+                          onTap: () => context.pushNamed('my-addresses'),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-              ],
+                  const SizedBox(height: 8),
+
+                  _sectionHeader(title: 'Thiết lập tài khoản', onTap: null),
+                  Container(
+                    color: Colors.white,
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.person_outline),
+                          title: const Text(
+                            'Thông tin & bảo mật',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => context.pushNamed('account-settings'),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: const Icon(Icons.logout, color: Colors.red),
+                          title: const Text(
+                            'Đăng xuất',
+                            style: TextStyle(color: Colors.red, fontSize: 12),
+                          ),
+                          onTap: () async {
+                            showAdaptiveDialog(
+                              context: context,
+                              builder: (ctx) {
+                                return CupertinoAlertDialog(
+                                  title: const Text('Đăng xuất'),
+                                  content: const Text(
+                                    'Bạn có chắc chắn muốn đăng xuất không?',
+                                  ),
+                                  actions: [
+                                    CupertinoDialogAction(
+                                      onPressed: () => Navigator.pop(ctx),
+                                      child: const Text(
+                                        'Huỷ',
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 14,
+                                        ),
+                                      ), // Mặc định là màu xanh chuẩn iOS
+                                    ),
+                                    CupertinoDialogAction(
+                                      isDefaultAction:
+                                          true, // Làm chữ In Đậm (Bold)
+                                      onPressed: () async {
+                                        await ref
+                                            .read(
+                                              authControllerProvider.notifier,
+                                            )
+                                            .signOut();
+                                        Navigator.pop(ctx);
+                                        if (context.mounted) {
+                                          // Dùng go (xoá stack) thay vì push để không back lại được
+                                          context.go('/home');
+                                        }
+                                      },
+
+                                      textStyle: const TextStyle(
+                                        color: Color(
+                                          0xff007AFF,
+                                        ), // Hoặc Colors.blue
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                      child: const Text('Đồng ý'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -342,7 +391,10 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
     return Scaffold(
       backgroundColor: const Color(0xfff5f5f5),
       appBar: AppBar(
-        title: const Text('Tài khoản', style: TextStyle(fontWeight: FontWeight.w600),),
+        title: const Text(
+          'Tài khoản',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+        ),
         backgroundColor: AppColor.buttonprimaryCol,
         foregroundColor: Colors.white,
         centerTitle: true,
@@ -372,9 +424,7 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
                   Expanded(
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                          color: AppColor.buttonprimaryCol,
-                        ),
+                        side: BorderSide(color: AppColor.buttonprimaryCol),
                         foregroundColor: AppColor.buttonprimaryCol,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),

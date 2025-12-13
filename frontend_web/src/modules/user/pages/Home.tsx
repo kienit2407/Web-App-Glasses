@@ -11,7 +11,7 @@ import { ProductListItem } from "@/types/product"
 import { toast } from "sonner"
 import { Spinner } from "@/components/ui/spinner"
 import { useCatalog } from "@/hooks/use-catalog"
-import { Carousel } from "antd"
+import { Carousel, Spin } from "antd"
 
 const Home = () => {
   const [shopSettings, setShopSettings] = useState<any | null>(null)
@@ -31,7 +31,7 @@ const Home = () => {
     fetchHomeProducts()
     fetchBrands()
   }, [fetchHomeProducts, fetchCategories, fetchBrands])
-  
+
   useEffect(() => {
     const run = async () => {
       try {
@@ -48,8 +48,8 @@ const Home = () => {
   }, [])
 
   const banners: { _id: string; banner_url: string; position: number }[] = (shopSettings?.banner_list || []).sort(
-      (a: any, b: any) => a.position - b.position
-    )
+    (a: any, b: any) => a.position - b.position
+  )
   const mainFeatured = featuredProducts[0]
   const secondFeatured = featuredProducts[1]
 
@@ -59,7 +59,7 @@ const Home = () => {
       <VideoHero />
       {loadingSettings ? (
         <div className="min-h-screen flex justify-center py-8">
-          <Spinner />
+          <Spin size="large" />
         </div>
       ) : banners.length > 0 ? (
         <Carousel
@@ -244,7 +244,7 @@ const Home = () => {
 
           {isLoading ? (
             <div className="flex justify-center py-12">
-              <Spinner />
+              <Spin size="large" />
             </div>
           ) : (
             <>

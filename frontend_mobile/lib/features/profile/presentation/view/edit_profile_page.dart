@@ -1,12 +1,19 @@
 import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_mobile/core/assets/app_image.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:frontend_mobile/core/theme/app_color.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
   const EditProfilePage({super.key});
@@ -16,7 +23,7 @@ class EditProfilePage extends ConsumerStatefulWidget {
 }
 
 class _EditProfilePageState extends ConsumerState<EditProfilePage> {
-  final _nameCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController(); // tên người dùng hiện tịa
   File? _localAvatar;
   bool _saving = false;
 
@@ -25,7 +32,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     super.initState();
     final state = ref.read(profileControllerProvider);
     final user = state.user;
-    _nameCtrl.text = user?.displayName ?? '';
+    _nameCtrl.text = user?.displayName ?? ''; // mới đầu vào cho
   }
 
   @override
@@ -35,17 +42,168 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   }
 
   Future<void> _pickAvatar() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      setState(() {
-        _localAvatar = File(picked.path);
-      });
+    // [NOTE 1]: Xác định loại quyền cần xin tùy theo thiết bị
+    // Android 13+ (SDK 33) dùng Permission.photos
+    // Android cũ (SDK < 33) dùng Permission.storage
+    // iOS dùng Permission.photos
+    Permission permissionWithType;
+
+    if (Platform.isAndroid) {
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      if (androidInfo.version.sdkInt <= 32) {
+        permissionWithType = Permission.storage;
+      } else {
+        permissionWithType = Permission.photos;
+      }
+    } else {
+      permissionWithType = Permission.photos;
     }
+
+    // [NOTE 2]: Kiểm tra trạng thái HIỆN TẠI trước khi xin
+    // Lý do: Để tránh việc vừa bấm vào đã bắt user vào Cài đặt nếu họ chưa từng từ chối.
+    var status = await permissionWithType.status;
+
+    // Nếu trạng thái là 'denied' (Từ chối lần đầu hoặc chưa hỏi bao giờ)
+    // -> Thì gọi lệnh request() để hiện bảng hỏi "Cho phép truy cập?" của hệ thống
+    if (status.isDenied) {
+      status = await permissionWithType.request();
+    }
+
+    // [NOTE 3]: Xử lý kết quả sau khi hỏi
+    // - isGranted: User chọn "Allow Full Access" (Cho phép tất cả)
+    // - isLimited: User chọn "Select Photos" (Chỉ cho phép vài ảnh - iOS 14+/Android 14+)
+    if (status.isGranted || status.isLimited) {
+      // --- KHU VỰC ĐƯỢC PHÉP CHỌN ẢNH ---
+      try {
+        // [NOTE 4]: Mở File Picker
+        // Lưu ý: Nếu status là 'isLimited', FilePicker sẽ chỉ hiện những ảnh mà user đã chọn trước đó.
+        FilePickerResult? picked = await FilePicker.platform.pickFiles(
+          type: FileType.image,
+          allowMultiple: false,
+        );
+
+        if (picked != null && picked.files.isNotEmpty) {
+          final filePath = picked.files.single.path;
+
+          // [NOTE 5]: Cắt ảnh (Crop)
+          final cropped = await ImageCropper().cropImage(
+            sourcePath: filePath!,
+            uiSettings: [
+              AndroidUiSettings(
+                toolbarTitle: 'Cắt ảnh',
+                toolbarColor: AppColor.buttonprimaryCol, // Đồng bộ màu app
+                toolbarWidgetColor: Colors.white,
+                initAspectRatio: CropAspectRatioPreset.square,
+                lockAspectRatio: false,
+                aspectRatioPresets: [
+                  CropAspectRatioPreset.original,
+                  CropAspectRatioPreset.square,
+                ],
+              ),
+              IOSUiSettings(
+                title: 'Cắt ảnh',
+                aspectRatioPresets: [
+                  CropAspectRatioPreset.original,
+                  CropAspectRatioPreset.square,
+                ],
+              ),
+            ],
+          );
+
+          // Cập nhật UI & Gọi API lưu
+          if (cropped != null) {
+            setState(() {
+              _localAvatar = File(cropped.path);
+            });
+            _saveProfile();
+          }
+        }
+      } catch (e) {
+        debugPrint("Lỗi pick file: $e");
+      }
+      // ------------------------------------
+    } else if (status.isPermanentlyDenied) {
+      // [NOTE 6]: Trường hợp bị chặn vĩnh viễn (User bấm Don't Allow 2 lần hoặc tắt trong Settings)
+      // -> Bắt buộc hiện Dialog dẫn user sang Cài đặt (Settings) của điện thoại
+      _showPermissionDialog();
+    } else {
+      // Trường hợp User bấm "Hủy" hoặc "Không cho phép" ở bảng hỏi lần đầu
+      // Có thể hiện SnackBar nhắc nhở nhẹ
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bạn cần cấp quyền để đổi ảnh đại diện')),
+      );
+    }
+  }
+
+  void _showPermissionDialog() {
+    // [NOTE 7]: Dùng showAdaptiveDialog
+    // Hàm này tự động tạo hiệu ứng Fade/Scale popup đúng chuẩn iOS hoặc Android
+    showAdaptiveDialog(
+      context: context,
+      builder: (ctx) {
+        // --- GIAO DIỆN IOS (Cupertino) ---
+        if (Platform.isIOS) {
+          return CupertinoAlertDialog(
+            title: const Text('Cần cấp quyền truy cập'),
+            content: const Text(
+              'Ứng dụng bị chặn quyền truy cập ảnh. Vui lòng vào Cài đặt > Ảnh > Chọn "Truy cập đầy đủ" hoặc "Giới hạn" để tiếp tục.',
+            ),
+            actions: [
+              CupertinoDialogAction(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Huỷ', style: TextStyle(color: Colors.red)), // Mặc định là màu xanh chuẩn iOS
+              ),
+              CupertinoDialogAction(
+                isDefaultAction: true, // Làm chữ In Đậm (Bold)
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  openAppSettings(); // Mở trang cài đặt
+                },
+                // [NOTE 8]: Fix màu tím mặc định
+                // Thêm textStyle để chỉnh màu nút thành màu xanh (chuẩn iOS) hoặc màu App
+                textStyle: const TextStyle(
+                  color: Color(0xff007AFF), // Hoặc Colors.blue
+                  fontWeight: FontWeight.bold,
+                ),
+                child: const Text('Đến Cài đặt'),
+              ),
+            ],
+          );
+        }
+
+        // --- GIAO DIỆN ANDROID (Material) ---
+        return AlertDialog(
+          title: const Text('Cần cấp quyền truy cập'),
+          content: const Text(
+            'Ứng dụng cần quyền truy cập thư viện ảnh để tải lên avatar. Vui lòng vào Cài đặt để cấp quyền.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Huỷ', style: TextStyle(color: Colors.red)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                openAppSettings();
+              },
+              // Android tự lấy màu primary của App (AppColor.buttonprimaryCol) nên không cần chỉnh
+              child: const Text(
+                'Đến Cài đặt',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _saveProfile() async {
     final name = _nameCtrl.text.trim();
+
+    print(name);
     if (name.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -64,7 +222,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Cập nhật thông tin thành công')),
       );
-      context.pop(); // quay về trang Account
+      // context.pop(); // quay về trang Account
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -77,6 +235,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(profileControllerProvider);
+    final isUploadingAvt = state.uploadingAvatar;
     final user = state.user;
 
     // final avatarProvider = (() {
@@ -101,10 +260,11 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         centerTitle: true,
         title: const Text(
           'Chỉnh sửa trang cá nhân',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(disabledBackgroundColor: Colors.grey),
             onPressed: _saving ? null : _saveProfile,
             child: Text(
               'Lưu',
@@ -124,13 +284,17 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             height: 180,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xfff9735b), Color(0xfffdc46b)],
+                colors: [
+                  Color(0xff251E4C),
+                  Color(0xff341D5C),
+                  Color(0xff6B2E7C),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               image: const DecorationImage(
-                image: AssetImage(AppImage.bgProfile),
-                fit: BoxFit.cover,
+                image: AssetImage(AppImage.nitro1),
+                fit: BoxFit.fill,
               ),
             ),
             child: Column(
@@ -139,42 +303,51 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor: Colors.white,
-                      backgroundImage: avatarProvider,
-                      child: avatarProvider == null
-                          ? Text(
-                              _initials(
-                                user?.displayName ?? user?.email ?? 'U',
-                              ),
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                          : null,
+                    GestureDetector(
+                      onTap: _pickAvatar,
+                      child: CircleAvatar(
+                        radius: 40,
+                        backgroundColor: Colors.white,
+                        backgroundImage: avatarProvider,
+                        child: isUploadingAvt
+                            ? Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.black45,
+                                ),
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child:
+                                        LoadingAnimationWidget.progressiveDots(
+                                          color: AppColor.buttonprimaryCol,
+                                          size: 20,
+                                        ),
+                                  ),
+                                ),
+                              )
+                            : (avatarProvider == null
+                                  ? Text(
+                                      _initials(
+                                        user?.displayName ?? user?.email ?? 'U',
+                                      ),
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )
+                                  : null),
+                      ),
                     ),
                     Positioned(
-                      bottom: -10,
-                      left: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: _pickAvatar,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.6),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Text(
-                            'Edit',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white, fontSize: 12),
-                          ),
+                      top: -10,
+                      left: -9,
+                      child: IgnorePointer(
+                        child: Image.asset(
+                          AppImage.avtFrame2,
+                          width: 100,
+                          height: 100,
                         ),
                       ),
                     ),
@@ -233,7 +406,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       },
                       child: const Text(
                         'Đổi mật khẩu',
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
                       ),
                     ),
                   ),
@@ -290,11 +463,11 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         ),
         child: Row(
           children: [
-            Expanded(child: Text(title, style: const TextStyle(fontSize: 15))),
+            Expanded(child: Text(title, style: const TextStyle(fontSize: 13))),
             Text(
               value,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 12,
                 color:
                     valueColor ??
                     (isPlaceholder ? Colors.grey : Colors.black87),
@@ -415,7 +588,11 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                         onPressed: () {
                           final v = ctrl.text.trim();
                           if (v.isEmpty) return;
-                          Navigator.pop(ctx, v);
+                          setState(() {
+                            _nameCtrl.text = v;
+                          });
+                          _saveProfile();
+                          Navigator.pop(ctx);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColor.buttonprimaryCol,
@@ -447,4 +624,12 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     if (parts.length == 1) return parts.first[0].toUpperCase();
     return (parts.first[0] + parts.last[0]).toUpperCase();
   }
+}
+
+class CropAspectRatioPresetCustom implements CropAspectRatioPresetData {
+  @override
+  (int, int)? get data => (2, 3);
+
+  @override
+  String get name => '2x3 (customized)';
 }

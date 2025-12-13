@@ -216,7 +216,7 @@ final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
 });
 
 // controller theo productId
-final productReviewsControllerProvider = StateNotifierProvider.family<
+final productReviewsControllerProvider = StateNotifierProvider.autoDispose.family<
     ProductReviewsController, ProductReviewsState, String>(
   (ref, productId) {
     final repo = ref.watch(reviewRepositoryProvider);

@@ -30,7 +30,7 @@ Keywords: ${doc.keywords.join(", ")}
 Content: ${doc.content}
         `.trim()
     );
-    
+
     console.log("[face-advice] Embedding", texts.length, "docs...");
     const vectors = await embedTexts(texts);
 
@@ -82,17 +82,29 @@ export async function searchFaceAdvice(
     }
 
     // Map lại kết quả từ Qdrant về object FaceAdviceDoc
-    const docs: FaceAdviceDoc[] = raw.map((r) => ({
-        id: r.payload.original_id ?? String(r.id),
-        title: r.payload.title,
-        content: r.payload.content,
-        face_shape: r.payload.face_shape,
-        keywords: r.payload.keywords ?? [], // <--- Lấy lại keywords từ payload
-    }));
+    const docs: FaceAdviceDoc[] = raw.map((r) => {
+        // 1. Lấy payload ra và ép kiểu về any để truy cập thuộc tính dễ dàng
+        const payload = r.payload as any;
+
+        return {
+            // Dùng ?? "" để đảm bảo luôn là string, không bị null/undefined
+            id: (payload?.original_id as string) ?? String(r.id),
+            title: (payload?.title as string) ?? "",
+            content: (payload?.content as string) ?? "",
+
+            // 2. QUAN TRỌNG: Ép kiểu string về Union Type ("round" | "square"...)
+            face_shape: (payload?.face_shape as FaceAdviceDoc["face_shape"]) ?? "oval", // Giá trị mặc định nếu không tìm thấy
+
+            keywords: (payload?.keywords as string[]) ?? [],
+        };
+    });
 
     const topScore = raw[0].score ?? null;
+
+    // Sửa lại đoạn này một chút cho an toàn
+    const firstPayload = raw[0].payload as any;
     const bestFaceShape =
-        raw[0].payload?.face_shape ??
+        (firstPayload?.face_shape as FaceAdviceDoc["face_shape"]) ??
         (docs[0]?.face_shape ?? null);
 
     return { docs, bestFaceShape, topScore };

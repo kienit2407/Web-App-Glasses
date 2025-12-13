@@ -90,8 +90,26 @@ class AuthRepository {
     final meBody = meRes.data as Map<String, dynamic>;
     return meBody['data'] as Map<String, dynamic>;
   }
+Future<void> logout() async {
+    // 1. Lấy refreshToken từ Storage ra
+    final refreshToken = await _tokenStorage.getRefreshToken();
+    
+    // 2. Gửi nó lên Backend để revoke
+    if (refreshToken != null) {
+      try {
+        await _dio.post(
+          '/auth/logout',
+          data: {
+            'refreshToken': refreshToken // QUAN TRỌNG: Phải gửi cái này lên
+          },
+        );
+      } catch (e) {
+        // Có thể server lỗi hoặc mạng yếu, nhưng cứ kệ nó đi
+        print("Logout API error: $e");
+      }
+    }
 
-  Future<void> logout() async {
+    // 3. Xoá token dưới máy (như cũ)
     await _tokenStorage.clearToken();
-  }
+}
 }
