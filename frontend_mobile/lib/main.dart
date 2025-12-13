@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:frontend_mobile/core/network/dio_config.dart';
 import 'package:frontend_mobile/core/network/token_storage.dart';
-import 'package:frontend_mobile/core/notifications/push_notification_service.dart';
 import 'package:frontend_mobile/core/routes/app_routes.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 // // dùng cho message khi app đang ở background

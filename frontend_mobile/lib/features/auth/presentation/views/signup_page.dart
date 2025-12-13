@@ -1,33 +1,137 @@
 import 'package:apptomate_custom_checkbox/apptomate_custom_checkbox.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:frontend_mobile/core/assets/app_icon.dart';
 import 'package:frontend_mobile/core/common/app_button.dart';
+import 'package:frontend_mobile/core/contants/url_config.dart';
+import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
-class SignupPage extends StatefulWidget {
+class SignupPage extends ConsumerStatefulWidget {
   const SignupPage({super.key});
 
   @override
-  State<SignupPage> createState() => _SignupPageState();
+  ConsumerState<SignupPage> createState() => _SignupPageState();
 }
 
-class _SignupPageState extends State<SignupPage> {
+class _SignupPageState extends ConsumerState<SignupPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _pwdController = TextEditingController();
+  Future<void> _onSignInPressed() async {
+    final email = _emailController.text.trim();
+    final password = _pwdController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập email và mật khẩu')),
+      );
+      return;
+    }
+
+    try {
+      await ref.read(authControllerProvider.notifier).signIn(email, password);
+
+      if (!mounted) return;
+
+      // login ok
+      context.go('/');
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Đăng nhập thất bại: $e')));
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    try {
+      // 1) Mở popup web auth trỏ tới BE /auth/google?client=mobile
+      final authUrl = '${UrlConfig.baseUrl}/auth/google?platform=mobile';
+
+      final result = await FlutterWebAuth2.authenticate(
+        url: authUrl,
+        callbackUrlScheme: 'myshop', // phải trùng scheme deep link
+      );
+
+      // result sẽ là: myshop://oauth-callback?accessToken=...&refreshToken=...
+      final uri = Uri.parse(result);
+      final accessToken = uri.queryParameters['accessToken'];
+      final refreshToken = uri.queryParameters['refreshToken'];
+
+      if (accessToken == null || refreshToken == null) {
+        throw Exception('Thiếu accessToken / refreshToken');
+      }
+
+      // 2) Gọi AuthController để lưu token + lấy profile
+      await ref
+          .read(authControllerProvider.notifier)
+          .signInWithExternalTokens(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+          );
+      await ref.read(profileControllerProvider.notifier).loadProfile();
+      if (!mounted) return;
+      context.go('/home');
+    } catch (e) {
+      // if (!mounted) return;
+      // ScaffoldMessenger.of(
+      //   context,
+      // ).showSnackBar(SnackBar(content: Text('Đăng nhập Google thất bại: $e')));
+    }
+  }
+
+  Future<void> _signInWithGithub() async {
+    try {
+      // 1) Mở popup web auth trỏ tới BE /auth/google?client=mobile
+      final authUrl = '${UrlConfig.baseUrl}/auth/github?platform=mobile';
+
+      final result = await FlutterWebAuth2.authenticate(
+        url: authUrl,
+        callbackUrlScheme: 'myshop', // phải trùng scheme deep link
+      );
+
+      // result sẽ là: myshop://oauth-callback?accessToken=...&refreshToken=...
+      final uri = Uri.parse(result);
+      final accessToken = uri.queryParameters['accessToken'];
+      final refreshToken = uri.queryParameters['refreshToken'];
+
+      if (accessToken == null || refreshToken == null) {
+        throw Exception('Thiếu accessToken / refreshToken');
+      }
+
+      // 2) Gọi AuthController để lưu token + lấy profile
+      await ref
+          .read(authControllerProvider.notifier)
+          .signInWithExternalTokens(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+          );
+      await ref.read(profileControllerProvider.notifier).loadProfile();
+      if (!mounted) return;
+      context.go('/home');
+    } catch (e) {
+      // if (!mounted) return;
+      // ScaffoldMessenger.of(
+      //   context,
+      // ).showSnackBar(SnackBar(content: Text('Đăng nhập Github thất bại: $e')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
+        backgroundColor: const Color(0xffF2F4F8),
         appBar: AppBar(
           backgroundColor: Colors.transparent, // Nền trong suốt
           elevation: 0, // Bỏ bóng đổ
           leading: IconButton(
             icon: const Icon(
-              Iconsax.arrow_left_2_copy, // Dùng icon arrow của Iconsax cho đồng bộ
+              Iconsax
+                  .arrow_left_2_copy, // Dùng icon arrow của Iconsax cho đồng bộ
               color: AppColor.textpriCol, // Màu đen/xám theo theme text
             ),
             onPressed: () {
@@ -42,31 +146,34 @@ class _SignupPageState extends State<SignupPage> {
           ),
         ),
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              //Title
-              _titlePage(),
-              const SizedBox(height: 45),
-              // TextField For Signing
-              _textFieldEmail(context),
-              const SizedBox(height: 15),
-              _textFieldPwd(context),
-              const SizedBox(height: 20),
-              _checkBoxConfirm(),
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 50),
-                child: AppButton(content: 'Sign Up', onPressed: () {}),
-              ),
-              const SizedBox(height: 20),
-              _optSignUp(),
-              const SizedBox(height: 20),
-              _methodSignUp(),
-              const SizedBox(height: 20),
-              _moveOnSignIn(),
-            ],
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(bottom: 20.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                //Title
+                _titlePage(),
+                const SizedBox(height: 45),
+                // TextField For Signing
+                _textFieldEmail(context),
+                const SizedBox(height: 15),
+                _textFieldPwd(context),
+                const SizedBox(height: 20),
+                _checkBoxConfirm(),
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 50),
+                  child: AppButton(content: 'Sign Up', onPressed: () {}),
+                ),
+                const SizedBox(height: 20),
+                _optSignUp(),
+                const SizedBox(height: 20),
+                _methodSignUp(),
+                const SizedBox(height: 20),
+                _moveOnSignIn(),
+              ],
+            ),
           ),
         ),
       ),
@@ -90,8 +197,7 @@ class _SignupPageState extends State<SignupPage> {
           style: TextButton.styleFrom(
             padding: EdgeInsets.zero,
             minimumSize: Size(0, 0),
-            tapTargetSize:
-                MaterialTapTargetSize.shrinkWrap,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           onPressed: () {
             context.pushReplacementNamed('signin');
@@ -114,8 +220,8 @@ class _SignupPageState extends State<SignupPage> {
       spacing: 25,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _iconMethod(AppIcon.googleIcon, () => {}),
-        _iconMethod(AppIcon.githubIcon, () => {}),
+        _iconMethod(AppIcon.googleIcon, _signInWithGoogle),
+        _iconMethod(AppIcon.githubIcon, _signInWithGithub),
       ],
     );
   }

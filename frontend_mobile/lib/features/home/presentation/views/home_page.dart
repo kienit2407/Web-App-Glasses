@@ -128,6 +128,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   'Thương hiệu chính hãng',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
+                    fontSize: 13
                   ),
                 ),
               ),
@@ -145,6 +146,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   'Gợi ý hôm nay',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
+                    fontSize: 13
                   ),
                 ),
               ),
@@ -187,16 +189,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Text('Xem thêm'),
+                              : const Text('Xem thêm', style: TextStyle(color: Colors.grey, fontSize: 12),),
                         )
                       : const Text(
                           'Bạn đã xem hết sản phẩm',
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(color: Colors.grey, fontSize: 12),
                         ),
                 ),
               ),
             ),
-            SliverPadding(padding: const EdgeInsets.only(bottom: 100)),
+            SliverPadding(padding: const EdgeInsets.only(bottom: 20)),
           ],
         ),
       ),
@@ -609,7 +611,7 @@ class _ProductCard extends StatelessWidget {
                 product.name,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 13),
+                style: const TextStyle(fontSize: 11),
               ),
             ),
 
@@ -625,14 +627,14 @@ class _ProductCard extends StatelessWidget {
                     style: const TextStyle(
                       color: Colors.red,
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                      fontSize: 13,
                     ),
                   ),
                   if (originalPriceText != null)
                     Text(
                       originalPriceText,
                       style: const TextStyle(
-                        fontSize: 11,
+                        fontSize: 10,
                         color: Colors.grey,
                         decoration: TextDecoration.lineThrough,
                       ),
@@ -749,7 +751,7 @@ class _SearchHintTyperState extends State<_SearchHintTyper> {
           widget.textStyle ??
           const TextStyle(
             color: AppColor.buttomThirdCol,
-            fontSize: 14,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
       overflow: TextOverflow.ellipsis,

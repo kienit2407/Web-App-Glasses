@@ -8,23 +8,36 @@ class CouponCenterController extends StateNotifier<CouponCenterState> {
   final CouponCenterRepository _repo;
 
   CouponCenterController(this._repo) : super(CouponCenterState.initial()) {
-    loadAll();
+    loadCouponsAndPromotions();
+    // loadHighlight();
   }
 
-  Future<void> loadAll() async {
+  // Load coupon và promotions khi cần
+  Future<void> loadCouponsAndPromotions() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final coupons = await _repo.getCoupons();
       final promotions = await _repo.getPromotions();
-      // final highlight = await _repo.getHighlight();
       state = state.copyWith(
         isLoading: false,
         coupons: coupons,
         promotions: promotions,
-        // highlight: highlight,
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      print('Error loading coupons and promotions: $e');
+    }
+  }
+
+  // Load highlight chỉ khi cần (ví dụ: khi có yêu cầu từ phía UI)
+  Future<void> loadHighlight() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final highlight = await _repo.getHighlight();
+      state = state.copyWith(isLoading: false, highlight: highlight);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      print('Error loading highlight: $e');
     }
   }
 

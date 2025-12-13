@@ -181,7 +181,7 @@ class _RegionSelectPageState extends ConsumerState<RegionSelectPage> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xfffafafa),
       appBar: AppBar(
         backgroundColor: AppColor.buttonprimaryCol,
         foregroundColor: Colors.white,
@@ -193,7 +193,7 @@ class _RegionSelectPageState extends ConsumerState<RegionSelectPage> {
         // Bạn có thể để title trống hoặc text tùy ý
         title: const Text(
           'Chọn khu vực',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
       ),
       body: Column(
@@ -243,6 +243,7 @@ class _RegionSelectPageState extends ConsumerState<RegionSelectPage> {
                     title: Text(
                       item.name,
                       style: TextStyle(
+                        fontSize: 13,
                         color: isSelected
                             ? AppColor.buttonprimaryCol
                             : Colors.black87,
@@ -372,7 +373,7 @@ class _RegionSelectPageState extends ConsumerState<RegionSelectPage> {
             child: Text(
               text,
               style: const TextStyle(
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: FontWeight.w400,
                 color: Colors.black87,
               ),

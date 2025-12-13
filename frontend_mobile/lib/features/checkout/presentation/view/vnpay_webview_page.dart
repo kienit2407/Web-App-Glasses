@@ -20,7 +20,7 @@ class _VnpayWebviewPageState extends State<VnpayWebviewPage> {
   late final WebViewController _controller;
 
   static const String kReturnUrlPrefix =
-      '${UrlConfig.frontendBaseUrl}/payment-result';
+      '${UrlConfig.backendBaseUrl}/payment-result';
 
   @override
   void initState() {

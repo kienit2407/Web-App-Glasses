@@ -20,6 +20,8 @@ export const INITIALIZE_SOCKET_IO = (server: http.Server) => {
                 "http://localhost:8017",
                 "http://localhost:8080",
                 "https://localhost:5173",
+                "https://web-app-glasses.up.railway.app",
+                "https://web-app-glasses-x57x.vercel.app",
             ],
             credentials: true,
         },

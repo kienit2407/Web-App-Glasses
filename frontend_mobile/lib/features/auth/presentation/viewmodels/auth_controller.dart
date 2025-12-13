@@ -33,7 +33,7 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
       state = const AsyncData(null);
     }
   }
-
+  
   Future<void> signIn(String email, String password) async {
     state = const AsyncLoading();
     try {

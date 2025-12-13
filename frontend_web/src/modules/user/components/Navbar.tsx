@@ -128,7 +128,7 @@ export const Navbar = () => {
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4">
+      <div className="mx-10 px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link
@@ -357,7 +357,7 @@ export const Navbar = () => {
               <Badge count={cart?.items.length || 0} size="default" overflowCount={99}>
                 <button
                   type="button"
-                  className="relative inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-slate-100 transition"
+                  className="relative inline-flex h-10 w-10 items-center bg-slate-200 justify-center rounded-full hover:bg-blue-100 transition"
                 >
                   <ShoppingCart className="h-[18px] w-[18px]" />
                 </button>
@@ -407,8 +407,8 @@ export const Navbar = () => {
               >
                 <DropdownMenuTrigger asChild >
                   <Button className="flex items-center gap-2 px-2 hover:bg-blue-50 focus:text-blue-700 data-[state=open]:bg-blue-100 transition-colors" variant="ghost" >
-                    <Avatar className="h-7 w-7">
-                      <AvatarImage src={user.avatar_url} alt={user.display_name} />
+                    <Avatar className="h-10 w-10 !object-cover">
+                      <AvatarImage src={user.avatar_url} alt={user.display_name} className="object-cover"/>
                       <AvatarFallback>{getInitials(user.display_name)}</AvatarFallback>
                     </Avatar>
                     <span className="max-w-[140px] truncate text-sm font-medium">
@@ -418,8 +418,8 @@ export const Navbar = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-[260px]">
                   <DropdownMenuLabel className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={user.avatar_url} />
+                    <Avatar className="h-7 w-7 object-cover">
+                      <AvatarImage src={user.avatar_url}  className="object-cover"/>
                       <AvatarFallback>{getInitials(user.display_name)}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">

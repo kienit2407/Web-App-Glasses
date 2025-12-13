@@ -25,17 +25,17 @@ class ProfileController extends StateNotifier<ProfileState> {
     File? avatarFile,
   }) async {
     try {
-      state = state.copyWith(savingProfile: true, errorMessage: null);
+      state = state.copyWith(savingProfile: true, errorMessage: null, uploadingAvatar: true);
 
       final updatedUser = await _repo.updateMe(
         displayName: displayName.trim(),
         avatarFile: avatarFile,
       );
 
-      state = state.copyWith(user: updatedUser, savingProfile: false);
+      state = state.copyWith(user: updatedUser, savingProfile: false, uploadingAvatar: false);
     } catch (e) {
       print('[ProfileController] updateProfile error: $e');
-      state = state.copyWith(savingProfile: false, errorMessage: e.toString());
+      state = state.copyWith(savingProfile: false, errorMessage: e.toString(), uploadingAvatar: false);
     }
   }
 

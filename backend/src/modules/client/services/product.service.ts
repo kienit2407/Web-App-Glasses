@@ -356,6 +356,7 @@ export const productService = {
     async getProductDetail(productId: string) {
         if (!Types.ObjectId.isValid(productId)) return null;
 
+        // Lấy thông tin sản phẩm chính
         const product = await Product.findOne({
             _id: productId,
             is_active: true,
@@ -363,51 +364,48 @@ export const productService = {
 
         if (!product) return null;
 
+        // Lấy thông tin variants và images của sản phẩm
         const [variants, images] = await Promise.all([
             ProductVariant.find({
                 product_id: product._id,
                 is_active: true,
-            })
-                .sort({ createdAt: 1 })
-                .lean(),
+            }).sort({ createdAt: 1 }).lean(),
             ProductImage.find({
                 product_id: product._id,
-            })
-                .sort({ position: 1 })
-                .lean(),
+            }).sort({ position: 1 }).lean(),
         ]);
 
-        const productImages = images
-            .filter((img) => !img.variant_id)
-            .map((img) => ({
+        // Các ảnh sản phẩm chính
+        const productImages = images.filter((img) => !img.variant_id).map((img) => ({
+            image_id: img._id,
+            url: img.url,
+            url_id: img.url_id,
+            position: img.position,
+        }));
+
+        // Các ảnh riêng biệt cho từng variant
+        const byVariant: Record<string, any[]> = {};
+        images.filter((img) => img.variant_id).forEach((img) => {
+            const vid = String(img.variant_id);
+            if (!byVariant[vid]) byVariant[vid] = [];
+            byVariant[vid].push({
                 image_id: img._id,
                 url: img.url,
                 url_id: img.url_id,
                 position: img.position,
-            }));
-
-        const byVariant: Record<string, any[]> = {};
-        images
-            .filter((img) => img.variant_id)
-            .forEach((img) => {
-                const vid = String(img.variant_id);
-                if (!byVariant[vid]) byVariant[vid] = [];
-                byVariant[vid].push({
-                    image_id: img._id,
-                    url: img.url,
-                    url_id: img.url_id,
-                    position: img.position,
-                });
             });
+        });
 
+        // Trả về thông tin chi tiết sản phẩm
         return {
             product: {
                 product_id: product._id,
                 product_name: product.product_name,
-                slug: product.slug,              // FE dùng để hiển thị URL đẹp
+                slug: product.slug,
                 description: product.description,
                 selled_amount: product.selled_amount ?? 0,
                 review_count: product.review_count ?? 0,
+                rating_avg: product.rating_avg ?? 0,  // Trả về rating_avg từ sản phẩm chính
                 origin_country: product.origin_country,
                 category_id: product.category_id,
                 brand_id: product.brand_id,
@@ -428,15 +426,14 @@ export const productService = {
                 temple_length: v.temple_length,
                 bridge_width: v.bridge_width,
                 stock: v.stock,
-                rating_avg: product.rating_avg ?? 0,
                 has_uv_protection: v.has_uv_protection,
                 price: v.price,
                 sale_price: v.sale_price,
                 is_active: v.is_active,
             })),
             images: {
-                product: productImages, // ảnh chung
-                byVariant,              // ảnh riêng từng variant
+                product: productImages, // ảnh chung cho sản phẩm
+                byVariant,              // ảnh riêng cho từng variant
             },
         };
     },

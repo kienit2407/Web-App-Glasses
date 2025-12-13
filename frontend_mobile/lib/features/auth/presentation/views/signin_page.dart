@@ -10,6 +10,9 @@ import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:frontend_mobile/features/home/presentation/views/home_page.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
+import 'package:keyboard_actions/keyboard_actions.dart';
+import 'package:keyboard_actions/keyboard_actions_config.dart';
+import 'package:keyboard_actions/keyboard_actions_item.dart';
 
 class SigninPage extends ConsumerStatefulWidget {
   const SigninPage({super.key});
@@ -21,6 +24,8 @@ class SigninPage extends ConsumerStatefulWidget {
 class _SigninPageState extends ConsumerState<SigninPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _pwdController = TextEditingController();
+  final FocusNode _nodeText1 = FocusNode();
+  final FocusNode _nodeText2 = FocusNode();
   bool _isLoading = false;
   bool _hidePwd = false;
   Future<void> _onSignInPressed() async {
@@ -74,7 +79,7 @@ class _SigninPageState extends ConsumerState<SigninPage> {
             accessToken: accessToken,
             refreshToken: refreshToken,
           );
-
+      await ref.read(profileControllerProvider.notifier).loadProfile();
       if (!mounted) return;
       context.go('/home');
     } catch (e) {
@@ -84,6 +89,7 @@ class _SigninPageState extends ConsumerState<SigninPage> {
       // ).showSnackBar(SnackBar(content: Text('Đăng nhập Google thất bại: $e')));
     }
   }
+
   Future<void> _signInWithGithub() async {
     try {
       // 1) Mở popup web auth trỏ tới BE /auth/google?client=mobile
@@ -110,8 +116,9 @@ class _SigninPageState extends ConsumerState<SigninPage> {
             accessToken: accessToken,
             refreshToken: refreshToken,
           );
-
+      await ref.read(profileControllerProvider.notifier).loadProfile();
       if (!mounted) return;
+
       context.go('/home');
     } catch (e) {
       // if (!mounted) return;
@@ -126,9 +133,11 @@ class _SigninPageState extends ConsumerState<SigninPage> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
+        backgroundColor: const Color(0xffF2F4F8),
         appBar: AppBar(
           backgroundColor: Colors.transparent, // Nền trong suốt
           elevation: 0, // Bỏ bóng đổ
+          surfaceTintColor: Colors.transparent,
           leading: IconButton(
             icon: const Icon(
               Iconsax
@@ -146,38 +155,117 @@ class _SigninPageState extends ConsumerState<SigninPage> {
             },
           ),
         ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              //Title
-              _titlePage(),
-              const SizedBox(height: 45),
-              // TextField For Signing
-              _textFieldEmail(context),
-              const SizedBox(height: 15),
-              _textFieldPwd(context),
-              const SizedBox(height: 20),
-              _checkBoxConfirm(),
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 50),
-                child: AppButton(
-                  content: _isLoading ? 'Loading...' : 'Sign In',
-                  onPressed: _onSignInPressed,
-                ),
+        body: KeyboardActions(
+          config: _buildConfig(context),
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.only(bottom: 20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  //Title
+                  _titlePage(),
+                  const SizedBox(height: 45),
+                  // TextField For Signing
+                  _textFieldEmail(context),
+                  const SizedBox(height: 15),
+                  _textFieldPwd(context),
+                  const SizedBox(height: 20),
+                  _checkBoxConfirm(),
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 50),
+                    child: AppButton(
+                      content: _isLoading ? 'Loading...' : 'Sign In',
+                      onPressed: _onSignInPressed,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _optSignUp(),
+                  const SizedBox(height: 20),
+                  _methodSignUp(),
+                  const SizedBox(height: 20),
+                  _moveOnSignIn(),
+                ],
               ),
-              const SizedBox(height: 20),
-              _optSignUp(),
-              const SizedBox(height: 20),
-              _methodSignUp(),
-              const SizedBox(height: 20),
-              _moveOnSignIn(),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  KeyboardActionsConfig _buildConfig(BuildContext context) {
+    return KeyboardActionsConfig(
+      keyboardActionsPlatform: KeyboardActionsPlatform.ALL,
+      keyboardBarColor: Colors.grey[200], // Màu nền của thanh bar
+      nextFocus: true, // Nút mũi tên chuyển next
+      actions: [
+        // Cấu hình cho ô nhập số tài khoản (Giống ảnh 1 của bạn)
+        KeyboardActionsItem(
+          focusNode: _nodeText1,
+          displayArrows: false, // Tắt mũi tên nếu muốn custom hoàn toàn
+          toolbarAlignment: MainAxisAlignment.end, // Căn phải
+          // Đây là chỗ bạn vẽ cái thanh suggestion contacts hoặc nút Kiểm tra
+          footerBuilder: (_) => PreferredSize(
+            preferredSize: Size.fromHeight(50),
+            child: Container(
+              color: Colors.white,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        _buildChip("Nguyễn Văn A"),
+                        _buildChip("Trần Thị B"),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    color: Colors.green, // Nút màu xanh giống ảnh
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                    child: Text(
+                      "Kiểm tra",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        // Cấu hình cho ô thứ 2
+        KeyboardActionsItem(
+          focusNode: _nodeText2,
+          toolbarButtons: [
+            // Nút "Xong" đơn giản
+            (node) {
+              return GestureDetector(
+                onTap: () => node.unfocus(),
+                child: Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Text(
+                    "Xong",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              );
+            },
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChip(String name) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: Chip(label: Text(name), backgroundColor: Colors.grey[100]),
     );
   }
 
@@ -308,6 +396,7 @@ class _SigninPageState extends ConsumerState<SigninPage> {
           ],
         ),
         child: TextField(
+          focusNode: _nodeText2,
           controller: _pwdController,
           cursorColor: AppColor.textpriCol,
           obscureText: _hidePwd,
@@ -364,6 +453,7 @@ class _SigninPageState extends ConsumerState<SigninPage> {
           ],
         ),
         child: TextField(
+          focusNode: _nodeText1,
           controller: _emailController,
           cursorColor: AppColor.textpriCol,
           decoration: InputDecoration(

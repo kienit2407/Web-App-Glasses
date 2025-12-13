@@ -59,7 +59,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
       appBar: AppBar(
         title: const Text(
           'Đơn mua',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
         backgroundColor: AppColor.buttonprimaryCol,
         foregroundColor: Colors.white, // Chữ đen cho sang trọng
@@ -78,7 +78,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
               unselectedLabelColor: Colors.grey[600],
               indicatorColor: AppColor.buttonprimaryCol,
               indicatorSize: TabBarIndicatorSize.label,
-              labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
               unselectedLabelStyle: const TextStyle(
                 fontWeight: FontWeight.normal,
               ),
@@ -179,7 +179,7 @@ class _OrdersTabContentState extends ConsumerState<OrdersTabContent> {
 
     // Empty State đẹp hơn
     if (listState.items.isEmpty) {
-      return RefreshIndicator(
+      return RefreshIndicator.adaptive(
         onRefresh: () => ref
             .read(ordersControllerProvider.notifier)
             .refreshStatus(widget.status),
@@ -206,7 +206,7 @@ class _OrdersTabContentState extends ConsumerState<OrdersTabContent> {
                   const SizedBox(height: 16),
                   Text(
                     'Chưa có đơn hàng nào',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
                   ),
                 ],
               ),
@@ -216,7 +216,7 @@ class _OrdersTabContentState extends ConsumerState<OrdersTabContent> {
       );
     }
 
-    return RefreshIndicator(
+    return RefreshIndicator.adaptive(
       onRefresh: () => ref
           .read(ordersControllerProvider.notifier)
           .refreshStatus(widget.status),
@@ -337,7 +337,7 @@ class OrderCard extends ConsumerWidget {
                       order.shopName,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: 12,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -391,7 +391,7 @@ class OrderCard extends ConsumerWidget {
                               it.productName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 14, height: 1.2),
+                              style: const TextStyle(fontSize: 12, height: 1.2,),
                             ),
                             const SizedBox(height: 4),
                             if (it.variantName != null &&
@@ -455,7 +455,7 @@ class OrderCard extends ConsumerWidget {
                       style: const TextStyle(
                         color: AppColor.buttonprimaryCol,
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: 13,
                       ),
                     ),
                   ],

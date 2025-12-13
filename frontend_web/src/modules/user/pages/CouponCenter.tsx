@@ -224,7 +224,7 @@ const CouponCenter = () => {
     // ====== RENDER ======
     return (
         <div className="min-h-screen py-8 bg-[#fafafa]">
-            <div className="container mx-auto px-4 space-y-6">
+            <div className="w-full max-w-screen-2xl mx-auto px-4 space-y-6">
                 <Title level={3} className="mb-0">
                     Kho ưu đãi & voucher
                 </Title>

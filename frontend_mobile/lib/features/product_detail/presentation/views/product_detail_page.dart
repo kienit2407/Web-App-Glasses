@@ -12,8 +12,10 @@ import 'package:frontend_mobile/core/di/providers.dart'
 import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:frontend_mobile/features/checkout/presentation/view/checkout_args.dart';
 import 'package:frontend_mobile/features/product_detail/data/model/product_detail_model.dart';
+import 'package:frontend_mobile/features/product_detail/presentation/widgets/product_detail_skeleton.dart';
 import 'package:frontend_mobile/features/review/data/model/review_model.dart';
 import 'package:frontend_mobile/features/review/presentation/viewmodel/product_reviews_controller.dart';
+import 'package:frontend_mobile/features/review/presentation/viewmodel/review_state.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -30,6 +32,7 @@ class ProductDetailPage extends ConsumerStatefulWidget {
 class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
     with TickerProviderStateMixin {
   bool _isLoading = true;
+  bool _isLoadingUpload = false;
   ProductDetail? _detail;
 
   String? _selectedVariantId;
@@ -50,10 +53,6 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
 
   Future<void> _runAddToCartAnimation() async {
     // nếu đang animate rồi thì thôi, tránh spam tạo nhiều controller
-    bool isAnimating = false;
-    if (isAnimating) return;
-    isAnimating = true;
-
     final overlay = Overlay.of(context);
 
     // box của ảnh và icon giỏ
@@ -62,7 +61,6 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
         _cartIconKey.currentContext?.findRenderObject() as RenderBox?;
 
     if (imageBox == null || cartBox == null) {
-      isAnimating = false;
       return;
     }
 
@@ -74,7 +72,6 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
     // URL ảnh sẽ bay
     final imageUrl = _activeImageUrl ?? _detail?.product.thumbnailUrl ?? '';
     if (imageUrl.isEmpty) {
-      isAnimating = false;
       return;
     }
 
@@ -113,7 +110,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
 
     overlay.insert(entry);
 
-    // 👉 Quan trọng: mỗi tick animation, rebuild OverlayEntry
+    // Quan trọng: mỗi tick animation, rebuild OverlayEntry
     controller.addListener(() {
       if (entry.mounted) {
         entry.markNeedsBuild();
@@ -124,7 +121,6 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
 
     entry.remove();
     controller.dispose();
-    isAnimating = false;
   }
 
   Future<void> _loadDetail() async {
@@ -159,7 +155,6 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
         _isLoading = false;
       });
     } catch (e) {
-      // TODO: show SnackBar
       setState(() => _isLoading = false);
     }
   }
@@ -217,17 +212,34 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
     final cartController = ref.read(cartControllerProvider.notifier);
     final authState = ref.watch(authControllerProvider);
     final isLoggedIn = authState.valueOrNull != null;
+    final reviewState = ref.watch(
+      productReviewsControllerProvider(widget.productId),
+    );
 
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Chi tiết sản phẩm')),
-        body: const Center(child: CircularProgressIndicator()),
+        appBar: AppBar(
+          title: const Text(
+            'Chi tiết sản phẩm',
+            style: TextStyle(fontSize: 16),
+          ),
+          foregroundColor: Colors.white,
+          backgroundColor: AppColor.buttonprimaryCol,
+        ),
+        body: const ProductDetailSkeleton(),
       );
     }
 
     if (detail == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Chi tiết sản phẩm')),
+        appBar: AppBar(
+          title: const Text(
+            'Chi tiết sản phẩm',
+            style: TextStyle(fontSize: 16),
+          ),
+          foregroundColor: Colors.white,
+          backgroundColor: AppColor.buttonprimaryCol,
+        ),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -260,24 +272,29 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
         variant.salePrice! < originPrice);
 
     final discountPercent = hasDiscount
-        ? ((originPrice - (variant!.salePrice ?? 0)) * 100 ~/ originPrice)
+        ? ((originPrice - (variant.salePrice ?? 0)) * 100 ~/ originPrice)
         : 0;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Text(
+          product.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontSize: 16),
+        ),
         actions: [
           // gán key để tính vị trí đích
           CartIconButton(key: _cartIconKey),
         ],
-        backgroundColor: Colors.white,
+        foregroundColor: Colors.white,
+        backgroundColor: AppColor.buttonprimaryCol,
         shadowColor: Colors.black,
-        foregroundColor: Colors.black87,
         elevation: 0.5,
       ),
       backgroundColor: const Color(0xfff5f5f5),
 
-      body: RefreshIndicator(
+      body: RefreshIndicator.adaptive(
         onRefresh: _loadDetail,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -319,6 +336,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
                 child: Column(
                   children: [
                     TabBar(
+                      labelStyle: TextStyle(fontSize: 13),
                       controller: _tabController,
                       labelColor: AppColor.buttonprimaryCol,
                       unselectedLabelColor: Colors.black54,
@@ -419,7 +437,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
                               _quantity,
                             );
 
-                            // hiệu ứng bay vào giỏ 👇
+                            // hiệu ứng bay vào giỏ
                             _runAddToCartAnimation();
 
                             // SnackBar thông báo (nếu muốn giữ)
@@ -449,7 +467,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
                   ),
                   child: Text(
                     stock <= 0 ? 'Hết hàng' : 'Thêm vào giỏ',
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
                   ),
                 ),
               ),
@@ -479,7 +497,10 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
                   ),
                   child: Text(
                     'Mua ngay',
-                    style: TextStyle(color: AppColor.buttonprimaryCol),
+                    style: TextStyle(
+                      color: AppColor.buttonprimaryCol,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ),
@@ -606,7 +627,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
 
         Text(
           product.name,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
 
@@ -616,6 +637,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
             const SizedBox(width: 4),
             Text(
               rating.toStringAsFixed(1),
+              
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 4),
@@ -628,29 +650,35 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
         const SizedBox(height: 8),
 
         Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              _formatPrice(displayPrice),
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColor.buttonprimaryCol,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _formatPrice(displayPrice),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColor.buttonprimaryCol,
+                  ),
+                ),
+                if (hasDiscount)
+                  Text(
+                    _formatPrice(originPrice),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                      decoration: TextDecoration.lineThrough,
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(width: 8),
             if (hasDiscount)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    _formatPrice(originPrice),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey,
-                      decoration: TextDecoration.lineThrough,
-                    ),
-                  ),
                   const SizedBox(height: 2),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -700,6 +728,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
                 label: Text(
                   '${v.frameColor} • ${v.frameShape}',
                   style: TextStyle(
+                    fontSize: 11,
                     color: selected ? Colors.white : Colors.black,
                   ),
                 ),
@@ -728,7 +757,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
       padding: const EdgeInsets.all(12),
       child: Text(
         product.description,
-        style: const TextStyle(fontSize: 14, height: 1.4),
+        style: const TextStyle(fontSize: 13, height: 1.5),
       ),
     );
   }
@@ -827,14 +856,14 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
     final authState = ref.watch(authControllerProvider);
     final isLoggedIn = authState.valueOrNull != null;
 
-    // show error nếu có
-    if (reviewState.errorMessage != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(reviewState.errorMessage!)));
-      });
-    }
+    // // show error nếu có
+    // if (reviewState.errorMessage != null) {
+    //   WidgetsBinding.instance.addPostFrameCallback((_) {
+    //     ScaffoldMessenger.of(
+    //       context,
+    //     ).showSnackBar(SnackBar(content: Text(reviewState.errorMessage!)));
+    //   });
+    // }
 
     if (reviewState.isLoading && reviewState.items.isEmpty) {
       return const Center(child: CircularProgressIndicator.adaptive());
@@ -874,6 +903,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
                 onPressed: () => _showReviewDialog(
                   controller: controller,
                   existing: myReview,
+                  reviewState: reviewState,
                 ),
                 child: const Text('Viết đánh giá'),
               ),
@@ -919,6 +949,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
                         onPressed: () => _showReviewDialog(
                           controller: controller,
                           existing: myReview,
+                          reviewState: reviewState,
                         ),
                         child: Text(
                           'Sửa đánh giá',
@@ -927,11 +958,19 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
                       ),
                     if (isLoggedIn && myReview == null)
                       ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColor.buttonprimaryCol,
+                          foregroundColor: Colors.white,
+                        ),
                         onPressed: () => _showReviewDialog(
                           controller: controller,
                           existing: null,
+                          reviewState: reviewState,
                         ),
-                        child: const Text('Viết đánh giá'),
+                        child: const Text(
+                          'Viết đánh giá',
+                          style: TextStyle(fontSize: 12),
+                        ),
                       ),
                     if (isLoggedIn && myReview != null)
                       TextButton(
@@ -1005,22 +1044,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
           // avatar + tên + rating + ngày
           Row(
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundImage: rv.user?.avatarUrl != null
-                    ? NetworkImage(rv.user!.avatarUrl!)
-                    : null,
-                child: rv.user?.avatarUrl == null
-                    ? Text(
-                        rv.user?.displayName.substring(0, 1).toUpperCase() ??
-                            'U',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      )
-                    : null,
-              ),
+              _buildAvatar(rv),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
@@ -1108,9 +1132,71 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
     );
   }
 
+  Widget _buildAvatar(ReviewModel rv) {
+    // 1. Lấy URL và Tên
+    final url = rv.user?.avatarUrl;
+    final name = rv.user?.displayName ?? 'U';
+    final firstLetter = name.isNotEmpty
+        ? name.substring(0, 1).toUpperCase()
+        : 'U';
+
+    // 2. Logic hiển thị
+    return Container(
+      width: 36, // = radius 18 * 2
+      height: 36,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.blueGrey, // Màu nền mặc định khi hiện chữ
+      ),
+      clipBehavior: Clip.hardEdge, // Cắt ảnh theo hình tròn container
+      child: (url != null && url.isNotEmpty)
+          ? Image.network(
+              url,
+              fit: BoxFit.cover,
+              // Quan trọng: Nếu ảnh lỗi -> Hiện chữ cái đầu
+              errorBuilder: (context, error, stackTrace) {
+                return Center(
+                  child: Text(
+                    firstLetter,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                );
+              },
+              // Khi đang tải -> Hiện loading hoặc placeholder
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(
+                  child: SizedBox(
+                    width: 10,
+                    height: 10,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  ),
+                );
+              },
+            )
+          : Center(
+              // Nếu url null ngay từ đầu -> Hiện chữ
+              child: Text(
+                firstLetter,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+    );
+  }
+
   void _showReviewDialog({
     required ProductReviewsController controller,
     ReviewModel? existing,
+    required ProductReviewsState reviewState,
   }) {
     final commentController = TextEditingController(
       text: existing?.comment ?? '',
@@ -1276,7 +1362,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
                                         children: [
                                           ListTile(
                                             leading: const Icon(
-                                              Iconsax.photoshop_copy,
+                                              Iconsax.camera_copy,
                                             ),
                                             title: const Text('Thêm hình ảnh'),
                                             onTap: () async {
@@ -1415,14 +1501,18 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
                                       );
                                       return;
                                     }
-
+                                    setState(() {
+                                      _isLoadingUpload = true;
+                                    });
                                     await controller.createOrUpdate(
                                       rating: _rating,
                                       comment: comment,
                                       images: _images,
                                       videoFile: _videoFile,
                                     );
-
+                                    setState(() {
+                                      _isLoadingUpload = false;
+                                    });
                                     if (context.mounted) {
                                       Navigator.of(ctx).pop();
                                     }
@@ -1438,7 +1528,9 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
                                     ),
                                     elevation: 0,
                                   ),
-                                  child: const Text('Gửi đánh giá'),
+                                  child: _isLoadingUpload
+                                      ? const CircularProgressIndicator.adaptive() // Hiển thị Spinner khi đang gửi
+                                      : const Text('Gửi đánh giá'),
                                 ),
                               ),
                             ],

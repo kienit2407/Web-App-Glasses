@@ -143,7 +143,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         appBar: AppBar(
           backgroundColor: AppColor.buttonprimaryCol,
           foregroundColor: Colors.white,
-          title: const Text('Chi tiết đơn hàng'),
+          title: const Text('Chi tiết đơn hàng', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),),
           elevation: 0,
         ),
         body: const Center(child: CircularProgressIndicator.adaptive()),
@@ -152,7 +152,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
 
     if (_error != null || _data == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Chi tiết đơn hàng')),
+        appBar: AppBar(title: const Text('Chi tiết đơn hàng', style: TextStyle(fontSize: 16),), ),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -195,14 +195,14 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       appBar: AppBar(
         title: const Text(
           'Chi tiết đơn hàng',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
         centerTitle: true,
         backgroundColor: AppColor.buttonprimaryCol,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: RefreshIndicator(
+      body: RefreshIndicator.adaptive(
         onRefresh: _loadDetail,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -261,19 +261,20 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         children: [
           Row(
             children: [
-              const Text('Mã đơn hàng: ', style: TextStyle(color: Colors.grey)),
+              const Text('Mã đơn hàng: ', style: TextStyle(color: Colors.grey,fontSize: 12)),
+              _CopyButton(textToCopy: orderId),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   orderId,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                    fontSize: 13,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // NÚT COPY ANIMATION
-              _CopyButton(textToCopy: orderId),
+    
               const SizedBox(width: 8),
               InkWell(
                 onTap: () => _showQrDialog(orderId),
@@ -350,7 +351,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         children: [
           const Text(
             'Trạng thái đơn hàng',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
           ),
           const SizedBox(height: 16),
           Row(
@@ -450,15 +451,15 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               children: [
                 const Text(
                   'Địa chỉ nhận hàng',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
                 const SizedBox(height: 4),
-                Text('$name | $phone', style: const TextStyle(fontSize: 13)),
+                Text('$name | $phone', style: const TextStyle(fontSize: 12)),
                 const Divider(thickness: .8,),
                 Text(
                   specificAdress,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: Colors.black87,
                     fontWeight: FontWeight.w600,
                     height: 1.3,
@@ -468,7 +469,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                 Text(
                   fullAddress,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: Colors.grey[700],
                     height: 1.3,
                   ),
@@ -494,7 +495,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         children: [
           const Text(
             'Kiện hàng',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           const SizedBox(height: 12),
           ListView.separated(
@@ -547,7 +548,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                           it['name'] ?? '',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 14),
+                          style: const TextStyle(fontSize: 12),
                         ),
                         if (variant.isNotEmpty)
                           Padding(
@@ -616,14 +617,14 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
             children: [
               const Text(
                 'Tổng thanh toán',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
               Text(
                 _formatPrice(total),
                 style: const TextStyle(
                   color: AppColor.buttonprimaryCol,
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 14,
                 ),
               ),
             ],
@@ -660,10 +661,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
           Text(
             value,
-            style: TextStyle(fontSize: 13, color: valueColor ?? Colors.black87),
+            style: TextStyle(fontSize: 11, color: valueColor ?? Colors.black87),
           ),
         ],
       ),

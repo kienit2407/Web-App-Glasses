@@ -2,12 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:frontend_mobile/core/common/app_button.dart';
 import 'package:frontend_mobile/core/common/product_cart.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:frontend_mobile/features/home/data/models/product_list_item.dart';
-import 'package:frontend_mobile/features/product_detail/presentation/views/product_detail_page.dart';
 import 'package:go_router/go_router.dart';
 
 class SearchResultPage extends ConsumerStatefulWidget {
@@ -103,24 +103,32 @@ class _SearchResultPageState extends ConsumerState<SearchResultPage> {
           _buildQuickFilters(),
           Expanded(
             child: _isLoading && _items.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator.adaptive())
                 : _items.isEmpty
-                ? const Center(child: Text('Không tìm thấy sản phẩm'))
-                : RefreshIndicator(
+                ? const Center(
+                    child: Text(
+                      'Không tìm thấy sản phẩm',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  )
+                : RefreshIndicator.adaptive(
                     onRefresh: () => _load(page: 1, reset: true),
-                    child: GridView.builder(
+                    child: MasonryGridView.count(
                       padding: const EdgeInsets.all(8),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            mainAxisSpacing: 8,
-                            crossAxisSpacing: 8,
-                            childAspectRatio: 0.63,
-                          ),
+                      crossAxisCount: 2, // 2 cột
+                      mainAxisSpacing: 8, // Khoảng cách dọc
+                      crossAxisSpacing: 8, // Khoảng cách ngang
                       itemCount: _items.length,
                       itemBuilder: (context, index) {
                         final p = _items[index];
-                        return _ProductCard(product: p);
+
+                        // Gọi Widget chung (ProductCard)
+                        return ProductCard(
+                          product: p,
+                          onTap: () {
+                            context.push('/product/${p.productId}');
+                          },
+                        );
                       },
                     ),
                   ),
@@ -155,6 +163,7 @@ class _SearchResultPageState extends ConsumerState<SearchResultPage> {
                     Expanded(
                       child: TextField(
                         controller: TextEditingController(text: _query),
+                        style: TextStyle(fontSize: 12),
                         decoration: const InputDecoration(
                           border: InputBorder.none,
                           isDense: true,
@@ -183,18 +192,24 @@ class _SearchResultPageState extends ConsumerState<SearchResultPage> {
   Widget _buildQuickFilters() {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       child: Row(
         children: [
           DropdownButton<String>(
             value: _sort,
             underline: const SizedBox.shrink(),
             items: const [
-              DropdownMenuItem(value: 'newest', child: Text('Mới nhất')),
-              DropdownMenuItem(value: 'price_asc', child: Text('Giá tăng dần')),
+              DropdownMenuItem(
+                value: 'newest',
+                child: Text('Mới nhất', style: TextStyle(fontSize: 12)),
+              ),
+              DropdownMenuItem(
+                value: 'price_asc',
+                child: Text('Giá tăng dần', style: TextStyle(fontSize: 12)),
+              ),
               DropdownMenuItem(
                 value: 'price_desc',
-                child: Text('Giá giảm dần'),
+                child: Text('Giá giảm dần', style: TextStyle(fontSize: 12)),
               ),
             ],
             onChanged: (val) {
@@ -210,7 +225,7 @@ class _SearchResultPageState extends ConsumerState<SearchResultPage> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 12,
                 color: AppColor.buttonprimaryCol,
                 fontWeight: FontWeight.w600,
               ),
@@ -313,7 +328,7 @@ class _SearchResultPageState extends ConsumerState<SearchResultPage> {
                           label: 'Gọng kính',
                           onSelected: (v) {
                             tempType = v;
-                            // 👇 chọn type cụ thể => bỏ brand
+                            // chọn type cụ thể => bỏ brand
                             tempBrandId = null;
                           },
                         ),
@@ -323,7 +338,7 @@ class _SearchResultPageState extends ConsumerState<SearchResultPage> {
                           label: 'Kính mát',
                           onSelected: (v) {
                             tempType = v;
-                            // 👇 chọn type cụ thể => bỏ brand
+                            // chọn type cụ thể => bỏ brand
                             tempBrandId = null;
                           },
                         ),
@@ -481,15 +496,3 @@ class _SearchResultPageState extends ConsumerState<SearchResultPage> {
   }
 }
 
-class _ProductCard extends StatelessWidget {
-  const _ProductCard({required this.product});
-  final ProductListItem product;
-
-  @override
-  Widget build(BuildContext context) {
-    return ProductCard(
-      product: product,
-      onTap: () => context.push('/product/${product.productId}'),
-    );
-  }
-}

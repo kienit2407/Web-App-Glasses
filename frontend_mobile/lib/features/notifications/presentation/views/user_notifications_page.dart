@@ -1,4 +1,5 @@
 // lib/features/notifications/presentation/views/user_notifications_page.dart
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -19,7 +20,6 @@ class UserNotificationsPage extends ConsumerWidget {
     final state = ref.watch(userNotificationControllerProvider);
     final controller = ref.read(userNotificationControllerProvider.notifier);
 
-    
     final authState = ref.watch(authControllerProvider);
     final authUser = authState.valueOrNull;
 
@@ -33,7 +33,7 @@ class UserNotificationsPage extends ConsumerWidget {
         foregroundColor: Colors.white,
         title: const Text(
           'Thông báo',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
         centerTitle: true,
         actions: [
@@ -52,22 +52,34 @@ class UserNotificationsPage extends ConsumerWidget {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (ctx) {
-                        return AlertDialog(
+                        return CupertinoAlertDialog(
                           title: const Text('Xoá tất cả thông báo?'),
                           content: const Text(
                             'Thao tác này sẽ xoá toàn bộ thông báo hiện có, bạn có chắc không?',
                           ),
                           actions: [
-                            TextButton(
+                            CupertinoDialogAction(
                               onPressed: () => Navigator.of(ctx).pop(false),
-                              child: const Text('Huỷ', style: TextStyle(color: AppColor.textpriCol),),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.of(ctx).pop(true),
                               child: const Text(
-                                'Xoá hết',
-                                style: TextStyle(color: Colors.red),
+                                'Huỷ',
+                                // Nút Huỷ trên iOS thường là màu xanh (0xff007AFF) hoặc xám
+                                style: TextStyle(
+                                  color: Color(0xff007AFF),
+                                  fontSize: 14,
+                                ),
                               ),
+                            ),
+                            CupertinoDialogAction(
+                              isDefaultAction: true, // Làm chữ In Đậm (Bold)
+                              onPressed: () => Navigator.of(ctx).pop(true),
+
+                              textStyle: const TextStyle(
+                                color: Colors
+                                    .red, // Đổi sang màu đỏ vì là hành động Xoá
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                              child: const Text('Xoá hết'),
                             ),
                           ],
                         );
@@ -128,7 +140,7 @@ class UserNotificationsPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text(
           'Thông báo',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
         backgroundColor: AppColor.buttonprimaryCol,
         foregroundColor: Colors.white,
