@@ -124,7 +124,7 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Không lưu được địa chỉ')));
+      ).showSnackBar(const SnackBar(content: Text('Không lưu được địa chỉ', style: TextStyle(fontSize: 12),)));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -138,7 +138,7 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
       appBar: AppBar(
         foregroundColor: Colors.white,
         backgroundColor: AppColor.buttonprimaryCol,
-        title: Text(isEdit ? 'Chỉnh sửa địa chỉ' : 'Địa chỉ mới', style: TextStyle(fontWeight: FontWeight.w600),),
+        title: Text(isEdit ? 'Chỉnh sửa địa chỉ' : 'Địa chỉ mới', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),),
       ),
       body: Form(
         key: _formKey,
@@ -163,14 +163,16 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                         children: [
                           const Text(
                             'Địa chỉ giao hàng',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                           ),
                           const SizedBox(height: 8),
                           TextFormField(
+                            style: TextStyle(fontSize: 12),
                             cursorColor: AppColor.buttonprimaryCol,
                             controller: _nameCtrl,
                             decoration: const InputDecoration(
                               hintText: 'Tên người nhận',
+                              hintStyle: TextStyle(fontSize: 12),
                               border: InputBorder.none,
                             ),
                             validator: (v) => v == null || v.trim().isEmpty
@@ -181,10 +183,12 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                           TextFormField(
                             cursorColor: AppColor.buttonprimaryCol,
                             controller: _phoneCtrl,
+                            style: TextStyle(fontSize: 12),
                             keyboardType: TextInputType.phone,
                             decoration: const InputDecoration(
                               hintText: 'Số điện thoại',
                               border: InputBorder.none,
+                              hintStyle: TextStyle(fontSize: 12),
                             ),
                             validator: (v) => v == null || v.trim().isEmpty
                                 ? 'Nhập SĐT'
@@ -203,6 +207,7 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                                           ? 'Thành phố, Huyện, Xã'
                                           : _regionText,
                                       style: TextStyle(
+                                        fontSize: 12,
                                         color: _regionText.isEmpty
                                             ? Colors.grey
                                             : Colors.black,
@@ -218,9 +223,11 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                           TextFormField(
                             cursorColor: AppColor.buttonprimaryCol,
                             controller: _specificCtrl,
+                            style: TextStyle(fontSize: 12),
                             maxLines: 2,
                             decoration: const InputDecoration(
                               hintText: 'Địa chỉ cụ thể',
+                              hintStyle: TextStyle(fontSize: 12),
                               border: InputBorder.none,
                             ),
                             validator: (v) => v == null || v.trim().isEmpty
@@ -241,7 +248,8 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                       side: BorderSide(color: Colors.grey.shade200),
                     ),
                     child: SwitchListTile.adaptive(
-                      title: const Text('Đặt làm mặc định'),
+                      
+                      title: const Text('Đặt làm mặc định', style: TextStyle(fontSize: 12),),
                       value: _isDefault,
                       onChanged: (val) => setState(() => _isDefault = val),
                     ),
@@ -275,7 +283,7 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                           )
                         : Text(
                           isEdit ? 'Xong' : 'Tạo mới',
-                        style: TextStyle(fontWeight: FontWeight.w600),),
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),),
                   ),
                 ),
               ),

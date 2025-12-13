@@ -32,7 +32,12 @@ const protectUserRoute = async (req: Request, res: Response, next: NextFunction)
 
   try {
     const token = getBearer(req) // check accesstoken gửi lê
-    if (!token) return next(new UnauthorizedException('No access token')) // quăng ra lỗi k có access token
+    if (!token) {
+        req.user = undefined; // Gán cho rõ ràng (hoặc để undefined cũng dc) -> guest
+        return next(); 
+    }
+    console.log("token từ fe gùi xuống: ", token)
+    // if (!token) return next(new UnauthorizedException('No access token')) // quăng ra lỗi k có access token
 
 
     const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as JwtPayload // chứa user id và role 

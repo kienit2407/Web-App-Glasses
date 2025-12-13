@@ -8,4 +8,5 @@ class AppImage {
   static const String nitro1 = '${basePath}asset1.png';
   static const String nitro2 = '${basePath}asset2.png';
   static const String avtFrame = '${basePath}avt.webp';
+  static const String avtFrame2 = '${basePath}avt2.webp';
 }

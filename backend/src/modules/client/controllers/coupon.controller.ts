@@ -14,8 +14,11 @@ export const listAvailable = TryCatch(async (req: Request, res: Response) => {
     //     throw new UnauthorizedException("Unauthorized");
     // }
     // const userId = new Types.ObjectId(req.user._id);
-
-    const items = await couponService.listAvailableForUser();
+    const userId = req.user && req.user._id 
+        ? new Types.ObjectId(req.user._id) 
+        : undefined
+     console.log(userId)
+    const items = await couponService.listAvailableForUser(userId);
 
     return res.json({ data: { items } });
 });

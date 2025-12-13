@@ -18,7 +18,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
-const { Countdown } = Statistic;
+
 
 type CouponCenterItem = {
     _id: string;
@@ -98,25 +98,6 @@ const CouponCenter = () => {
             console.error(err);
         }
     };
-
-    // // ====== fetch highlight promotion cho popup ======
-    // const fetchHighlight = async () => {
-    //     try {
-    //         const res = await API.get("/promotions/highlight");
-    //         const data = res.data?.data as {
-    //             promotion: HighlightPromotion | null;
-    //             already_seen: boolean;
-    //         };
-
-    //         if (data?.promotion && !data.already_seen) {
-    //             setHighlight(data.promotion);
-    //             setHighlightOpen(true);
-    //         }
-    //     } catch (err) {
-    //         console.error(err);
-    //     }
-    // };
-
     useEffect(() => {
         const load = async () => {
             setLoading(true);
@@ -183,7 +164,8 @@ const CouponCenter = () => {
             return (
                 <div className="text-xs text-orange-500 mt-1">
                     <span className="mr-1">Sắp diễn ra:</span>
-                    <Countdown
+                    <Statistic.Timer
+                        type="countdown"
                         value={startDate.valueOf()}
                         format="DD ngày HH:mm:ss"
                     />
@@ -196,7 +178,8 @@ const CouponCenter = () => {
             return (
                 <div className="text-xs text-green-600 mt-1">
                     <span className="mr-1">Còn lại:</span>
-                    <Countdown
+                    <Statistic.Timer
+                        type="countdown"
                         value={endDate.valueOf()}
                         format="DD ngày HH:mm:ss"
                     />
@@ -224,7 +207,7 @@ const CouponCenter = () => {
     // ====== RENDER ======
     return (
         <div className="min-h-screen py-8 bg-[#fafafa]">
-            <div className="container mx-auto px-4 space-y-6">
+            <div className="w-full max-w-screen-2xl mx-auto px-4 space-y-6">
                 <Title level={3} className="mb-0">
                     Kho ưu đãi & voucher
                 </Title>

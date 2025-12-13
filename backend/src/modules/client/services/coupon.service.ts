@@ -45,7 +45,7 @@ export const couponService = {
             start_date: { $lte: now },
             $or: [{ end_date: null }, { end_date: { $gte: now } }],
         });
-
+        console.log("đã cập nhật rồi")
         if (!coupon) {
             throw new Error("Coupon không tồn tại hoặc hết hạn");
         }
@@ -138,28 +138,25 @@ export const couponService = {
 
     // user "lưu" coupon về ví (CTA Lưu ở Coupon Center)
     async claim(userId: Types.ObjectId, rawCode: string) {
-        // reuse logic check để đảm bảo coupon hợp lệ
         const info = await this.checkCoupon(userId, rawCode);
 
-        const now = new Date();
+        // Kiểm tra xem đã có trong kho chưa
+        const existing = await UserCoupon.findOne({
+            user_id: userId,
+            coupon_id: info._id
+        });
 
-        await UserCoupon.updateOne(
-            { user_id: userId, coupon_id: info._id },
-            {
-                // Nếu đã tồn tại record thì chỉ cần đánh dấu là đã lưu
-                $set: {
-                    is_saved: true,
-                },
-                // Nếu chưa có thì insert mới
-                $setOnInsert: {
-                    user_id: userId,
-                    coupon_id: info._id,
-                    is_used: false,
-                    saved_at: now,
-                },
-            },
-            { upsert: true }
-        );
+        if (existing) {
+            throw new BadRequestException("Bạn đã lưu voucher này rồi, không thể lưu thêm.");
+        }
+
+        // Nếu chưa có thì tạo mới
+        await UserCoupon.create({
+            user_id: userId,
+            coupon_id: info._id,
+            is_saved: true,
+            saved_at: new Date()
+        });
 
         return info;
     },
@@ -175,7 +172,7 @@ export const couponService = {
         }).lean();
 
         if (coupons.length === 0) return [];
-
+        console.log(userId)
         // Nếu chưa đăng nhập -> trả list coupon + is_saved/is_used = false hết
         if (!userId) {
             return coupons.map((c) => ({

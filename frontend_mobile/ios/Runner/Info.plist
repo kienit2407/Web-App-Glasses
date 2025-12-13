@@ -16,6 +16,8 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>frontend_mobile</string>
+	<key>CFBundleDisplayName</key>
+	<string>Shop Glasses</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -32,7 +34,16 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
-	
+	<!-- Cấu hình cần truy cập thư viẹn ảnh -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Ứng dụng cần truy cập thư viện ảnh để bạn cập nhật ảnh đại diện.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Ứng dụng cần truy cập camera để bạn chụp ảnh đại diện.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Ứng dụng cần truy cập microphone để quay video.</string>
+
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Ứng dụng cần vị trí để tìm tài xế gần bạn.</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -46,7 +57,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<!-- 🔥 Thêm từ đây trở xuống -->
+	<!-- Thêm từ đây trở xuống deeplink -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -60,6 +71,7 @@
 			</array>
 		</dict>
 	</array>
-	<!-- 🔥 Đến đây -->
+	
+	<!-- Đến đây -->
 </dict>
 </plist>

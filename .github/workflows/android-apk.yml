@@ -1,11 +1,11 @@
 name: Build Android APK
 
 on:
-  # push:
-    # branches: [ master ]
-    # paths:
-    #   - 'frontend_mobile/**'              # chỉ khi file trong mobile đổi
-    #   - '.github/workflows/android-apk.yml'  # hoặc khi bạn sửa workflow
+  push:
+    branches: [ master ]
+    paths:
+      - 'frontend_mobile/**'              # chỉ khi file trong mobile đổi
+      - '.github/workflows/android-apk.yml'  # hoặc khi bạn sửa workflow
   workflow_dispatch:                      # vẫn cho phép chạy bằng tay
 
 permissions:

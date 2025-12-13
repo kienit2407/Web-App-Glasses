@@ -35,10 +35,27 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+
+            // --- SỬA LẠI ĐOẠN NÀY THEO CHUẨN KOTLIN DSL ---
+            
+            // 1. Bật tối ưu hóa code (R8)
+            isMinifyEnabled = true 
+            
+            // 2. Bật tối ưu hóa resource (xóa ảnh/file thừa)
+            isShrinkResources = true
+            
+            // 3. Cấu hình Proguard/R8 (Dùng ngoặc kép và ngoặc tròn)
+            proguardFiles(
+                getDefaultProguardFile("proguard-android.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
 
 flutter {
     source = "../.."
+}
+dependencies {
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
 }

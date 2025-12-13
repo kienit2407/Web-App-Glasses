@@ -110,6 +110,10 @@ const ProductDetail = () => {
     // tuỳ cấu trúc user, ưu tiên id, fallback _id
     return String((user as any).id ?? (user as any)._id ?? "");
   }, [user]);
+  // useEffect(() => {
+  //   // Cuộn lên đầu mỗi khi danh sách sản phẩm thay đổi (do lọc hoặc phân trang)
+  //   window.scrollTo({ top: 0, behavior: "smooth" });
+  // }, [data]); // Thêm các dependency này
   const {
     items: reviews,
     avg_rating,
@@ -256,6 +260,7 @@ const ProductDetail = () => {
 
     fetchDetail();
   }, [productId, fetchOfProduct]);
+  
   const handleCopyLink = () => {
     // 1. Lấy đường dẫn chi tiết sản phẩm
     // Thường là URL hiện tại của trình duyệt
@@ -350,10 +355,10 @@ const ProductDetail = () => {
   console.log("reviews:", reviews);
   console.log("myReview:", myReview);
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen py-8 md:px-10 lg:px-10">
       <div className="container mx-auto px-4">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+        <div className="md:hidden flex items-center gap-2 text-sm text-muted-foreground mb-6">
           <Link to="/" className="hover:text-primary">
             Trang chủ
           </Link>

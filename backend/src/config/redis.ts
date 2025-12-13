@@ -3,6 +3,7 @@ import { env } from './environment'
 
 const client = createClient({
     url: env.REDIS_LOCAL ?? 'redis://localhost:6379',
+    
     socket: {
         reconnectStrategy(retries, cause) {
             if(retries > 10) return new Error('Max retries reached')

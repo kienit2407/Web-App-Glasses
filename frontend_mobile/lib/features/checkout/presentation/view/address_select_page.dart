@@ -5,6 +5,7 @@ import 'package:frontend_mobile/core/theme/app_color.dart';
 // import 'package:frontend_mobile/core/theme/app_color.dart'; // Bạn có thể dùng lại nếu muốn, mình sẽ dùng Colors trực tiếp để demo chuẩn theo ảnh
 import 'package:frontend_mobile/features/address/data/models/address_model.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 class AddressSelectPage extends ConsumerStatefulWidget {
   const AddressSelectPage({super.key, this.returnSelectedAddress = true});
@@ -60,7 +61,7 @@ class _AddressSelectPageState extends ConsumerState<AddressSelectPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xfff5f5f5),
       appBar: AppBar(
         backgroundColor: AppColor.buttonprimaryCol,
         foregroundColor: Colors.white,
@@ -72,7 +73,7 @@ class _AddressSelectPageState extends ConsumerState<AddressSelectPage> {
         // ),
         title: const Text(
           'Chọn địa chỉ',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       body: _isLoading
@@ -145,12 +146,13 @@ class _AddressSelectPageState extends ConsumerState<AddressSelectPage> {
         color: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         child: Row(
+          spacing: 10,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
           
             if (showRadio) 
               Padding(
-                padding: const EdgeInsets.only(top: 2.0),
+                padding: const EdgeInsets.only(top: 2.0,),
                 child: SizedBox(
                   width: 20,
                   height: 20,
@@ -178,7 +180,7 @@ class _AddressSelectPageState extends ConsumerState<AddressSelectPage> {
                           text: TextSpan(
                             style: const TextStyle(
                               color: Colors.black,
-                              fontSize: 15,
+                              fontSize: 13,
                             ),
                             children: [
                               TextSpan(
@@ -215,7 +217,7 @@ class _AddressSelectPageState extends ConsumerState<AddressSelectPage> {
                             style: TextStyle(
                               color: AppColor
                                   .buttonprimaryCol, // Sửa lại màu cho đúng biến của bạn
-                              fontSize: 14,
+                              fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -228,7 +230,7 @@ class _AddressSelectPageState extends ConsumerState<AddressSelectPage> {
                   Text(
                     addr.specificAddress,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       color: Colors.black87,
                       height: 1.4,
                       fontWeight: FontWeight.w500,
@@ -238,7 +240,7 @@ class _AddressSelectPageState extends ConsumerState<AddressSelectPage> {
                   Text(
                     '${addr.fullAddress}',
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       color: Colors.black87,
                       height: 1.4,
                     ),
@@ -284,7 +286,7 @@ class _AddressSelectPageState extends ConsumerState<AddressSelectPage> {
 
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xfff5f5f5),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.1),
@@ -301,7 +303,7 @@ class _AddressSelectPageState extends ConsumerState<AddressSelectPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.add_circle_outline,
+                Iconsax.add_copy,
                 color: AppColor.buttonprimaryCol,
                 size: 22,
               ),
@@ -310,7 +312,7 @@ class _AddressSelectPageState extends ConsumerState<AddressSelectPage> {
                 'Thêm địa chỉ mới',
                 style: TextStyle(
                   color: AppColor.buttonprimaryCol,
-                  fontSize: 16,
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
               ),

@@ -89,7 +89,7 @@ const AccountPage = () => {
     ];
     const HeaderBlock = (
         <Dropdown menu={{ items }} trigger={['click']} placement="bottomLeft">
-            <div className="p-6 border-b border-border flex items-center gap-3 relative text-white cursor-pointer group hover:bg-white/5 transition-colors">
+            <div className="p-6 border-b border-border flex items-center gap-3 relative bg-gradient-to-tr from-[#341D5C] to-[#251E4C] text-white cursor-pointer group hover:bg-white/5 transition-colors">
 
                 {/* Content chính (Avatar + Text) */}
                 <div className="relative z-10 flex items-center gap-4"> {/* Tăng gap lên xíu vì khung có thể lòi ra */}
@@ -118,7 +118,7 @@ const AccountPage = () => {
                    - pointer-events-none: Để chuột bấm xuyên qua khung vào avatar
                 */}
                         <img
-                            src="/avt.webp" // Đường dẫn ảnh khung (phải là PNG trong suốt)
+                            src="/avt2.webp" // Đường dẫn ảnh khung (phải là PNG trong suốt)
                             alt="Avatar Frame"
                             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[118%] h-[118%] max-w-none z-20 pointer-events-none"
                         />
@@ -126,10 +126,10 @@ const AccountPage = () => {
                     {/* === KẾT THÚC PHẦN AVATAR === */}
 
                     <div>
-                        <Title level={5} className="!mb-1 text-white">
+                        <Title level={5} className="!mb-1 !text-[#A15EAB] font-bold">
                             {user?.display_name || "Người dùng"}
                         </Title>
-                        <Text className="text-xs text-black/70">
+                        <Text className="text-xs !text-white/70">
                             Sửa hồ sơ & quản lý tài khoản
                         </Text>
                     </div>
@@ -139,7 +139,7 @@ const AccountPage = () => {
                 <img
                     src={`/asset${nitro}.png`}
                     alt="Background decoration"
-                    className="absolute bottom-0 right-0 w-full h-full object-cover z-0"
+                    className="absolute bottom-0 right-0 w-full h-full object-fill z-0"
                 />
             </div>
         </Dropdown>

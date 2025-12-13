@@ -5,7 +5,7 @@ import { authMidleWares } from "../middleware/authMiddleware";
 const router: Router = express.Router();
 
 
-
+router.use(authMidleWares.protectUserRoute);
 /**
  * @swagger
  * /coupons:
@@ -26,7 +26,7 @@ router.get("/", couponController.listAvailable);
  *     description: Coupon dành cho user
  */
 
-router.use(authMidleWares.protectUserRoute);
+
 /**
  * @swagger
  * /coupons/{code}/check:

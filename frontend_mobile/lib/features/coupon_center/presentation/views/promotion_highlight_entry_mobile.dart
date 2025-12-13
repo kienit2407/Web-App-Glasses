@@ -22,15 +22,14 @@ class _PromotionHighlightEntryMobileState
   void initState() {
     super.initState();
     // gọi API highlight 1 lần khi widget mount
+    print("DEBUG: Promotion Widget Init");
     Future.microtask(() async {
-      if (_requested) return;
-      _requested = true;
 
       // Nếu bạn muốn chỉ load highlight:
       // await ref.read(couponCenterControllerProvider.notifier).loadHighlightOnly();
 
       // Hoặc tận dụng loadAll (fetch coupons + promotions + highlight)
-      await ref.read(couponCenterControllerProvider.notifier).loadAll();
+      await ref.read(couponCenterControllerProvider.notifier).loadHighlight();
     });
   }
 
@@ -101,8 +100,10 @@ class _PromotionHighlightDialogContent extends StatelessWidget {
                 // thanh countdown bên dưới banner
                 Container(
                   width: maxWidth,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
                   color: Colors.black.withOpacity(0.35),
                   child: Center(
                     child: PromotionCountdownChip(
@@ -134,5 +135,3 @@ class _PromotionHighlightDialogContent extends StatelessWidget {
     );
   }
 }
-
-

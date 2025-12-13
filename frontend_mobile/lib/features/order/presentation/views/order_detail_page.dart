@@ -6,6 +6,7 @@ import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class OrderDetailPage extends ConsumerStatefulWidget {
@@ -61,8 +62,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     if (iso == null) return '';
     final dt = DateTime.tryParse(iso);
     if (dt == null) return iso;
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(dt.day)}/${two(dt.month)}/${dt.year} ${two(dt.hour)}:${two(dt.minute)}';
+
+    // Tự động chuyển sang Local và format chuẩn đẹp
+    // "dd/MM/yyyy HH:mm" -> 15/12/2025 17:30
+    return DateFormat('dd/MM/yyyy HH:mm').format(dt.toLocal());
   }
 
   // Helper màu sắc trạng thái
@@ -143,7 +146,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         appBar: AppBar(
           backgroundColor: AppColor.buttonprimaryCol,
           foregroundColor: Colors.white,
-          title: const Text('Chi tiết đơn hàng'),
+          title: const Text(
+            'Chi tiết đơn hàng',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
           elevation: 0,
         ),
         body: const Center(child: CircularProgressIndicator.adaptive()),
@@ -152,7 +158,12 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
 
     if (_error != null || _data == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Chi tiết đơn hàng')),
+        appBar: AppBar(
+          title: const Text(
+            'Chi tiết đơn hàng',
+            style: TextStyle(fontSize: 16),
+          ),
+        ),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -195,14 +206,14 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       appBar: AppBar(
         title: const Text(
           'Chi tiết đơn hàng',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
         centerTitle: true,
         backgroundColor: AppColor.buttonprimaryCol,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: RefreshIndicator(
+      body: RefreshIndicator.adaptive(
         onRefresh: _loadDetail,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -215,13 +226,18 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
 
               const SizedBox(height: 12),
 
-              // 2. STEPPER NGANG 
+              // 2. STEPPER NGANG
               _buildHorizontalStepper(status),
 
               const SizedBox(height: 12),
 
               // 3. ĐỊA CHỈ NHẬN HÀNG
-              _buildAddressCard(recipientName, phone, specificAdress, fullAddress),
+              _buildAddressCard(
+                recipientName,
+                phone,
+                specificAdress,
+                fullAddress,
+              ),
 
               const SizedBox(height: 12),
 
@@ -261,19 +277,23 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         children: [
           Row(
             children: [
-              const Text('Mã đơn hàng: ', style: TextStyle(color: Colors.grey)),
+              const Text(
+                'Mã đơn hàng: ',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+              _CopyButton(textToCopy: orderId),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   orderId,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                    fontSize: 13,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // NÚT COPY ANIMATION
-              _CopyButton(textToCopy: orderId),
+
               const SizedBox(width: 8),
               InkWell(
                 onTap: () => _showQrDialog(orderId),
@@ -350,7 +370,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         children: [
           const Text(
             'Trạng thái đơn hàng',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
           ),
           const SizedBox(height: 16),
           Row(
@@ -426,7 +446,12 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     );
   }
 
-  Widget _buildAddressCard(String name, String phone,String specificAdress, String fullAddress) {
+  Widget _buildAddressCard(
+    String name,
+    String phone,
+    String specificAdress,
+    String fullAddress,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -450,15 +475,15 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               children: [
                 const Text(
                   'Địa chỉ nhận hàng',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
                 const SizedBox(height: 4),
-                Text('$name | $phone', style: const TextStyle(fontSize: 13)),
-                const Divider(thickness: .8,),
+                Text('$name | $phone', style: const TextStyle(fontSize: 12)),
+                const Divider(thickness: .8),
                 Text(
                   specificAdress,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: Colors.black87,
                     fontWeight: FontWeight.w600,
                     height: 1.3,
@@ -468,7 +493,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                 Text(
                   fullAddress,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: Colors.grey[700],
                     height: 1.3,
                   ),
@@ -494,7 +519,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         children: [
           const Text(
             'Kiện hàng',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           const SizedBox(height: 12),
           ListView.separated(
@@ -547,7 +572,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                           it['name'] ?? '',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 14),
+                          style: const TextStyle(fontSize: 12),
                         ),
                         if (variant.isNotEmpty)
                           Padding(
@@ -616,14 +641,14 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
             children: [
               const Text(
                 'Tổng thanh toán',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
               Text(
                 _formatPrice(total),
                 style: const TextStyle(
                   color: AppColor.buttonprimaryCol,
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 14,
                 ),
               ),
             ],
@@ -660,10 +685,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
           Text(
             value,
-            style: TextStyle(fontSize: 13, color: valueColor ?? Colors.black87),
+            style: TextStyle(fontSize: 11, color: valueColor ?? Colors.black87),
           ),
         ],
       ),

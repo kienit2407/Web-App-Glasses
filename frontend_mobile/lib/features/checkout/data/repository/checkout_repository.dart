@@ -91,7 +91,7 @@ class CheckoutRepository {
       data: {
         'order_id': orderId,
         // hoặc deep-link sau này: 'myapp://payment-result'
-        'returnUrl': '${UrlConfig.frontendBaseUrl}/payment-result',
+        'returnUrl': '${UrlConfig.backendBaseUrl}/payment-result',
       },
     );
     return res.data['data']['payment_url'] as String;
