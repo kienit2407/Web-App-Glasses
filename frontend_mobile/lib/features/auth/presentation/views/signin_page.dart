@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
@@ -13,6 +15,7 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:keyboard_actions/keyboard_actions_config.dart';
 import 'package:keyboard_actions/keyboard_actions_item.dart';
+import 'package:toastification/toastification.dart';
 
 class SigninPage extends ConsumerStatefulWidget {
   const SigninPage({super.key});
@@ -33,8 +36,14 @@ class _SigninPageState extends ConsumerState<SigninPage> {
     final password = _pwdController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập email và mật khẩu')),
+      toastification.show(
+        // context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored, // Style màu tràn viền
+        title: Text('Cảnh báo!'),
+        description: Text('Vui lòng nhập mật khẩu'),
+        alignment: Alignment.topRight, // Hiện góc trên phải
+        autoCloseDuration: const Duration(seconds: 4),
       );
       return;
     }
@@ -56,7 +65,14 @@ class _SigninPageState extends ConsumerState<SigninPage> {
   Future<void> _signInWithGoogle() async {
     try {
       // 1) Mở popup web auth trỏ tới BE /auth/google?client=mobile
-      final authUrl = '${UrlConfig.baseUrl}/auth/google?platform=mobile';
+      // 1. Xác định đích đến (VD: '/' hoặc '/home')
+      const String originalFrom = '/'; 
+      
+      // 2. Mã hóa Base64 (Chuẩn: Chuyển string sang bytes -> mã hóa)
+      final String encodedFrom = base64Encode(utf8.encode(originalFrom));
+
+      // 3. Ghép vào URL
+      final authUrl = '${UrlConfig.baseUrl}/auth/google?platform=mobile&from=$encodedFrom';
 
       final result = await FlutterWebAuth2.authenticate(
         url: authUrl,
@@ -92,8 +108,10 @@ class _SigninPageState extends ConsumerState<SigninPage> {
 
   Future<void> _signInWithGithub() async {
     try {
-      // 1) Mở popup web auth trỏ tới BE /auth/google?client=mobile
-      final authUrl = '${UrlConfig.baseUrl}/auth/github?platform=mobile';
+      const String originalFrom = '/'; 
+      final String encodedFrom = base64Encode(utf8.encode(originalFrom));
+      
+      final authUrl = '${UrlConfig.baseUrl}/auth/github?platform=mobile&from=$encodedFrom';
 
       final result = await FlutterWebAuth2.authenticate(
         url: authUrl,

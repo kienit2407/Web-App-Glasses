@@ -17,7 +17,6 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
   bool get isLoggedIn => state.hasValue && state.value != null;
 
   Future<void> _bootstrap() async {
-    print('[AuthController] bootstrap called');
     try {
       final refresh = await _tokenStorage.getRefreshToken();
       if (refresh == null || refresh.isEmpty) {
@@ -43,6 +42,7 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
       ref.invalidate(profileControllerProvider);
       ref.invalidate(cartControllerProvider);
       ref.invalidate(userNotificationControllerProvider);
+      ref.invalidate(couponCenterControllerProvider);
     } catch (e, st) {
       // Cập nhật state để UI biết là có lỗi (nếu muốn show message đẹp)
       state = AsyncError(e, st);
@@ -69,6 +69,7 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
       ref.invalidate(profileControllerProvider);
       ref.invalidate(cartControllerProvider);
       ref.invalidate(userNotificationControllerProvider);
+      ref.invalidate(couponCenterControllerProvider);
     } catch (e, st) {
       state = AsyncError(e, st);
       // log cho dễ debug, và rethrow để UI biết là fail
@@ -83,5 +84,6 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
     ref.invalidate(profileControllerProvider);
     ref.invalidate(cartControllerProvider);
     ref.invalidate(userNotificationControllerProvider);
+    ref.invalidate(couponCenterControllerProvider);
   }
 }

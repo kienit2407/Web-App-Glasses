@@ -13,7 +13,9 @@ import morgan from 'morgan'
 import { INITIALIZE_SOCKET_IO } from './config/socket.io'
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
+import { arcjetGuard } from './middleware/arcjet_guard';
 import path from 'path'
+import helmet from 'helmet'
 //===================================
 
 const app: Express = express()
@@ -26,6 +28,18 @@ const START_SERVER = () => {
     // Gắn socket.io vào chính server này
     INITIALIZE_SOCKET_IO(server)
 
+    
+    // Đặt ngay đầu tiên, trước cả Arcjet
+    helmet({
+        contentSecurityPolicy: false, // Tắt CSP để cho phép script chạy trong popup
+        crossOriginEmbedderPolicy: false,
+    })
+    // Helmet sẽ tự động ẩn dòng "X-Powered-By: Express" (để hacker không biết bạn dùng Express)
+    // và thêm các header bảo mật khác.
+    // --- [QUAN TRỌNG] THÊM DÒNG NÀY CHO CLOUDFLARE ---
+    // Số 1 nghĩa là tin tưởng 1 lớp Proxy đứng trước (chính là Cloudflare)
+    // Khi có dòng này, req.ip sẽ tự động lấy đúng IP thật của người dùng
+    app.set('trust proxy', 1);
     // Middlewares
     app.use(express.json({ limit: "4mb" }))
     app.use(cookieParser())
@@ -41,7 +55,7 @@ const START_SERVER = () => {
                 'https://localhost:5173',
                 'https://web-app-glasses-x57x.vercel.app',
             ],
-            allowedHeaders: ["Content-Type", "Authorization", "x-client-platform"],
+            allowedHeaders: ["Content-Type", "Authorization", "x-client-platform", "x-device-id"],
             credentials: true,
         })
     )
@@ -83,25 +97,26 @@ const START_SERVER = () => {
     // --- SERVE FRONTEND BUILD (static files) ---
     // const clientBuildPath = path.join(process.cwd(), '../frontend_web/dist');
     // console.log('Serving frontend from:', clientBuildPath);
-    const clientBuildPath = path.join(process.cwd(), 'client-dist');
-    console.log('Serving frontend from:', clientBuildPath);
+    // const clientBuildPath = path.join(process.cwd(), 'client-dist');
+    // console.log('Serving frontend from:', clientBuildPath);
 
     // 1) serve file tĩnh (JS, CSS, image...)
-    app.use(express.static(clientBuildPath));
-
-    // 2) API routes
+    // app.use(express.static(clientBuildPath));
+    //2) Đặt ở đây để bảo vệ tất cả các route API bên dưới => khác với cloudflare cái này nó sẽ bảo vệ ở trong code
+    // app.use(arcjetGuard);
+    // 3) API routes
     app.use('/', API_ENTRYPOINT);
 
-    // 3) Error handler CHO API
+    // 4) Error handler CHO API
     app.use(errolHandlingMiddleware);
 
-    // 4) SPA fallback (LUÔN LUÔN ĐỂ CUỐI CÙNG)
+    // 5) SPA fallback (LUÔN LUÔN ĐỂ CUỐI CÙNG)
     app.get('*', (req, res) => {
         // giữ lại /api-docs hoặc các route khác nếu muốn
         if (req.path.startsWith('/api-docs')) {
             return res.status(404).send('Not found');
         }
-        res.sendFile(path.join(clientBuildPath, 'index.html'));
+        // res.sendFile(path.join(clientBuildPath, 'index.html'));
     });
     app.use('/', API_ENTRYPOINT)
     app.use(errolHandlingMiddleware)

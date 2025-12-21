@@ -26,6 +26,8 @@ class _MainShellState extends ConsumerState<MainShell> {
   int _index = 0;
   // 1. Thêm biến trạng thái để kiểm soát việc Hiện/Ẩn
   bool _isVisible = true;
+  final List<bool> _built = [true, false, true, false];
+
   final _pages = const [
     HomePage(),
     CouponCenterPage(),
@@ -68,7 +70,15 @@ class _MainShellState extends ConsumerState<MainShell> {
         },
         child: Stack(
           children: [
-            IndexedStack(index: _index, children: _pages),
+            IndexedStack(
+              
+              index: _index, 
+              children: List.generate(_pages.length, (i){
+                if (!_built[i]) return SizedBox.shrink();
+                return _pages[i];
+              })
+              ),
+            // _pages[_index],
             PromotionHighlightEntryMobile(),
           ],
         ),
@@ -134,6 +144,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                   onDestinationSelected: (i) {
                     setState(() {
                       _index = i;
+                      _built[i] = true;
                       // QUAN TRỌNG: Khi chuyển tab bất kỳ,
                       // BẮT BUỘC phải hiện lại Nav Bar ngay lập tức
                       _isVisible = true;
@@ -167,12 +178,15 @@ class _MainShellState extends ConsumerState<MainShell> {
                       label: 'Tài khoản',
                     ),
                   ],
+                
                 ),
+              
               ),
             ),
           ),
         ),
       ),
+      
     );
   }
 }

@@ -7,15 +7,47 @@ import { StatusCodes } from "http-status-codes";
 import { getRefreshFromRequest, Platform } from "../../../utils/jwt";
 import { normalizeIp } from "../../../utils/format_ip";
 import axios from "axios";
+import { ajEmail } from "../../../config/arcjet";
+import { BadRequestException } from "../../../utils/app_errol";
 
 const FRONTEND_URL = (process.env.NODE_BUILD === 'dev') ? process.env.FRONTEND_URL : process.env.FRONTEND_URL_PROD || 'http://localhost:3000'
 const BACKEND_URL = (process.env.NODE_BUILD === 'dev') ? process.env.BACKEND_URL : process.env.BACKEND_URL_PROD || 'http://localhost:4000'
 console.log('MÔI TRƯỜNG', process.env.NODE_BUILD, 'FRONTEND_URL:', FRONTEND_URL)
 console.log('MÔI TRƯỜNG', process.env.NODE_BUILD, 'BACKEND_URL:', BACKEND_URL)
+// Hàm kiểm tra xem URL có an toàn để redirect không (tránh open redirect)
+function isSafeRedirect(url: string) {
+  // Chỉ cho phép bắt đầu bằng "/" nhưng KHÔNG được bắt đầu bằng "//" (tránh hack: //google.com)
+  return url.startsWith("/") && !url.startsWith("//");
+}
 
+// Hàm giải mã Base64 an toàn
+function decodeSafeFrom(encodedFrom: string | undefined): string {
+  if (!encodedFrom) return '/';
+  try {
+    const decoded = Buffer.from(encodedFrom, 'base64').toString('utf-8');
+    return isSafeRedirect(decoded) ? decoded : '/';
+  } catch (e) {
+    return '/';
+  }
+}
 const signUp = TryCatch(async (req: Request, res: Response, next: NextFunction) => {
   const platform = getPlatformFromReq(req)
   const payload: SignUp = req.body
+  // --- [BẮT ĐẦU: ARCJET EMAIL VALIDATION] ---
+  // Bước này kiểm tra xem email có phải rác không TRƯỚC KHI gọi service
+  const decision = await ajEmail.protect(req, {
+    email: payload.email // Truyền email user nhập vào
+  });
+
+  if (decision.isDenied()) {
+    if (decision.reason.isEmail()) {
+      // Thông báo lỗi chi tiết cho FE
+      throw new BadRequestException("Email không hợp lệ hoặc là email dùng 1 lần (Disposable). Vui lòng dùng email thật.");
+    }
+    // Các lỗi khác (nếu có)
+    throw new BadRequestException("Yêu cầu bị từ chối do vấn đề bảo mật.");
+  }
+  // --- [KẾT THÚC: ARCJET EMAIL VALIDATION] ---
   const userAgent = req.headers["user-agent"] || "unknown"
   const rawIp =
     (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
@@ -55,7 +87,9 @@ const logOut = TryCatch(async (req: Request, res: Response, _next: NextFunction)
   const platform = getPlatformFromReq(req)
   const rawRefresh = getRefreshFromRequest(req, platform) // Từ web hoặc mobile
   console.log(`[Logout] Platform: ${platform}, RefreshToken: ${rawRefresh ? 'Có hàng' : 'NULL'}`)
-  await authService.logOut(rawRefresh, platform, res)
+  // [MỚI] Lấy Access Token từ Header để đưa vào Blacklist
+  const accessToken = req.headers.authorization?.split(" ")[1] || null;
+  await authService.logOut(rawRefresh,accessToken, platform, res)
 
   return sendAsSuccess(
     res,
@@ -78,7 +112,8 @@ const refreshToken = TryCatch(async (req: Request, res: Response, _next: NextFun
 })
 // 1) Redirect sang Google
 const oauthGoogle = TryCatch(async (req: Request, res: Response) => {
-  const from = (req.query.from as string) || '/';
+  const rawFrom = req.query.from as string;
+  const from = decodeSafeFrom(rawFrom);
   const redirectUri = `${BACKEND_URL}/auth/google/callback`;
 
   // ?platform=mobile từ Flutter
@@ -107,7 +142,7 @@ const oauthGoogle = TryCatch(async (req: Request, res: Response) => {
 
 // 2) Callback từ Google
 const oauthGoogleCallback = TryCatch(async (req: Request, res: Response) => {
-  const { code, state, error} = req.query;
+  const { code, state, error } = req.query;
   const redirectUri = `${BACKEND_URL}/auth/google/callback`;
 
   let from = '/';
@@ -199,12 +234,13 @@ const oauthGoogleCallback = TryCatch(async (req: Request, res: Response) => {
   // 2) Tuỳ platform mà trả về
 
   if (platform === 'web') {
-    // Web: gửi HTML postMessage, popup window (giống Shopee web)
+    // Web: gửi HTML postMessage, popup windo
+    // w (giống Shopee web)
     return res.send(`
       <!DOCTYPE html>
       <html>
         <body>
-          <script>
+          <script >
             window.opener && window.opener.postMessage(
               {
                 type: "OAUTH_SUCCESS",
@@ -235,7 +271,8 @@ const oauthGoogleCallback = TryCatch(async (req: Request, res: Response) => {
 
 // 3) Redirect sang GitHub
 const oauthGithub = TryCatch(async (req: Request, res: Response) => {
-  const from = (req.query.from as string) || '/';
+  const rawFrom = req.query.from as string;
+  const from = decodeSafeFrom(rawFrom);
   const redirectUri = `${BACKEND_URL}/auth/github/callback`;
 
   // Lấy platform từ query (?platform=mobile) giống Google

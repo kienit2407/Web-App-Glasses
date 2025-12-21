@@ -116,7 +116,8 @@ class _HomePageState extends ConsumerState<HomePage> {
               SliverToBoxAdapter(child: _buildBannerCarousel(state.banners)),
             const SliverToBoxAdapter(child: SizedBox(height: 8)),
             if (state.banners.isNotEmpty)
-              SliverToBoxAdapter(child: _buildDotIndicator(state.banners)),
+              SliverToBoxAdapter(
+                child: _buildDotIndicator(state.banners)),
             const SliverToBoxAdapter(child: SizedBox(height: 8)),
             SliverToBoxAdapter(
               child: Padding(
@@ -205,60 +206,60 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildGuestAccount(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xfff5f5f5),
-      appBar: AppBar(
-        title: const Text('Tài khoản'),
-        backgroundColor: AppColor.buttonprimaryCol,
-        foregroundColor: Colors.white,
-        centerTitle: true,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.person_outline, size: 80, color: Colors.grey),
-              const SizedBox(height: 16),
-              const Text(
-                'Bạn chưa đăng nhập',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Đăng nhập để xem đơn hàng, voucher và quản lý tài khoản.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => context.goNamed('signin'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColor.buttonprimaryCol,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: const Text('Đăng nhập'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => context.goNamed('signup'),
-                  child: const Text('Đăng ký'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // Widget _buildGuestAccount(BuildContext context) {
+  //   return Scaffold(
+  //     backgroundColor: const Color(0xfff5f5f5),
+  //     appBar: AppBar(
+  //       title: const Text('Tài khoản'),
+  //       backgroundColor: AppColor.buttonprimaryCol,
+  //       foregroundColor: Colors.white,
+  //       centerTitle: true,
+  //     ),
+  //     body: Center(
+  //       child: Padding(
+  //         padding: const EdgeInsets.all(24),
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             const Icon(Icons.person_outline, size: 80, color: Colors.grey),
+  //             const SizedBox(height: 16),
+  //             const Text(
+  //               'Bạn chưa đăng nhập',
+  //               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //             ),
+  //             const SizedBox(height: 8),
+  //             const Text(
+  //               'Đăng nhập để xem đơn hàng, voucher và quản lý tài khoản.',
+  //               textAlign: TextAlign.center,
+  //               style: TextStyle(color: Colors.grey),
+  //             ),
+  //             const SizedBox(height: 24),
+  //             SizedBox(
+  //               width: double.infinity,
+  //               child: ElevatedButton(
+  //                 onPressed: () => context.goNamed('signin'),
+  //                 style: ElevatedButton.styleFrom(
+  //                   backgroundColor: AppColor.buttonprimaryCol,
+  //                   foregroundColor: Colors.white,
+  //                   padding: const EdgeInsets.symmetric(vertical: 12),
+  //                 ),
+  //                 child: const Text('Đăng nhập'),
+  //               ),
+  //             ),
+  //             const SizedBox(height: 12),
+  //             SizedBox(
+  //               width: double.infinity,
+  //               child: OutlinedButton(
+  //                 onPressed: () => context.goNamed('signup'),
+  //                 child: const Text('Đăng ký'),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildDotIndicator(List<BannerModel> banners) {
     // Đổi kiểu dữ liệu phù hợp
@@ -266,42 +267,49 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return Skeletonizer(
       enabled: _isLoading,
-      child: SizedBox(
-        height: 30,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          // Dùng wrap/padding để tạo khoảng cách giữa các chấm thay vì `spacing` (không tồn tại trong Row)
-          children: List.generate(itemCount, (index) {
-            bool isSelected = currentIndex == index;
-            return GestureDetector(
-              onTap: () {
-                // Sử dụng CarouselController đã được gắn với CarouselSlider
-                // Nếu chưa có, bạn cần khai báo và truyền vào CarouselSlider
-                // indexCarouselController.jumpToPage(index);
-                // indexCarouselController.animateToPage(index, duration: const Duration(milliseconds: 300));
-              },
-              child: Padding(
-                // Thêm Padding để tạo khoảng cách giữa các chấm
-                padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                child: AnimatedContainer(
-                  curve: Curves.easeInOut,
-                  duration: const Duration(milliseconds: 300),
-                  // Kích thước của chấm (Chấm đang chọn sẽ lớn hơn)
-                  width: isSelected ? 20 : 8,
-                  height:
-                      8, // Chiều cao cố định (thường là hình chữ nhật hoặc tròn)
-                  decoration: BoxDecoration(
-                    // Thay thế Image bằng màu sắc
-                    color: isSelected ? AppColor.buttonprimaryCol : Colors.grey,
-                    // Làm tròn góc (hình viên thuốc nếu là hình chữ nhật)
-                    borderRadius: isSelected
-                        ? BorderRadius.circular(5)
-                        : BorderRadius.circular(4),
+      child: Center( // nền có align hoặc center đẻ loai bỏ ràng buộc width của lớp cha
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.black12,
+            borderRadius: BorderRadius.circular(50)
+          ),
+          padding: const EdgeInsets.all(5),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            // Dùng wrap/padding để tạo khoảng cách giữa các chấm thay vì `spacing` (không tồn tại trong Row)
+            children: List.generate(itemCount, (index) {
+              bool isSelected = currentIndex == index;
+              return GestureDetector(
+                onTap: () {
+                  // Sử dụng CarouselController đã được gắn với CarouselSlider
+                  // Nếu chưa có, bạn cần khai báo và truyền vào CarouselSlider
+                  // indexCarouselController.jumpToPage(index);
+                  // indexCarouselController.animateToPage(index, duration: const Duration(milliseconds: 300));
+                },
+                child: Padding(
+                  // Thêm Padding để tạo khoảng cách giữa các chấm
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: AnimatedContainer(
+                    curve: Curves.easeInOut,
+                    duration: const Duration(milliseconds: 300),
+                    // Kích thước của chấm (Chấm đang chọn sẽ lớn hơn)
+                    width: isSelected ? 20 : 8,
+                    height:
+                        8, // Chiều cao cố định (thường là hình chữ nhật hoặc tròn)
+                    decoration: BoxDecoration(
+                      // Thay thế Image bằng màu sắc
+                      color: isSelected ? AppColor.buttonprimaryCol : Colors.white,
+                      // Làm tròn góc (hình viên thuốc nếu là hình chữ nhật)
+                      borderRadius: isSelected
+                          ? BorderRadius.circular(5)
+                          : BorderRadius.circular(4),
+                    ),
                   ),
                 ),
-              ),
-            );
-          }),
+              );
+            }),
+          ),
         ),
       ),
     );

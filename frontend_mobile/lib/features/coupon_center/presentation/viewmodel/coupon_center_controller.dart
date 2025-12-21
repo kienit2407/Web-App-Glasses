@@ -8,7 +8,7 @@ class CouponCenterController extends StateNotifier<CouponCenterState> {
   final CouponCenterRepository _repo;
 
   CouponCenterController(this._repo) : super(CouponCenterState.initial()) {
-    loadCouponsAndPromotions();
+    // loadCouponsAndPromotions();
     // loadHighlight();
   }
 

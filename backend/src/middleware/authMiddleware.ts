@@ -2,10 +2,12 @@ import { NextFunction, Request, Response } from 'express'
 import { IUser, User } from '../models/user.model'
 import { StatusCodes } from 'http-status-codes'
 import jwt from 'jsonwebtoken'
+
 import { env } from '../config/environment'
 import { sendAsFailure } from '../utils/send_status'
 import AppError, { ForbiddenException, NotFoundException, UnauthorizedException } from '../utils/app_errol'
 import { Platform } from '../utils/jwt'
+import { redisClient } from '../config/redis'
 
 // Định nghĩa kiểu cho JWT payload
 interface JwtPayload {
@@ -33,10 +35,16 @@ const protectUserRoute = async (req: Request, res: Response, next: NextFunction)
   try {
     const token = getBearer(req) // check accesstoken gửi lê
     if (!token) {
-        req.user = undefined; // Gán cho rõ ràng (hoặc để undefined cũng dc) -> guest
-        return next(); 
+      req.user = undefined; // Gán cho rõ ràng (hoặc để undefined cũng dc) -> guest
+      return next();
     }
-    console.log("token từ fe gùi xuống: ", token)
+    // --- [MỚI] CHECK BLACKLIST ---
+    // Kiểm tra xem token này có nằm trong sổ đen Redis không
+    const isBanned = await redisClient.get(`bl_${token}`);
+    if (isBanned) {
+      return next(new UnauthorizedException('Token đã bị thu hồi (Bạn đã đăng xuất)'));
+    }
+    // console.log("token từ fe gùi xuống: ", token)
     // if (!token) return next(new UnauthorizedException('No access token')) // quăng ra lỗi k có access token
 
 

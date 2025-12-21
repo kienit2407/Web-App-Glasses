@@ -228,3 +228,204 @@ FE  ->  BE (/users/me)
 
 
 dart run flutter_launcher_icons
+
+
+1. Ẩn danh tính Server (Hide X-Powered-By) - Quan trọng nhất
+Vấn đề: Mặc định, mọi Server Express khi trả về response đều đính kèm một cái nhãn: X-Powered-By: Express.
+
+Nguy hiểm: Hacker nhìn thấy cái nhãn này sẽ biết ngay: "À, ông này dùng Node.js Express. Để tao lấy bộ tool hack chuyên dụng cho Express ra thử".
+
+Helmet làm gì: Nó xóa cái dòng này đi. Hacker quét qua sẽ không biết server bạn viết bằng công nghệ gì (PHP? Java? Python? Node?).
+
+Ví dụ: Giống như bạn đi xe sang nhưng tháo hết logo hãng xe ra để trộm đỡ để ý.
+
+2. Chống tấn công Clickjacking (X-Frame-Options)
+Vấn đề: Hacker tạo một trang web trúng thưởng giả. Nó nhúng trang web của bạn vào một cái khung trong suốt (<iframe>) đè lên nút "Nhận thưởng".
+
+Nguy hiểm: Người dùng tưởng bấm "Nhận thưởng" nhưng thực ra đang bấm vào nút "Xóa tài khoản" hoặc "Chuyển tiền" trên web của bạn (đang ẩn bên dưới).
+
+Helmet làm gì: Nó thêm header X-Frame-Options: SAMEORIGIN. Trình duyệt nhìn thấy sẽ CẤM bất kỳ ai nhúng web của bạn vào iframe, trừ chính bạn.
+
+3. Chống giả dạng file (X-Content-Type-Options)
+Vấn đề: Hacker upload một file tên là anh_vui.jpg. Nhưng thực chất nội dung bên trong là code JavaScript độc hại.
+
+Nguy hiểm: Một số trình duyệt "thông minh" sẽ tự đoán: "Tuy đuôi là ảnh nhưng ruột là code, thôi tao chạy code luôn". Thế là web bị hack (XSS).
+
+Helmet làm gì: Nó thêm header X-Content-Type-Options: nosniff. Nó ra lệnh cho trình duyệt: "Tao bảo nó là ảnh thì nó là ảnh, cấm được đoán già đoán non rồi chạy bậy".
+
+4. Bắt buộc bảo mật HTTPS (HSTS)
+Helmet làm gì: Nó thêm header Strict-Transport-Security.
+
+Tác dụng: Một khi người dùng đã vào web bạn bằng HTTPS, lần sau dù họ có gõ http:// thì trình duyệt cũng tự động chuyển sang https:// ngay lập tức, không cho hacker cơ hội chen vào giữa hạ cấp giao thức.
+
+
+Hacker DDOS server: * 🛡️ Cloudflare chặn ngay từ ngoài biển khơi. Server bạn không hề hấn gì.
+
+Hacker dùng tool dò quét API:
+
+🛡️ Arcjet (Bot Detection) phát hiện User-Agent lạ -> Chặn (403).
+
+Hacker spam F5 trang đăng nhập:
+
+🛡️ Arcjet (Rate Limit) thấy 1 Device ID gọi 20 lần/10s -> Chặn (429).
+
+Hacker gửi mã độc SQL Injection vào ô tìm kiếm:
+
+🛡️ Arcjet (Shield) phát hiện chuỗi ký tự nguy hiểm -> Chặn.
+
+Hacker thử sửa ID trong URL để xem đơn hàng người khác:
+
+🛡️ JWT Middleware kiểm tra: "Token của anh là User A, sao anh đòi xem đơn hàng User B?" -> Chặn (403 Forbidden).
+
+Hacker gửi email lung tung (không đúng định dạng):
+
+🛡️ Validation Layer (Zod) báo lỗi: "Email không hợp lệ" -> Trả về 400 Bad Request.
+
+
+git archive --format=zip -o Web-App-Glasses-source.zip HEAD
+
+
+Bộ quy tắc 7 câu hỏi (chỉ cần trả lời Yes/No)
+1) Logic này có phụ thuộc UI không?
+
+Ví dụ: show toast, animation, debounce, tab index, giữ scroll…
+
+Có → Presentation (Controller/Bloc/Notifier)
+
+Không → qua câu 2
+
+2) Logic này có phụ thuộc framework/hạ tầng không?
+
+Ví dụ: Dio, Hive, SharedPrefs, Supabase, Firebase, file system…
+
+Có → Data/Core (Datasource, Client, Storage)
+
+Không → qua câu 3
+
+3) Logic này là “luật nghiệp vụ” (business rule) không?
+
+Ví dụ: voucher hết hạn, đơn tối thiểu, phim full vs phim bộ theo yêu cầu sản phẩm, quyền truy cập…
+
+Có → Domain (Usecase/Domain service)
+
+Không → qua câu 4
+
+4) Logic này có phải “điều phối nhiều bước / nhiều nguồn” không?
+
+Ví dụ: login → lấy profile → lưu token → preload home
+checkout → check stock → create order → pay
+
+Có → Domain (Usecase) (Clean hàn lâm)
+hoặc Presentation (Clean-lite/MVVM nếu bạn không dùng usecase)
+
+Không → qua câu 5
+
+5) Logic này chỉ là “biến đổi dữ liệu kỹ thuật” không?
+
+Ví dụ: parse JSON, map field, normalize API response
+
+Có → Data
+
+Không → qua câu 6
+
+6) Logic này là “chính sách chọn nguồn dữ liệu” không?
+
+Ví dụ: lấy cache trước rồi gọi API, fallback local khi offline
+
+Có → Repository (Data layer boundary)
+
+Không → qua câu 7
+
+7) Logic này dùng chung toàn app không?
+
+Ví dụ: format date, validate email cơ bản, map lỗi HTTP → AppException
+
+Có → Core
+
+Không → thường là Domain hoặc Presentation tùy nó phục vụ nghiệp vụ hay UI
+
+Bảng “nhìn phát biết luôn” (rule-of-thumb)
+Presentation (UI/Controller)
+
+debounce search
+
+giữ filter đang chọn
+
+paging state, loadMore triggers
+
+show/hide loading
+
+điều hướng (navigate)
+
+map domain error → message hiển thị (UI message)
+
+Domain (Usecase/Service)
+
+rule nghiệp vụ: full vs series (nếu là yêu cầu sản phẩm)
+
+tính tổng tiền, giảm giá
+
+điều phối flow: refresh token, checkout, login flow
+
+combine nhiều repo
+
+chuẩn hóa lỗi nghiệp vụ từ server (EMAIL_ALREADY_USED → enum)
+
+Data (RepoImpl/Datasource)
+
+gọi API/DB, cache
+
+build endpoint/query params
+
+parse JSON → model
+
+map model ↔ entity (nếu bạn dùng entity)
+
+retry/token attach (thường nằm core/network)
+
+Core
+
+DioClient, interceptors
+
+TokenStorage
+
+exception mapping (HTTP→AppException)
+
+utils chung
+
+Áp vào dự án phim của bạn (ví dụ cụ thể)
+“Korea movie”, “China movie”
+
+Nếu chỉ là hardcode endpoint slug → nên là Domain/Usecase (vì nó là “tính năng”)
+
+Data chỉ nên có hàm generic: getMoviesByCountry(slug, req)
+
+“Lọc phim full, không phim bộ”
+
+Nếu đây là “rule của màn”/tính năng → Domain/Usecase
+
+Data chỉ nhận filter và translate sang query
+
+“Parse response.data['status']==true && msg=='done'”
+
+100% Data
+
+“Nếu 429 thì show toast”
+
+Toast là Presentation, nhưng bạn đang show trong DioClient → hơi lệch.
+
+Chuẩn hơn: DioClient throw lỗi, UI/controller decide show toast (hoặc có 1 global error handler).
+
+Một mẹo cực nhanh (chỉ cần 1 câu)
+
+Nếu bạn có thể unit test logic đó mà không cần Flutter/Dio/Hive → nó thuộc Domain.
+Nếu phải cần Dio/Hive mới test được → Data/Core.
+Nếu phải cần Widget/UI lifecycle mới test được → Presentation.
+
+
+
+Tình huống	Nên dùng loại nào?	Thư viện gợi ý
+Báo lỗi nhẹ (Ví dụ: Chưa nhập tên, email sai định dạng)	Toast / Top Snackbar	top_snackbar_flutter
+Báo lỗi nặng (Ví dụ: Sai pass, Lỗi Server, Mất mạng)	Dialog (Popup)	quickalert (Type: Error)
+Xác nhận hành động (Ví dụ: Chắc chắn xóa?, Đăng xuất?)	Confirm Dialog	quickalert (Type: Confirm)
+Báo thành công (Ví dụ: Đăng nhập xong, Lưu xong)	Toast nhỏ gọn	delightful_toast hoặc toastification

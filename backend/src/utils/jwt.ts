@@ -1,9 +1,9 @@
 import jwt, {  } from 'jsonwebtoken'
 import { Response } from "express"
 import { env } from '../config/environment'
-import redisClient from '../config/redis';
 import crypto from 'crypto'
 import { UnauthorizedException } from './app_errol';
+import { redisClient } from '../config/redis';
 export type Platform = 'web' | 'mobile'
 const ACCESS_TTL = '15m'           // JWT
 const REFRESH_TTL_SECONDS = 7 * 24 * 60 * 60  // 7 days

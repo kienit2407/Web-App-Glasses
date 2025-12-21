@@ -1,204 +1,141 @@
+// lib/core/network/dio_client.dart
 import 'package:dio/dio.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart';
-import 'package:frontend_mobile/core/contants/url_config.dart';
-import 'package:frontend_mobile/core/network/intorceptors/auth_interceptor.dart';
+import 'package:frontend_mobile/core/errol/error_mapper.dart';
+import 'package:frontend_mobile/core/network/auth_interceptor.dart';
 import 'package:frontend_mobile/core/network/token_storage.dart';
-import 'package:frontend_mobile/core/utils/error.dart';
-import 'package:http_cache_hive_store/http_cache_hive_store.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
-//giảm gọi api nhiều lần trong cùng 1 session khi di chuyển qua lại giữa các tag
 class DioClient {
-  // static final DioClient _instance = DioClient._internal(); // tạo  biến thuộc class, chỉ khởi tạo 1 lần, và khi tạo instance lần đầu nó sẽ lưu 1 instance vào bộ nhớ duy nhất
+  final TokenStorage tokenStorage;
+  final String baseUrl;
+  final String deviceId;
 
-  // factory DioClient() => _instance; // khi gọi lần sau nó sẽ trả về cùng instance, factory trả về 1 đối tuọng có sẵn
-  static const int _connectTimeout = 30000; // thời gian để kết nối
-  static const int _receiveTimeout = 30000; // thời gian để nhận kết nối
-  static const int _sendTimeout = 30000; // thời gian để gửi đi post
+  late final Dio dio;
+  late final CacheOptions cacheOptions;
 
- 
-  //Mình bị lỗi lazyInit nghĩa là khai báo late mà không gán giá trị, hàm là future nhưng không thể async nên lỗi 
+  DioClient._internal({
+    required this.tokenStorage,
+    required this.baseUrl,
+    required this.deviceId,
+  });
 
-  late final CacheOptions _cacheOptions; // khai báo biến cachingOption để áp dụng cho mọi request
+  static Future<DioClient> create({
+    required TokenStorage tokenStorage,
+    required String baseUrl,
+    required String deviceId,
+    required Future<(String accessToken, String refreshToken)> Function(String refreshToken) refreshTokens,
+  }) async {
+    final client = DioClient._internal(
+      tokenStorage: tokenStorage,
+      baseUrl: baseUrl,
+      deviceId: deviceId,
+    );
 
-    //HANDLE CALLING API 
-  late final Dio _dio; //khởi tạo 1 lần và không thể thay đổi
-  //late cho phép đối tượng khởi tạo sau khi DioClient khởi tạo (late cho phép gán giá trị sau khi khởi tạo đối tượng. Nhưng do khởi tạo đối tượng Dio rất tốn tài nguyên ví dụ kết nối mạng,.. )
-  //_dio <- biến private cho phép sử dụng trong lớp DioClient thôi
-  // nếuu biến được khia báo là final mà không được gán giá trị ban đầu hoặc contructor thì sẽ bị lỗi compile
-  // DioClient({String? baseUrl}) : _dio = Dio(
-  // ); -> đây là initilize list, do là nếu không có late thì nó phỉa được gán trong contruct hoặc trong initilize list
-  // DioClient._internal //-> khai báo contructor private đẻ không có lớp bên ngoài, và chỉ tạo đúng 1 lần để tạo instance
-  // ({String? baseUrl}) { // phải đảm bảo Dio được khởi tạo trước khi sử dụng các phương thức khác. nó áp dụng cho các request khác không làm lặp code 
-
-  //khai báo một factory contructor -> nó sẽ trả về instance theo singleton
-  static Future<DioClient> create() async {
-    final client = DioClient._internal();
-    await client.initalizeCacheOption();
-    client._initDio();
+    client._initCache();
+    client._initDio(refreshTokens: refreshTokens);
     return client;
-  } 
-
-// Constructor private, không init gì
-  DioClient._internal();
-    //khởi tạo instance dio
-  void _initDio() {
-      _dio = Dio(); //gán trước -> lí do là do dio nếu dùng cacade thì interceptor đều khỏi tạo cùng 1 cùng nhưng mà. do là trong interceptor cần instance của dio nhưng khi khai báo như vậy nó khởi tạo không kịp gây ra lỗi. Nên giải pháp là [gán trước rồi cho nó gán từng cái base option và interceptor lần lượt]
-      _dio.options = BaseOptions( // dùng để cấu hình các thiết lập mặc định ban đầu cho "tất cả request", giúp cần lặp lại cho từng req
-        baseUrl: UrlConfig.baseUrl, // đường dẫn domain
-        connectTimeout: Duration(milliseconds: _connectTimeout), // đây là thời gian mà client kết nối đến server nếu quá timeout thì sẽ báo lỗi timeout. Ngăn ứng dụng treo, server không phản hồi, đảm bảo trải nghiệm khi có lỗi thì show ra không để đợi lâu
-        receiveTimeout: Duration(milliseconds: _receiveTimeout), //Nếu mà đã kết nối với server rồi nhưng thời gian truyền dữ liệu be timeouted thì cũng sẽ quăng lỗi. Tránh ứng dụng bị treo và bảo vệ ứng dựng khi sever phản hồi chậm, hoặc có vấn đề
-        sendTimeout: Duration(milliseconds: _sendTimeout),//-> thời gian gửi lên tương tự 2 cái kia
-        headers: {//chuẩn hoá header, giảm lặp code cho mỗi req
-          'Content-Type': 'application/json',  //Khi gửi đi thì baseOption này sẽ nhét vào req yêu cầu gửi đi là 1 file dạng json
-          'Accept': 'application/json', //tương tự khi get về cũng expectn là 1 dạng json báo cho server biết
-          // 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36', //giả lập yêu cầu được gửi từ trình duyệt
-          // 'Referer': 'https://phimapi.com'
-          'x-client-platform': 'mobile'
-        },
-        responseType: ResponseType.json, //định dạng dữ liệu dio mặc định là json rồi. Alternative, nó còn những dữ liệu khác byte cho file, plain cho text
-        validateStatus: (status) {
-          return status != null && status >= 200 && status < 300; // kiểm status code mà server trả về
-        },
-      );
-        // khởi tạo lấy từ hive
-      final tokenStorage = TokenStorage();
-      _dio.interceptors.addAll([ // là một hàm để ngăn chặn, bộ lọc giữa req va res
-        DioCacheInterceptor(options: _cacheOptions), //đặt ở đầu tiên để cache response. Đẩm bảo dữ liệu được cache nagy khi nhận từ server
-        AuthInterceptor(
-          dio: dio, 
-          getAccessToken: tokenStorage.getAccessToken, 
-          getRefreshToken: tokenStorage.getRefreshToken, 
-          saveToken: tokenStorage.saveToken
-        ),
-        //retry khi when requesting is failed
-        RetryInterceptor( //-. cái này đã đủ kích hoạt cache cho mọi request rồi
-          dio: _dio, //nhận vào dio để control việc retry khi bị fail 
-          logPrint: (message) => print('[Retry]: $message'),
-          retries: 3, // -> số lần retry
-          retryDelays: [
-            Duration(seconds: 1), //lần 1 đợi 1s
-            Duration(seconds: 1), //lần 1 đợi 1s
-            Duration(seconds: 1), //lần 1 đợi 1s
-          ],
-          retryEvaluator: (error, attempt) { //-> Chỉ retry với các lỗi network 
-            if(
-              error.type == DioExceptionType.connectionTimeout ||
-              error.type == DioExceptionType.sendTimeout ||
-              error.type == DioExceptionType.receiveTimeout ||
-              error.type == DioExceptionType.connectionError
-              ){
-                return true;
-              }
-            if(error.response?.statusCode != null) {
-              final statusCode = error.response!.statusCode!;
-              return statusCode >= 500 && statusCode < 600; //chỉ retry khi lỗi 500 là lỗi kết nối mạng
-            }
-            return false;
-            //mục đích thử lại khi failed that relate to sever or network 
-          },
-        ),
-      // đặt cuối để hiện các log khac nhau req và res kể cả là log của retry -> that one of reason why it locate back of all
-        PrettyDioLogger(
-          requestHeader: true, // kiểm tra xem header gửi đi có đúng không
-          requestBody: true, // kiểm tra dữ liệu gửi lên server có đúng định dạng hay không
-          responseBody: true, // kiểm tra dữ liệu trả về có đúng hay không
-          responseHeader: false, // dài và không cần thiết để debug
-          error: true, // in ra lỗi khi req bị lỗi quăng dio Exception
-          compact: true, //loh hiển thị trẻnq dòng , không xuống dòng quá nhiều tránh khó đọc
-          maxWidth: 90 // tối đa của mỗi dòng log la 90 kí tự
-        )
-      ]) ;
-        print('Initalized dioInterceptor');
   }
-  Future<void> initalizeCacheOption ({String? baseUrl}) async {
-    
-    // final cacheDirectory = await getTemporaryDirectory(); // TRẢ VỀ ENDPOINT for using temporary data or api 
-    //getAplication thì trả về danh mục lưu trữ lưu dà
-    print('Initalized cache option');
 
-    //set up cache option 
-    _cacheOptions = CacheOptions(
-      // store: HiveCacheStore(cacheDirectory.path),
-      store: MemCacheStore(), // Có thể thay bằng HiveCacheStore() cho persistent cache
-      //memCache nó là mặc định của flutter (Nhưng nó sẽ lưu cache và bộ nhớ ram của thiết bị)
-      // còn Hive thì nó lưu cache lâu hơn
-      policy: CachePolicy.request, //quy định cached -> kiêm tra cache. Nếu cache còn hạn (still value) trả dữ liệu của cache còn không thì gửi request mới cho server
-      hitCacheOnErrorCodes: [401, 403, 500, 502, 503, 504], //nếu lỗi 500 (lỗi do server thì sẽ "sử dụng cache").Otherwise, còn nếu lỗi 401 (unauthorized -> lỗi uỷ quyền) và 403 (Forbiden) -> lỗi bị cấm
-      maxStale: Duration(minutes: 1), // cái này set chung cho mọi request nhưng tuỳ call api thì thời gian sẽ khác có thể ghi đè lai
-      priority: CachePriority.normal, // về mức độ ưu tiên nếu normal thì nếu ram đầy thì nó sẽ tự động xoá đi 
-      cipher: null, //mã hoá dữ liệu, nếu muôn hoá dữ liệu để lưu vào cache có thể sử dụng encrypt. Null -> lưu dưới dạng plain text. cái này dùng cho token
-      keyBuilder: CacheOptions.defaultCacheKeyBuilder, //tạo khoá key cho cached dauw vào url và query paramaters của request, đảm bảo mỗi request là duy nhất và giúp dio truy xuất đúng
-      allowPostMethod: false,// không cache post url
-      hitCacheOnNetworkFailure: true //sử dụng cache khi bị lỗi mạng
+  void _initCache() {
+    cacheOptions = CacheOptions(
+      store: MemCacheStore(),
+      policy: CachePolicy.request,
+      maxStale: const Duration(minutes: 1),
+      hitCacheOnNetworkFailure: true,
+      allowPostMethod: false,
     );
   }
-  // //Dùng trong code dioClient.dio.get
-  Dio get dio => _dio; // getter để có thể truy cập dio từ lớp bên ngoài (readOnly not set because we can not replace any data in this class) .. nếu các lớp bên ngoài truy cập tuỳ tiện từ bên ngoài có thể làm hỏng config
-  // //triển khai phương thức get
-  Future<Response> get (
-    {
-      required String path, //bắt buộc truyền vào đường dẫn 
-      Map<String, dynamic>? queryParameters,
-      Options? option,
-    }
-  ) async {
-    try {
-      final response = await _dio.get(
-        path,
-        options: option, // để overide option
-        queryParameters: queryParameters, // truyền các tham số query sau dấu ?
-      ); //truyền vào path
-      
-      return response;
-    } on DioException catch (e) {
-      throw _handlingErrol(e);
-    }
+
+  void _initDio({
+    required Future<(String accessToken, String refreshToken)> Function(String refreshToken) refreshTokens,
+  }) {
+    dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl,
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
+        sendTimeout: const Duration(seconds: 30),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'x-client-platform': 'mobile',
+          'x-device-id': deviceId,
+        },
+        // Cho phép 4xx đi qua để bạn đọc body lỗi (msg/code/details)
+        validateStatus: (status) => status != null && status >= 200 && status < 500,
+        responseType: ResponseType.json,
+      ),
+    );
+
+    dio.interceptors.addAll([
+      DioCacheInterceptor(options: cacheOptions),
+
+      AuthInterceptor(
+        dio: dio,
+        getAccessToken: tokenStorage.getAccessToken,
+        getRefreshToken: tokenStorage.getRefreshToken,
+        saveToken: tokenStorage.saveToken,
+        refreshTokens: refreshTokens,
+        onSessionExpired: () async {
+          await tokenStorage.clearToken();
+        },
+      ),
+
+      RetryInterceptor(
+        dio: dio,
+        retries: 3,
+        retryDelays: const [
+          Duration(seconds: 1),
+          Duration(seconds: 2),
+          Duration(seconds: 3),
+        ],
+        retryEvaluator: (e, attempt) {
+          // chỉ retry network/5xx
+          if (e.type == DioExceptionType.connectionError ||
+              e.type == DioExceptionType.connectionTimeout ||
+              e.type == DioExceptionType.sendTimeout ||
+              e.type == DioExceptionType.receiveTimeout) return true;
+
+          final status = e.response?.statusCode;
+          return status != null && status >= 500;
+        },
+      ),
+
+      PrettyDioLogger(
+        requestHeader: true,
+        requestBody: true,
+        responseBody: true,
+        error: true,
+        compact: true,
+        maxWidth: 100,
+      ),
+    ]);
   }
-  //triển khai phương thức post
-  Future<Response> post (
-    String path,
-    {
-      dynamic data,
-      Map<String, dynamic>? queryParameters,
-      Options? option
-    }
-  ) async {
+
+  // Wrapper tiện dùng (optional)
+  Future<Response<T>> get<T>(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
     try {
-      final response = await _dio.post(
-        path,
-        data: data, // dữ liệu gửi đi trong body cua req
-        options: option,
-        queryParameters: queryParameters // ví dụ post lên dựa theo userid chẳng hạn
-      );
-      return response;
+      return await dio.get<T>(path, queryParameters: queryParameters, options: options);
     } on DioException catch (e) {
-      throw _handlingErrol(e);
+      throw ErrorMapper.fromDio(e);
     }
   }
 
-  Exception _handlingErrol (DioException error) { 
-    switch (error.type) { // tạo một switch
-      case DioExceptionType.connectionError:
-      case DioExceptionType.receiveTimeout:
-      case DioExceptionType.sendTimeout:
-        return NetworkException('Connection timeout');
-      case DioExceptionType.badResponse:
-        switch (error.response?.statusCode) {
-          case 400:
-            return BadRequestException('Bad Request'); // lỗi yêu cầu
-          case 401:
-            return UnauthorizedException('Unauthorized'); // lỗi xác thực
-          case 404: 
-            return NotFoundException('Not Found'); // lỗi không tìm thấy trang
-          case 500:
-            return ServerException('Internal server errol'); // lỗi bên trong server
-          default:
-            return ServerException('Server has error'); // lỗi server 
-        }
-      default: 
-        return NetworkException('A Error occured with Network'); // lỗi mạng
+  Future<Response<T>> post<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    try {
+      return await dio.post<T>(path, data: data, queryParameters: queryParameters, options: options);
+    } on DioException catch (e) {
+      throw ErrorMapper.fromDio(e);
     }
   }
 }

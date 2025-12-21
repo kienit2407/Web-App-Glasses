@@ -12,7 +12,7 @@ const client = createClient({
     }
 })
 
-export default client
+export const redisClient = client
 
 export const CONNECT_REDIS = async () => {
     try {

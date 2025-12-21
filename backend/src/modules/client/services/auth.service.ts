@@ -3,8 +3,11 @@ import { BadRequestException, UnauthorizedException } from "../../../utils/app_e
 import { clearRefreshCookie, generateToken, Platform, revokeSessionByRefresh, rotateToken } from "../../../utils/jwt"
 import { Response } from "express";
 import bcrypt from "bcryptjs";
+import jwt from 'jsonwebtoken'
+
 import { LoginHistory } from "../../../models/login_history.model";
 import axios from "axios";
+import { redisClient } from "../../../config/redis";
 export interface SignUp {
     email: string
     display_name: string
@@ -278,11 +281,35 @@ const refreshToken = async (
 
 const logOut = async (
     rawRefreshToken: string | null,
+    accessToken: string | null, // [MỚI] Nhận thêm Access Token
     platform: Platform,
     res: Response
 ) => {
     if (rawRefreshToken) {
         await revokeSessionByRefresh(rawRefreshToken)
+    }
+    // 2. [MỚI] BLACKLIST ACCESS TOKEN
+    if (accessToken) {
+        try {
+            // Giải mã token để lấy thời gian hết hạn (exp)
+            const decoded = jwt.decode(accessToken) as any;
+
+            if (decoded && decoded.exp) {
+                // Tính thời gian còn lại: (Hết hạn - Hiện tại)
+                const ttl = decoded.exp - Math.floor(Date.now() / 1000);
+
+                // Nếu token chưa hết hạn thì mới cần block
+                if (ttl > 0) {
+                    // Lưu vào Redis: Key = bl_<token>, Value = 1, Hết hạn sau ttl giây
+                    // Hacker dùng token này sẽ bị chặn (nếu Middleware check key này)
+                    await redisClient.setEx(`bl_${accessToken}`, ttl, "1");
+                    console.log(`[Logout] Blacklisted AccessToken for ${ttl}s`);
+                }
+            }
+        } catch (e) {
+            console.error("[Logout] Error blacklisting token:", e);
+            // Không throw lỗi ở đây để đảm bảo logout vẫn thành công
+        }
     }
     // web bắt buộc phải xoá cookie
     if (platform === 'web') {
@@ -295,5 +322,5 @@ export const authService = {
     logOut,
     refreshToken,
     signInWithGoogle,
-    signInWithGithub,   
+    signInWithGithub,
 }

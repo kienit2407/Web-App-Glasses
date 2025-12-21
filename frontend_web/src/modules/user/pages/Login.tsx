@@ -58,7 +58,7 @@ const Login = () => {
   };
   const handleLoginWithGoogle = () => {
     const params = new URLSearchParams();
-    if (from) params.set("from", from);
+    if (from) params.set("from", btoa(from));
     const url = `${API_BASE_URL}/auth/google?${params.toString()}`;
     openPopup(url, "Google Login", 500, 600);
     // window.location.href = `${API_BASE_URL}/auth/google?${params.toString()}`;
@@ -91,7 +91,7 @@ const Login = () => {
 
   const handleLoginWithGithub = () => {
     const params = new URLSearchParams();
-    if (from) params.set("from", from);
+    if (from) params.set("from", btoa(from));
     // window.location.href = `${API_BASE_URL}/auth/github?${params.toString()}`;
     const url = `${API_BASE_URL}/auth/github?${params.toString()}`;
     openPopup(url, "Github Login", 500, 600);

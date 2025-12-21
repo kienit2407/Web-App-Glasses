@@ -2,8 +2,8 @@
 ## App Project: Glasses Web App
 ## Outcome of Project:
 - 🌐 Backend + Web:
-  - API docs (Swagger): https://web-app-glasses.up.railway.app/api-docs
-  - API backend: https://web-app-glasses.up.railway.app
+  - API docs (Swagger): https://web-app-glasses.onrender.com/api-docs
+  - API backend: https://web-app-glasses.onrender.com
   - Web client: https://web-app-glasses-x57x.vercel.app
 
 - 📱 Mobile App (Flutter / Android):
@@ -18,48 +18,52 @@
 
 ---
 ## 🚀 Features (Main Functionalities)
-## 🔐 Authentication & User Management
+### 🔐 Authentication & User Management
 - JWT Access/Refresh token flow
 - Secure password hashing (bcrypt)
 - Auto-refresh session with Redis token store
 - User roles: Customer, Admin
-## 🛍️ Product & Catalog Management
+### 🛍️ Product & Catalog Management
 - CRUD for products (Admin)
 - Product attributes, price, brand, images (Cloudinary upload)
 - Category filtering & search
 - Real-time product updates with Socket.io (optional for Flash Sale)
-## 🛒 Shopping Cart & Checkout
+### 🛒 Shopping Cart & Checkout
 - Add / remove / update cart items
 - Realtime cart sync across devices
 - Checkout flow with validation
 - Order summary & confirmation screen
-## 📦 Order Handling
+### 📦 Order Handling
 - Order placement & payment status
 - Order history per user
 - Admin order dashboard
 - Status flow: Pending → Processing → Shipping → Completed
-## 🏪 Admin Dashboard
+### 🏪 Admin Dashboard
 - Manage products
 - Manage users
 - Manage orders
 - Real-time notifications (orders, low-stock, etc...)
-## 📱 Mobile App (Flutter)
+### 📱 Mobile App (Flutter)
 - Built with Riverpod for predictable state management
 - Responsive UI
 - Smooth navigation & animations
 - Connects directly to backend REST API
 - Persistent login using Secure Storage
-## 🤖 RAG
+### 🤖 RAG
 - Using AI to advice suitable glasseses for Client's face 
 - Providing products fit Client's bubget
-## ⚡ Performance, Security & DevOps
+### ⚡ Performance, Security & DevOps
 - Redis caching for heavy queries
 - API rate-limiting using Arcjet
 - Modular service-based Node.js architecture
 - Environment-based config
 - Clean folder structure & TypeScript (Web Frontend)
+### 💰 Payment feature with VNPAY
+- Integrate both VNPAY & COD payment method
+- Using webview lib on flutter side (mobile) (can upgrate or option by deeplink)
+- On Web still use avaiable lib to avoid bug 
 ---
-### 🛠️ General Tech Stack
+## 🛠️ General Tech Stack
 | Tech | Purpose |
 |:---------:|:----------:|
 | 🟢⚙️ Node.js | Backend |
@@ -75,8 +79,8 @@
 | 🔵📘 TypeScript | Web Platform |
 | 🐜👀 Styling Design | Ant UI |
 ---
-### 🛠️ Spectific Tech Stack
-#### ⚙️Backend 
+## 🛠️ Spectific Tech Stack
+### ⚙️Backend 
 | Tech | Purpose |
 |:---------:|:----------:|
 | 🟢⚙️ Node.js | Backend |
@@ -88,7 +92,7 @@
 | 🚦🛑 Arcjet | Rate-Limiting API |
 | ☁️📤 File Uploads | Cloudinary |
 
-#### 🌀Frontend
+### 🌀Frontend
 | Tech | Purpose |
 |:---------:|:----------:|
 | 🔵📘 TypeScript | Web Platform |
@@ -97,7 +101,7 @@
 | 🐻🔄 Zuztand | State Management |
 | 🌐🔌 Axios | Api Client |
 
-#### 📱Mobile
+### 📱Mobile
 | Tech | Purpose |
 |:---------:|:----------:|
 | 💻🌐 Flutter | Cross-Platform |
@@ -106,23 +110,23 @@
 | 🛣️🚦 Go Router | Navigate Screen |
 | 📡🔗 Dio | HTTP Networking |
 ---
-### 🏆 This is a studying place where i learn about node.js and i can build a server by myself
+## 🏆 This is a studying place where i learn about node.js and i can build a server by myself
 ---
-### 🚀 Installation & Setup
-## If u want to take it immatediately. Let follow the intructions which i created for you below 👇:
+## 🚀 Installation & Setup
+### If u want to take it immatediately. Let follow the intructions which i created for you below 👇:
 ```bash
 git clone https://github.com/kienit2407/Web-App-Glasses.git
 ```
-### Navigate to the backend directory
+#### Step 1: Navigate to the backend directory
 ```bash
 cd Web-App-Glasses/backend
 ```
-### Navigate to the frontend_web directory
+#### Step 2: Navigate to the frontend_web directory
 ```bash
 cd Web-App-Glasses/frontend_web
 ```
-## Instruction for Node.js
-### If u installed yarn:
+### Step 3: Instruction for Node.js
+#### If u installed yarn:
 ```bash
 yarn install
 ```
@@ -131,8 +135,8 @@ yarn install
 npm install
 ```
 ---
-## Instruction for Flutter
-### 🐳 Copy & paste rapidly
+### Step 4: Instruction for Flutter
+#### 🐳 Copy & paste rapidly
 ```bash
 flutter pub get
 ```

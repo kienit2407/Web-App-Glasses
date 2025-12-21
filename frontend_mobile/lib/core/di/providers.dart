@@ -11,7 +11,6 @@ import 'package:frontend_mobile/features/checkout/data/repository/checkout_repos
 import 'package:frontend_mobile/features/checkout/presentation/view/checkout_args.dart';
 import 'package:frontend_mobile/features/checkout/presentation/viewmodels/checkout_controller.dart';
 import 'package:frontend_mobile/features/checkout/presentation/viewmodels/checkout_state.dart';
-import 'package:frontend_mobile/features/coupon/data/model/user_coupon_model.dart';
 import 'package:frontend_mobile/features/coupon/data/repository/coupon_repository.dart';
 import 'package:frontend_mobile/features/coupon/presentation/viewmodels/user_coupon_controller.dart';
 import 'package:frontend_mobile/features/coupon/presentation/viewmodels/user_coupon_state.dart';
@@ -38,7 +37,6 @@ import 'package:frontend_mobile/features/search/data/repository/search_result_re
 import 'package:frontend_mobile/features/search/presentation/viewmodel/search_result_controller.dart';
 import 'package:frontend_mobile/features/search/presentation/viewmodel/search_result_state.dart';
 import 'package:frontend_mobile/features/search/presentation/viewmodel/search_state.dart';
-
 import '../../features/profile/presentation/viewmodels/profile_state.dart';
 import '../network/dio_config.dart';
 import '../network/token_storage.dart';
@@ -50,7 +48,7 @@ final dioClientProvider = Provider<DioClient>((ref) {
 });
 
 final tokenStorageProvider = Provider<TokenStorage>((ref) {
-  return TokenStorage();
+  throw UnimplementedError('tokenStorageProvider chưa được override');
 });
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -90,12 +88,11 @@ final cartRepositoryProvider = Provider<CartRepository>((ref) {
   return CartRepository(dioClient: dioClient);
 });
 
-final cartControllerProvider = StateNotifierProvider<CartController, CartState>(
-  (ref) {
-    final repo = ref.read(cartRepositoryProvider);
-    return CartController(repo);
-  },
-);
+final cartControllerProvider =
+    StateNotifierProvider.autoDispose<CartController, CartState>((ref) {
+      final repo = ref.read(cartRepositoryProvider);
+      return CartController(repo);
+    });
 
 final searchRepositoryProvider = Provider<SearchRepository>((ref) {
   final dioClient = ref.read(dioClientProvider); // <-- dùng dioClientProvider
@@ -136,31 +133,32 @@ final addressRepositoryProvider = Provider<AddressRepository>((ref) {
 
 final checkoutControllerProvider = StateNotifierProvider.autoDispose
     .family<CheckoutController, CheckoutState, CheckoutArgs>((ref, args) {
-  final checkoutRepo = ref.read(checkoutRepositoryProvider);
-  final addressRepo = ref.read(addressRepositoryProvider);
+      final checkoutRepo = ref.read(checkoutRepositoryProvider);
+      final addressRepo = ref.read(addressRepositoryProvider);
 
-  return CheckoutController(
-    checkoutRepo,
-    addressRepo,
-    cartItemIds: args.cartItemIds,
-    directItem: args.directItem,
-  );
-});
+      return CheckoutController(
+        checkoutRepo,
+        addressRepo,
+        cartItemIds: args.cartItemIds,
+        directItem: args.directItem,
+      );
+    });
 
 final couponRepositoryProvider = Provider<CouponRepository>((ref) {
-  final dioClient = ref.watch(dioClientProvider); // Giả sử bạn có dioClientProvider
+  final dioClient = ref.watch(
+    dioClientProvider,
+  ); 
   return CouponRepository(dioClient);
 });
 
-// 2. KHAI BÁO CONTROLLER DÙNG FAMILY (Quan trọng)
-// Tham số thứ 3 là kiểu dữ liệu của tham số truyền vào (int: subtotal)
-final userCouponControllerProvider = StateNotifierProvider.family<UserCouponController, UserCouponState, int>(
-  (ref, subtotal) {
-    final repo = ref.watch(couponRepositoryProvider);
-    return UserCouponController(repo, subtotal: subtotal);
-  },
-);
-
+final userCouponControllerProvider =
+    StateNotifierProvider.family<UserCouponController, UserCouponState, int>((
+      ref,
+      subtotal,
+    ) {
+      final repo = ref.watch(couponRepositoryProvider);
+      return UserCouponController(repo, subtotal: subtotal);
+    });
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   final dio = ref.read(dioClientProvider);
@@ -169,9 +167,9 @@ final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
 
 final profileControllerProvider =
     StateNotifierProvider<ProfileController, ProfileState>((ref) {
-  final repo = ref.read(profileRepositoryProvider);
-  return ProfileController(repo);
-});
+      final repo = ref.read(profileRepositoryProvider);
+      return ProfileController(repo);
+    });
 
 // ORDERS
 final orderRepositoryProvider = Provider<OrderRepository>((ref) {
@@ -181,9 +179,9 @@ final orderRepositoryProvider = Provider<OrderRepository>((ref) {
 
 final ordersControllerProvider =
     StateNotifierProvider<OrdersController, OrdersState>((ref) {
-  final repo = ref.read(orderRepositoryProvider);
-  return OrdersController(repo);
-});
+      final repo = ref.read(orderRepositoryProvider);
+      return OrdersController(repo);
+    });
 
 // repository
 final couponCenterRepositoryProvider = Provider<CouponCenterRepository>((ref) {
@@ -193,40 +191,51 @@ final couponCenterRepositoryProvider = Provider<CouponCenterRepository>((ref) {
 
 // controller
 final couponCenterControllerProvider =
-    StateNotifierProvider<CouponCenterController, CouponCenterState>((ref) {
-  final repo = ref.read(couponCenterRepositoryProvider);
-  return CouponCenterController(repo);
-});
+    StateNotifierProvider.autoDispose<
+      CouponCenterController,
+      CouponCenterState
+    >((ref) {
+      final repo = ref.read(couponCenterRepositoryProvider);
+      final c = CouponCenterController(repo);
+      c.loadCouponsAndPromotions();
+      return c;
+    });
 
 final userNotificationRepositoryProvider = Provider<UserNotificationRepository>(
   (ref) => UserNotificationRepository(dioClient: ref.read(dioClientProvider)),
 );
 
-final userNotificationControllerProvider = StateNotifierProvider<
-    UserNotificationController, UserNotificationState>(
-  (ref) => UserNotificationController(
-    ref.read(userNotificationRepositoryProvider),
-  ),
-);
+final userNotificationControllerProvider =
+    StateNotifierProvider.autoDispose<
+      UserNotificationController,
+      UserNotificationState
+    >(
+      (ref) => UserNotificationController(
+        ref.read(userNotificationRepositoryProvider),
+      ),
+    );
 
 // repo
 final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
-  final dioClient = ref.watch(dioClientProvider); // <-- dùng dioClientProvider, không phải dioProvider
+  final dioClient = ref.watch(
+    dioClientProvider,
+  ); // <-- dùng dioClientProvider, không phải dioProvider
   return ReviewRepository(dioClient: dioClient);
 });
 
 // controller theo productId
-final productReviewsControllerProvider = StateNotifierProvider.autoDispose.family<
-    ProductReviewsController, ProductReviewsState, String>(
-  (ref, productId) {
-    final repo = ref.watch(reviewRepositoryProvider);
-    return ProductReviewsController(
-      repo: repo,
-      ref: ref,
-      productId: productId,
-    );
-  },
-);
+final productReviewsControllerProvider = StateNotifierProvider.autoDispose
+    .family<ProductReviewsController, ProductReviewsState, String>((
+      ref,
+      productId,
+    ) {
+      final repo = ref.watch(reviewRepositoryProvider);
+      return ProductReviewsController(
+        repo: repo,
+        ref: ref,
+        productId: productId,
+      );
+    });
 
 final botChatRepositoryProvider = Provider<BotChatRepository>((ref) {
   final dioClient = ref.read(dioClientProvider);
@@ -235,6 +244,6 @@ final botChatRepositoryProvider = Provider<BotChatRepository>((ref) {
 
 final botChatControllerProvider =
     StateNotifierProvider<BotChatController, BotChatState>((ref) {
-  final repo = ref.read(botChatRepositoryProvider);
-  return BotChatController(repo);
-});
+      final repo = ref.read(botChatRepositoryProvider);
+      return BotChatController(repo);
+    });
