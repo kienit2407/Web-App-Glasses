@@ -9,6 +9,7 @@ import { PromotionHighlightEntry } from "@/modules/user/components/PromotionHigh
 import { SupportChatWidget } from "@/modules/user/components/SupportChatWidget";
 import { useUserSocket } from "@/hooks/use-user-socket";
 import { useAuth } from "@/hooks/use-auth";
+import LiquidButton from "@/modules/user/components/LiquidButton";
 
 
 export const UserLayout = () => {
@@ -37,6 +38,7 @@ export const UserLayout = () => {
             <Footer />
             {user ? (<SupportChatWidget />) : null}
             <ScrollToTopButton showAfter={300} />
+            
 
         </div>
     );

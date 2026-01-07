@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend_mobile/core/utils/auth_session_provider.dart';
+import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:frontend_mobile/core/routes/bottom_navigation_bar.dart';
@@ -24,56 +24,39 @@ import 'package:frontend_mobile/features/profile/presentation/view/my_coupons_pa
 import 'package:frontend_mobile/features/search/presentation/view/search_page.dart';
 import 'package:frontend_mobile/features/search/presentation/view/search_result_page.dart';
 
+class AppRoutes {
+  AppRoutes._();
 
-bool _isPublicLocation(String loc) {
-  // Public như Shopee: khách vẫn xem được
-  if (loc == '/' ||
-      loc == '/home' ||
-      loc == '/signin' ||
-      loc == '/signup' ||
-      loc == '/search' ||
-      loc == '/search-result' ||
-      loc == '/cart' ||
-      loc == '/ai-chat') return true;
-
-  if (loc.startsWith('/product/')) return true;
-
-  return false;
-}
-
-bool _isProtectedLocation(String loc) {
-  // Những trang nên yêu cầu login
-  if (loc == '/checkout' || loc.startsWith('/checkout/')) return true;
-  if (loc == '/orders' || loc.startsWith('/orders/')) return true;
-  if (loc == '/my-coupons') return true;
-  if (loc == '/account-settings') return true;
-  if (loc == '/change-password') return true;
-  if (loc == '/account/addresses') return true;
-  if (loc == '/address-form') return true;
-  if (loc == '/vnpay-webview') return true;
-  if (loc == '/payment-result') return true;
-
-  return false;
+  static const String splash = '/';
+  static const String home = '/home';
+  static const String farmers = '/farmers';
+  static const String farmerDetail = '/farmers/:id';
+  // Thêm routes khác ở đây...
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  // tạo 1 provider cung cấp router cho app
+  final authState = ref.watch(authControllerProvider.notifier).isLoggedIn;
+
   // tạo router 1 lần
   final router = GoRouter(
     initialLocation: '/', // Splash
     redirect: (context, state) {
-      final loc = state.matchedLocation;
-      final isLoggedIn = ref.read(isLoggedInProvider);
+      final currentPath = state.matchedLocation;
+      // Routes cần đăng nhập (guard)
+      final protectedRoutes = ['/checkout', '/settings'];
 
-      // Splash/public không chặn
-      if (_isPublicLocation(loc)) return null;
-
-      // Nếu là protected mà chưa login => đá về signin + giữ đường dẫn để quay lại
-      if (!isLoggedIn && _isProtectedLocation(loc)) {
-        final from = Uri.encodeComponent(state.uri.toString());
-        return '/signin?from=$from';
+      if (protectedRoutes.contains(currentPath) && !authState) {
+        // GUARD: Chặn và redirect về login
+        return '/login?redirect=$currentPath'; // Lưu path để quay lại sau
       }
 
-      return null;
+      // Đã login mà vào /login → không cần, về home
+      if (currentPath == '/login' && authState) {
+        return '/home';
+      }
+
+      return null; // Cho qua
     },
     routes: [
       GoRoute(
@@ -153,8 +136,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/vnpay-webview',
         name: 'vnpay-webview',
-        redirect: (context, state) =>
-            state.extra is VnpayArgs ? null : '/home',
+        redirect: (context, state) => state.extra is VnpayArgs ? null : '/home',
         builder: (context, state) {
           final args = state.extra as VnpayArgs;
           return VnpayWebviewPage(args: args);
@@ -229,9 +211,5 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
-
-  // Quan trọng: auth state đổi thì router refresh để chạy lại redirect
-  ref.listen<bool>(isLoggedInProvider, (_, __) => router.refresh());
-
   return router;
 });

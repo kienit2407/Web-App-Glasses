@@ -32,6 +32,7 @@ import { RcFile } from "antd/es/upload";
 import { useSocket } from "@/hooks/use-socket";
 import { TypingDots } from "./ChatTypingIndicator";
 import { API } from "@/app/lib/axios-client";
+import LiquidButton from "./LiquidButton";
 
 const { TextArea } = Input;
 
@@ -289,13 +290,7 @@ export const SupportChatWidget = () => {
             <div className="fixed bottom-[80px] right-6 z-40">
                 <Tooltip title="Hỗ trợ khách hàng">
                     <Badge count={unreadBadge} size="small">
-                        <Button
-                            type="primary"
-                            shape="circle"
-                            size="large"
-                            icon={<MessageOutlined />}
-                            onClick={handleToggleOpen}
-                        />
+                       <LiquidButton onClick={handleToggleOpen} />
                     </Badge>
                 </Tooltip>
             </div>

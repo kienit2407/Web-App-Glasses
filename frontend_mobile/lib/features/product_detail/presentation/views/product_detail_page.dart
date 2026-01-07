@@ -212,7 +212,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
     final cartController = ref.read(cartControllerProvider.notifier);
     final authState = ref.watch(authControllerProvider);
     final isLoggedIn = authState.valueOrNull != null;
-    final reviewState = ref.watch(
+    ref.watch(
       productReviewsControllerProvider(widget.productId),
     );
 
@@ -304,7 +304,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage>
               // ===== GALLERY (full width, giống Shopee) =====
               Container(
                 color: Colors.white,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12), 
                 child: _buildGallerySection(),
               ),
 

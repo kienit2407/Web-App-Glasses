@@ -119,6 +119,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               SliverToBoxAdapter(
                 child: _buildDotIndicator(state.banners)),
             const SliverToBoxAdapter(child: SizedBox(height: 8)),
+            // SliverPersistentHeader(delegate: delegate)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
