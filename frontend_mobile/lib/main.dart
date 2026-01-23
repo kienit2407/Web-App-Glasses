@@ -72,7 +72,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_mobile/core/network/dio_config.dart';
 import 'package:frontend_mobile/core/routes/app_routes.dart';
-import 'package:frontend_mobile/features/auth/presentation/views/splash_page.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:toastification/toastification.dart';
 
@@ -139,10 +138,18 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
+    
+    // Watch auth sync provider - nó sẽ tự động invalidate data khi auth thay đổi
+    ref.watch(authSyncProvider);
+
+    // Watch auth state để log
+    final authState = ref.watch(authControllerProvider);
+    authState.whenData((user) {
+      print('[MyApp] Auth state changed: ${user?.email ?? 'guest'}');
+    });
 
     return ToastificationWrapper(
       child: MaterialApp.router(
-        // scaffoldMessengerKey: rootScaffoldMessengerKey,
         title: 'My Ecommerce',
         routerConfig: router,
         debugShowCheckedModeBanner: false,

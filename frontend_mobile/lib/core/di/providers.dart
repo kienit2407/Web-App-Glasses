@@ -145,9 +145,7 @@ final checkoutControllerProvider = StateNotifierProvider.autoDispose
     });
 
 final couponRepositoryProvider = Provider<CouponRepository>((ref) {
-  final dioClient = ref.watch(
-    dioClientProvider,
-  ); 
+  final dioClient = ref.watch(dioClientProvider);
   return CouponRepository(dioClient);
 });
 
@@ -247,3 +245,45 @@ final botChatControllerProvider =
       final repo = ref.read(botChatRepositoryProvider);
       return BotChatController(repo);
     });
+
+// ========== SYNC PROVIDERS: Auto reload khi auth thay đổi ==========
+// Dùng Provider để lắng nghe auth state thay đổi một lần duy nhất
+final authSyncProvider = Provider<void>((ref) {
+  print('[AuthSync] Setting up auth listener');
+
+  // Lắng nghe auth state thay đổi
+  ref.listen(authControllerProvider, (previous, next) async {
+    final prevEmail = previous?.valueOrNull?.email ?? 'null';
+    final nextEmail = next.valueOrNull?.email ?? 'null';
+    print('[AuthSync] Auth state changed from $prevEmail to $nextEmail');
+
+    // Thêm delay nhỏ để đảm bảo TokenStorage đã ghi xong token xuống đĩa
+    // Tránh trường hợp API gọi lại quá nhanh khi token chưa sẵn sàng
+    if (previous?.valueOrNull?.email != next.valueOrNull?.email) {
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+
+    // Khi auth thay đổi (login/logout/error), invalidate tất cả data providers
+    next.when(
+      loading: () {
+        print('[AuthSync] Auth loading...');
+      },
+      error: (err, st) {
+        print('[AuthSync] Auth error: $err');
+        // Invalidate tất cả khi có lỗi
+        ref.invalidate(profileControllerProvider);
+        ref.invalidate(cartControllerProvider);
+        ref.invalidate(catalogControllerProvider);
+      },
+      data: (user) {
+        print('[AuthSync] Auth data received: ${user?.email}');
+        // Luôn invalidate khi auth state thay đổi (login/logout/profile update)
+        ref.invalidate(profileControllerProvider);
+        ref.invalidate(cartControllerProvider);
+        ref.invalidate(catalogControllerProvider);
+      },
+    );
+  });
+});
+
+// export '_authSyncProvider';

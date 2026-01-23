@@ -38,7 +38,9 @@ class _AccountHomePageState extends ConsumerState<AccountHomePage> {
 
     // Đã đăng nhập -> như cũ
     final state = ref.watch(profileControllerProvider);
-    final user = state.user;
+    // FIX FLICKER: Nếu profileController đang load (state.user == null),
+    // dùng tạm authUser (đã có data từ lúc login) để hiển thị ngay lập tức.
+    final user = state.user ?? authUser;
 
     final ordersState = ref.watch(ordersControllerProvider);
     final counts = ordersState.statusCounts;

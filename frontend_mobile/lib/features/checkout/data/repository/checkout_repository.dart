@@ -34,6 +34,9 @@ class CheckoutRepository {
 
     final res = await dioClient.dio.post('/checkout/preview', data: body);
 
+    print('[CheckoutRepository] previewCheckout request body: $body');
+    print('[CheckoutRepository] previewCheckout response: ${res.data}');
+
     final data = res.data['data'];
 
     // nếu sau này BE bọc thêm key "preview" thì vẫn chạy được

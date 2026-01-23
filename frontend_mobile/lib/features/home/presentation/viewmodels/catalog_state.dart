@@ -1,6 +1,7 @@
 import 'package:frontend_mobile/features/home/data/models/banner_model.dart';
 import 'package:frontend_mobile/features/home/data/models/brand_model.dart';
 import 'package:frontend_mobile/features/home/data/models/product_list_item.dart';
+
 class CatalogState {
   final bool isLoading;
   final bool isLoadingMore;

@@ -5,12 +5,16 @@ import 'package:frontend_mobile/features/cart/data/repository/cart_repository.da
 import 'cart_state.dart';
 
 class CartController extends StateNotifier<CartState> {
-  CartController(this._repo) : super(const CartState());
+  // FIX FLICKER: isLoading = true
+  CartController(this._repo) : super(const CartState(isLoading: true)) {
+    loadCart();
+  }
 
   final CartRepository _repo;
 
   Future<void> loadCart() async {
-    state = state.copyWith(isLoading: true);
+    // Không check isLoading return ở đây nữa
+    if (!state.isLoading) state = state.copyWith(isLoading: true);
     try {
       final cart = await _repo.fetchCart();
       // nếu chưa chọn gì -> chọn hết
@@ -42,7 +46,6 @@ class CartController extends StateNotifier<CartState> {
     } catch (e) {
       print('[CartController] addToCart error: $e');
       state = state.copyWith(isUpdating: false, errorMessage: e.toString());
-      
     }
   }
 

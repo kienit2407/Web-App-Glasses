@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:go_router/go_router.dart';
@@ -34,29 +35,26 @@ class AppRoutes {
   // Thêm routes khác ở đây...
 }
 
-final appRouterProvider = Provider<GoRouter>((ref) {
-  // tạo 1 provider cung cấp router cho app
-  final authState = ref.watch(authControllerProvider.notifier).isLoggedIn;
+final _routerKey = GlobalKey<NavigatorState>();
 
-  // tạo router 1 lần
+final appRouterProvider = Provider<GoRouter>((ref) {
+  // Đơn giản: Router không lo auth logic
+  // Để splash page tự handle navigation
+  
   final router = GoRouter(
+    navigatorKey: _routerKey,
     initialLocation: '/', // Splash
     redirect: (context, state) {
+      // Chỉ guard các route được bảo vệ khi navigate trực tiếp
       final currentPath = state.matchedLocation;
-      // Routes cần đăng nhập (guard)
-      final protectedRoutes = ['/checkout', '/settings'];
-
-      if (protectedRoutes.contains(currentPath) && !authState) {
-        // GUARD: Chặn và redirect về login
-        return '/login?redirect=$currentPath'; // Lưu path để quay lại sau
+      
+      // Nếu đang ở splash, không redirect gì cả
+      if (currentPath == '/') {
+        return null;
       }
-
-      // Đã login mà vào /login → không cần, về home
-      if (currentPath == '/login' && authState) {
-        return '/home';
-      }
-
-      return null; // Cho qua
+      
+      // Cho các route khác đi, splash sẽ handle auth logic
+      return null;
     },
     routes: [
       GoRoute(

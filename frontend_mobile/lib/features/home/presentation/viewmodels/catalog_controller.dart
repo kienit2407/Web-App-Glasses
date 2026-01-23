@@ -5,15 +5,23 @@ import 'package:frontend_mobile/features/home/data/repository/catalog_repository
 import 'catalog_state.dart';
 
 class CatalogController extends StateNotifier<CatalogState> {
-  CatalogController(this._repo) : super(const CatalogState());
+  // FIX FLICKER: Khởi tạo với isLoading = true để hiển thị Skeleton ngay lập tức
+  CatalogController(this._repo) : super(const CatalogState(isLoading: true)) {
+    // Tự động load dữ liệu ngay khi controller được tạo
+    loadInitial();
+  }
 
   final CatalogRepository _repo;
 
   Future<void> loadInitial() async {
-    // tránh gọi lại nhiều lần
-    if (state.isLoading || state.products.isNotEmpty) return;
+    // Lưu ý: Không check state.isLoading ở đây nữa vì mặc định đã là true
+    // Nếu muốn check double-call thì cần biến riêng, nhưng gọi trong constructor thì an toàn.
 
-    state = state.copyWith(isLoading: true);
+    // Đảm bảo state đang là loading (phòng trường hợp gọi từ nơi khác)
+    if (!state.isLoading) {
+      state = state.copyWith(isLoading: true);
+    }
+
     try {
       final banners = await _repo.fetchBanners();
       final brands = await _repo.fetchBrands();
@@ -66,7 +74,9 @@ class CatalogController extends StateNotifier<CatalogState> {
   }
 
   Future<void> refresh() async {
-    state = const CatalogState(limit: 12); // reset
+    // Khi refresh, reset state về loading=true để hiện skeleton nếu muốn, hoặc giữ list cũ
+    // Ở đây ta reset về CatalogState(isLoading: true) để hiện skeleton lại cho giống app xịn
+    state = const CatalogState(limit: 12, isLoading: true);
     debugPrint('[CatalogController] refresh called');
     await loadInitial();
   }

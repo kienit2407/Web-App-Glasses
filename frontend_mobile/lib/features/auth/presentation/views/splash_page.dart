@@ -13,17 +13,29 @@ class SplashPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Lắng nghe thay đổi của authState
     ref.listen(authControllerProvider, (previous, next) {
+      print('[SplashPage] Auth state changed: previous=${previous?.runtimeType}, next=${next.runtimeType}');
+      
       next.when(
         loading: () {
+          print('[SplashPage] Auth is loading...');
           // vẫn ở splash, không làm gì
         },
         data: (user) {
+          print('[SplashPage] Auth data loaded. User: ${user?.email}');
           // user != null: đã login, null: khách
-          context.go('/home');
+          // Delay để ensure navigation được handle đúng
+          Future.delayed(const Duration(milliseconds: 500), () {
+            print('[SplashPage] Navigating to /home');
+            context.go('/home');
+          });
         },
         error: (err, st) {
+          print('[SplashPage] Auth error: $err');
           // lỗi khi bootstrap -> clear token, hoặc cho vào home guest
-          context.go('/home');
+          Future.delayed(const Duration(milliseconds: 500), () {
+            print('[SplashPage] Navigating to /home (error fallback)');
+            context.go('/home');
+          });
         },
       );
     });

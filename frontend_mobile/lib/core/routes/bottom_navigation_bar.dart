@@ -46,6 +46,10 @@ class _MainShellState extends ConsumerState<MainShell> {
     final notifState = ref.watch(userNotificationControllerProvider);
     final unread = notifState.unreadCount;
 
+    // Lấy thông tin User để hiển thị Avatar
+    final authState = ref.watch(authControllerProvider);
+    final user = authState.valueOrNull;
+
     return Scaffold(
       extendBody: true,
       body: NotificationListener<UserScrollNotification>(
@@ -71,13 +75,12 @@ class _MainShellState extends ConsumerState<MainShell> {
         child: Stack(
           children: [
             IndexedStack(
-              
-              index: _index, 
-              children: List.generate(_pages.length, (i){
+              index: _index,
+              children: List.generate(_pages.length, (i) {
                 if (!_built[i]) return SizedBox.shrink();
                 return _pages[i];
-              })
-              ),
+              }),
+            ),
             // _pages[_index],
             PromotionHighlightEntryMobile(),
           ],
@@ -172,21 +175,43 @@ class _MainShellState extends ConsumerState<MainShell> {
                       ),
                       label: 'Thông báo',
                     ),
-                    const NavigationDestination(
-                      icon: Icon(Iconsax.user_copy),
-                      selectedIcon: Icon(Iconsax.user),
+                    NavigationDestination(
+                      icon:
+                          (user?.avatarUrl != null &&
+                              user!.avatarUrl!.isNotEmpty)
+                          ? CircleAvatar(
+                              radius: 12,
+                              backgroundImage: NetworkImage(user!.avatarUrl!),
+                              backgroundColor: Colors.transparent,
+                            )
+                          : const Icon(Iconsax.user_copy),
+                      selectedIcon:
+                          (user?.avatarUrl != null &&
+                              user!.avatarUrl!.isNotEmpty)
+                          ? Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColor.buttonprimaryCol,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: CircleAvatar(
+                                radius: 12,
+                                backgroundImage: NetworkImage(user!.avatarUrl!),
+                                backgroundColor: Colors.transparent,
+                              ),
+                            )
+                          : const Icon(Iconsax.user),
                       label: 'Tài khoản',
                     ),
                   ],
-                
                 ),
-              
               ),
             ),
           ),
         ),
       ),
-      
     );
   }
 }

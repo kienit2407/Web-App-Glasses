@@ -11,14 +11,15 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 String _formatDateTime(String? iso) {
-    if (iso == null) return '';
-    final dt = DateTime.tryParse(iso);
-    if (dt == null) return iso;
+  if (iso == null) return '';
+  final dt = DateTime.tryParse(iso);
+  if (dt == null) return iso;
 
-    // Tự động chuyển sang Local và format chuẩn đẹp
-    // "dd/MM/yyyy HH:mm" -> 15/12/2025 17:30
-    return DateFormat('dd/MM/yyyy HH:mm').format(dt.toLocal());
+  // Tự động chuyển sang Local và format chuẩn đẹp
+  // "dd/MM/yyyy HH:mm" -> 15/12/2025 17:30
+  return DateFormat('dd/MM/yyyy HH:mm').format(dt.toLocal());
 }
+
 class UserNotificationsPage extends ConsumerWidget {
   const UserNotificationsPage({super.key});
 
@@ -35,6 +36,7 @@ class UserNotificationsPage extends ConsumerWidget {
       return _buildGuestAccount(context);
     }
     return Scaffold(
+      backgroundColor: const Color(0xfff5f5f5),
       appBar: AppBar(
         backgroundColor: AppColor.buttonprimaryCol,
         foregroundColor: Colors.white,

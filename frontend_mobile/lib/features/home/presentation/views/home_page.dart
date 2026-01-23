@@ -31,16 +31,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      final auth = ref.read(authControllerProvider);
-      final user = auth.valueOrNull;
-
-      if (user != null) {
-        ref.read(profileControllerProvider.notifier).loadProfile();
-        ref.read(cartControllerProvider.notifier).loadCart();
-      }
-      ref.read(catalogControllerProvider.notifier).loadInitial();
-    });
+    // Không cần gọi loadInitial ở đây nữa vì Controller tự gọi khi khởi tạo
   }
 
   @override
@@ -107,100 +98,204 @@ class _HomePageState extends ConsumerState<HomePage> {
         automaticallyImplyLeading: false,
       ),
       backgroundColor: const Color(0xfff5f5f5),
-      body: RefreshIndicator.adaptive(
-        onRefresh: () => ref.read(catalogControllerProvider.notifier).refresh(),
-        child: CustomScrollView(
-          slivers: [
-            const SliverToBoxAdapter(child: SizedBox(height: 8)),
-            if (state.banners.isNotEmpty)
-              SliverToBoxAdapter(child: _buildBannerCarousel(state.banners)),
-            const SliverToBoxAdapter(child: SizedBox(height: 8)),
-            if (state.banners.isNotEmpty)
-              SliverToBoxAdapter(
-                child: _buildDotIndicator(state.banners)),
-            const SliverToBoxAdapter(child: SizedBox(height: 8)),
-            // SliverPersistentHeader(delegate: delegate)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                child: Text(
-                  'Thương hiệu chính hãng',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13
-                  ),
-                ),
-              ),
-            ),
-            if (state.brands.isNotEmpty)
-              SliverToBoxAdapter(child: BrandSection(brands: state.brands)),
-            const SliverToBoxAdapter(child: SizedBox(height: 8)),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                child: Text(
-                  'Gợi ý hôm nay',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13
-                  ),
-                ),
-              ),
-            ),
-            if (state.isLoading && state.products.isEmpty)
-              const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator.adaptive()),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                sliver: SliverMasonryGrid.count(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  itemBuilder: (context, index) {
-                    final product = state.products[index];
-                    return _ProductCard(product: product);
-                  },
-                  childCount: state.products.length,
-                ),
-              ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Center(
-                  child: state.hasMore
-                      ? ElevatedButton(
-                          onPressed: state.isLoadingMore
-                              ? null
-                              : () => ref
-                                    .read(catalogControllerProvider.notifier)
-                                    .loadMore(),
-                          child: state.isLoadingMore
-                              ? const SizedBox(
-                                  height: 18,
-                                  width: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text('Xem thêm', style: TextStyle(color: Colors.grey, fontSize: 12),),
-                        )
-                      : const Text(
-                          'Bạn đã xem hết sản phẩm',
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
+      body: state.isLoading
+          ? _buildSkeletonLoading()
+          : RefreshIndicator.adaptive(
+              onRefresh: () =>
+                  ref.read(catalogControllerProvider.notifier).refresh(),
+              child: CustomScrollView(
+                slivers: [
+                  const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                  if (state.banners.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: _buildBannerCarousel(state.banners),
+                    ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                  if (state.banners.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: _buildDotIndicator(state.banners),
+                    ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                  // SliverPersistentHeader(delegate: delegate)
+                  if (state.brands.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
                         ),
-                ),
+                        child: Text(
+                          'Thương hiệu chính hãng',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                        ),
+                      ),
+                    ),
+                  if (state.brands.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: BrandSection(brands: state.brands),
+                    ),
+                  if (state.brands.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Không có thương hiệu nào',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                      ),
+                    ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                  if (state.products.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        child: Text(
+                          'Gợi ý hôm nay',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                        ),
+                      ),
+                    ),
+                  if (state.isLoading && state.products.isEmpty)
+                    const SliverFillRemaining(
+                      child: Center(
+                        child: CircularProgressIndicator.adaptive(),
+                      ),
+                    )
+                  else if (state.products.isEmpty)
+                    SliverFillRemaining(
+                      child: Center(
+                        child: Text(
+                          'Không có sản phẩm nào',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      sliver: SliverMasonryGrid.count(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        itemBuilder: (context, index) {
+                          final product = state.products[index];
+                          return _ProductCard(product: product);
+                        },
+                        childCount: state.products.length,
+                      ),
+                    ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Center(
+                        child: state.hasMore
+                            ? ElevatedButton(
+                                onPressed: state.isLoadingMore
+                                    ? null
+                                    : () => ref
+                                          .read(
+                                            catalogControllerProvider.notifier,
+                                          )
+                                          .loadMore(),
+                                child: state.isLoadingMore
+                                    ? const SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Xem thêm',
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                              )
+                            : const Text(
+                                'Bạn đã xem hết sản phẩm',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                  SliverPadding(padding: const EdgeInsets.only(bottom: 20)),
+                ],
               ),
             ),
-            SliverPadding(padding: const EdgeInsets.only(bottom: 20)),
+    );
+  }
+
+  Widget _buildSkeletonLoading() {
+    return Skeletonizer(
+      enabled: true,
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Banner skeleton
+            Container(
+              height: 200,
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            // Brands skeleton
+            Container(
+              height: 120,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Products skeleton
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.75,
+              ),
+              itemCount: 6,
+              itemBuilder: (context, index) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -268,11 +363,12 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return Skeletonizer(
       enabled: _isLoading,
-      child: Center( // nền có align hoặc center đẻ loai bỏ ràng buộc width của lớp cha
+      child: Center(
+        // nền có align hoặc center đẻ loai bỏ ràng buộc width của lớp cha
         child: Container(
           decoration: BoxDecoration(
             color: Colors.black12,
-            borderRadius: BorderRadius.circular(50)
+            borderRadius: BorderRadius.circular(50),
           ),
           padding: const EdgeInsets.all(5),
           child: Row(
@@ -300,7 +396,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                         8, // Chiều cao cố định (thường là hình chữ nhật hoặc tròn)
                     decoration: BoxDecoration(
                       // Thay thế Image bằng màu sắc
-                      color: isSelected ? AppColor.buttonprimaryCol : Colors.white,
+                      color: isSelected
+                          ? AppColor.buttonprimaryCol
+                          : Colors.white,
                       // Làm tròn góc (hình viên thuốc nếu là hình chữ nhật)
                       borderRadius: isSelected
                           ? BorderRadius.circular(5)

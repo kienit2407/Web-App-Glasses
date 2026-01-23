@@ -4,17 +4,16 @@ import 'package:frontend_mobile/features/order/data/repository/order_repository.
 import 'package:frontend_mobile/features/order/presentation/viewmodels/orders_state.dart';
 
 class OrdersController extends StateNotifier<OrdersState> {
-  OrdersController(this._repo) : super(OrdersState.initial());
+  OrdersController(this._repo) : super(OrdersState.initial()) {
+    init();
+  }
 
   final OrderRepository _repo;
   static const _pageSize = 10;
 
   Future<void> init() async {
     // load stats + load tab "all"
-    await Future.wait([
-      loadStatusCounts(),
-      fetchFirstPageForStatus('all'),
-    ]);
+    await Future.wait([loadStatusCounts(), fetchFirstPageForStatus('all')]);
   }
 
   Future<void> loadStatusCounts() async {
@@ -88,10 +87,7 @@ class OrdersController extends StateNotifier<OrdersState> {
         limit: _pageSize,
       );
 
-      final combined = <OrderModel>[
-        ...current.items,
-        ...resp.items,
-      ];
+      final combined = <OrderModel>[...current.items, ...resp.items];
 
       final hasMore = resp.total > combined.length;
 
@@ -105,8 +101,10 @@ class OrdersController extends StateNotifier<OrdersState> {
 
       state = state.copyWith(lists: newLists);
     } catch (e) {
-      newLists[status] =
-          current.copyWith(loadingMore: false, errorMessage: e.toString());
+      newLists[status] = current.copyWith(
+        loadingMore: false,
+        errorMessage: e.toString(),
+      );
       state = state.copyWith(lists: newLists);
     }
   }

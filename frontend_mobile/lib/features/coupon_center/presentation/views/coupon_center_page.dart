@@ -7,8 +7,6 @@ import 'package:frontend_mobile/core/theme/app_color.dart';
 import 'package:frontend_mobile/core/di/providers.dart';
 import 'package:frontend_mobile/core/utils/animated_dialog.dart';
 import 'package:frontend_mobile/features/coupon_center/data/models/coupon_center_models.dart';
-import 'package:go_router/go_router.dart';
-import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 class CouponCenterPage extends ConsumerWidget {
   const CouponCenterPage({super.key});
@@ -23,12 +21,6 @@ class CouponCenterPage extends ConsumerWidget {
     final controller = ref.read(couponCenterControllerProvider.notifier);
     final authState = ref.watch(authControllerProvider);
     final authUser = authState.valueOrNull;
-    // Kiểm tra nếu data đã được tải và cần gọi lại
-    if (!state.isLoading && state.coupons.isEmpty && state.promotions.isEmpty) {
-     print("qweqw");
-      controller.loadCouponsAndPromotions();
-    
-    }
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColor.buttonprimaryCol,
@@ -95,6 +87,21 @@ class CouponCenterPage extends ConsumerWidget {
                           crossAxisSpacing: 8,
                           childAspectRatio:
                               0.45, // Điều chỉnh tỉ lệ giữa các phần tử trong grid
+                        ),
+                      ),
+                    )
+                  else
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        child: Center(
+                          child: Text(
+                            'Hiện tại không có chương trình khuyến mãi nào.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
                         ),
                       ),
                     ),

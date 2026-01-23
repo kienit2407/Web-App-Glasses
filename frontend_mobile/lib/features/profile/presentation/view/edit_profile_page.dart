@@ -235,7 +235,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(profileControllerProvider);
-    final isUploadingAvt = state.uploadingAvatar;
+    final isUploadingAvt = false;
     final user = state.user;
 
     // final avatarProvider = (() {

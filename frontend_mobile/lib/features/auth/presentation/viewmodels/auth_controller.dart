@@ -18,18 +18,29 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
 
   Future<void> _bootstrap() async {
     try {
+      print('[AuthController] _bootstrap started');
       final refresh = await _tokenStorage.getRefreshToken();
+      print('[AuthController] getRefreshToken: $refresh');
       if (refresh == null || refresh.isEmpty) {
+        print('[AuthController] No refresh token, setting user to null');
         state = const AsyncData(null);
+        print('[AuthController] _bootstrap completed (no token)');
         return;
       }
 
+      print('[AuthController] calling refreshAndGetProfile...');
       final userJson = await _authRepo.refreshAndGetProfile();
+      print('[AuthController] refreshAndGetProfile success: ${userJson['email']}');
       final user = UserModel.fromJson(userJson);
+      print('[AuthController] UserModel parsed successfully');
       state = AsyncData(user);
-    } catch (_) {
+      print('[AuthController] _bootstrap completed successfully, user: ${user.email}');
+    } catch (e, st) {
+      print('[AuthController] _bootstrap error: $e');
+      print('[AuthController] stacktrace: $st');
       await _tokenStorage.clearToken();
       state = const AsyncData(null);
+      print('[AuthController] _bootstrap completed (error fallback)');
     }
   }
 
@@ -39,10 +50,18 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
       final userJson = await _authRepo.signIn(email: email, password: password);
       final user = UserModel.fromJson(userJson);
       state = AsyncData(user);
+      
+      // Invalidate all user providers để load data mới cho tài khoản này
       ref.invalidate(profileControllerProvider);
       ref.invalidate(cartControllerProvider);
       ref.invalidate(userNotificationControllerProvider);
       ref.invalidate(couponCenterControllerProvider);
+      ref.invalidate(ordersControllerProvider);
+      ref.invalidate(catalogControllerProvider);
+      ref.invalidate(reviewRepositoryProvider);
+      ref.invalidate(addressRepositoryProvider);
+      ref.invalidate(botChatControllerProvider);
+      ref.invalidate(checkoutControllerProvider);
     } catch (e, st) {
       // Cập nhật state để UI biết là có lỗi (nếu muốn show message đẹp)
       state = AsyncError(e, st);
@@ -66,10 +85,18 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
       final userJson = await _authRepo.getProfile();
       final user = UserModel.fromJson(userJson);
       state = AsyncData(user);
+      
+      // Invalidate all user providers để load data mới
       ref.invalidate(profileControllerProvider);
       ref.invalidate(cartControllerProvider);
       ref.invalidate(userNotificationControllerProvider);
       ref.invalidate(couponCenterControllerProvider);
+      ref.invalidate(ordersControllerProvider);
+      ref.invalidate(catalogControllerProvider);
+      ref.invalidate(reviewRepositoryProvider);
+      ref.invalidate(addressRepositoryProvider);
+      ref.invalidate(botChatControllerProvider);
+      ref.invalidate(checkoutControllerProvider);
     } catch (e, st) {
       state = AsyncError(e, st);
       // log cho dễ debug, và rethrow để UI biết là fail
@@ -79,11 +106,23 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
   }
 
   Future<void> signOut() async {
+    print('[AuthController] signOut started');
     await _authRepo.logout();
     state = const AsyncData(null);
+    
+    // Invalidate ALL user-related providers để reset cache
+    print('[AuthController] Invalidating all user providers');
     ref.invalidate(profileControllerProvider);
     ref.invalidate(cartControllerProvider);
     ref.invalidate(userNotificationControllerProvider);
     ref.invalidate(couponCenterControllerProvider);
+    ref.invalidate(ordersControllerProvider);
+    ref.invalidate(catalogControllerProvider);
+    ref.invalidate(reviewRepositoryProvider);
+    ref.invalidate(addressRepositoryProvider);
+    ref.invalidate(botChatControllerProvider);
+    ref.invalidate(checkoutControllerProvider);
+    
+    print('[AuthController] signOut completed - all cache cleared');
   }
 }
