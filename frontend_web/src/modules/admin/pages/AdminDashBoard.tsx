@@ -11,7 +11,7 @@ import {
     CartesianGrid,
     ResponsiveContainer,
 } from "recharts";
-import { Card, Row, Col, Statistic, Typography, Tag } from "antd";
+import { Card, Row, Col, Statistic, Typography, Tag, StatisticProps } from "antd";
 import {
     ShoppingCart,
     DollarSign,
@@ -20,6 +20,12 @@ import {
     CircleCheck,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import CountUp from 'react-countup';
+
+const formatter: StatisticProps['formatter'] = (value) => (
+    <CountUp end={value as number} separator="," />
+);
+
 const { Title, Text } = Typography;
 
 interface Summary {

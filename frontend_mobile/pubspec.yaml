@@ -105,7 +105,9 @@ flutter:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/logo_app.png"
+  remove_alpha_ios: true
+  image_path: "assets/images/icon_app.png" # ĐƯỜNG DẪN ĐẾN FILE ẢNH CỦA BẠN
+  adaptive_icon_background: "#EE4D2D" # Ví dụ lấy màu cam ShopeeFood bạn hỏi lúc nãy
   min_sdk_android: 21 # Tuỳ chọn
   # remove_alpha_ios: true # Nếu icon có nền trong suốt thì bật cái này cho iOS
   # An image asset can refer to one or more resolution-specific "variants", see

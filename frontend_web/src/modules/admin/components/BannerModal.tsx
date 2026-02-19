@@ -1,5 +1,5 @@
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { useEffect, useState } from "react";
 import {
     Modal,
     Upload,
@@ -7,11 +7,17 @@ import {
     Spin,
     Button,
     Popconfirm,
+    Tooltip,
 } from "antd";
 import type { UploadFile, UploadProps } from "antd";
-import { InboxOutlined } from "@ant-design/icons";
-import { useEffect, useState } from "react";
+import {
+    InboxOutlined,
+    ArrowUpOutlined,
+    ArrowDownOutlined,
+    DeleteOutlined,
+} from "@ant-design/icons";
 import { API } from "@/app/lib/axios-client";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 
 const { Dragger } = Upload;
 
@@ -27,6 +33,8 @@ interface BannerItem {
 }
 
 const BannerModal = ({ open, onClose }: BannerModalProps) => {
+    const isMobile = useIsMobile();
+
     const [banners, setBanners] = useState<BannerItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -43,9 +51,7 @@ const BannerModal = ({ open, onClose }: BannerModalProps) => {
             setBanners(items);
         } catch (e: any) {
             console.error(e);
-            message.error(
-                e?.response?.data?.msg || "Không tải được danh sách banner"
-            );
+            message.error(e?.response?.data?.msg || "Không tải được danh sách banner");
         } finally {
             setLoading(false);
         }
@@ -56,6 +62,7 @@ const BannerModal = ({ open, onClose }: BannerModalProps) => {
             fetchBanners();
             setFileList([]);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
     // ===== Upload config =====
@@ -64,9 +71,7 @@ const BannerModal = ({ open, onClose }: BannerModalProps) => {
         maxCount: 10,
         listType: "picture",
         beforeUpload: (file) => {
-            const okType = ["image/jpeg", "image/png", "image/webp"].includes(
-                file.type
-            );
+            const okType = ["image/jpeg", "image/png", "image/webp"].includes(file.type);
             if (!okType) {
                 message.error("Chỉ cho phép JPG/PNG/WebP");
                 return Upload.LIST_IGNORE;
@@ -92,9 +97,7 @@ const BannerModal = ({ open, onClose }: BannerModalProps) => {
         try {
             const fd = new FormData();
             fileList.forEach((f) => {
-                if (f.originFileObj) {
-                    fd.append("banners", f.originFileObj as File);
-                }
+                if (f.originFileObj) fd.append("banners", f.originFileObj as File);
             });
 
             const res = await API.post("/admin/settings/banners", fd, {
@@ -109,9 +112,7 @@ const BannerModal = ({ open, onClose }: BannerModalProps) => {
             setBanners(items);
         } catch (e: any) {
             console.error(e);
-            message.error(
-                e?.response?.data?.msg || "Có lỗi khi tải banner lên"
-            );
+            message.error(e?.response?.data?.msg || "Có lỗi khi tải banner lên");
         } finally {
             setUploading(false);
         }
@@ -148,12 +149,9 @@ const BannerModal = ({ open, onClose }: BannerModalProps) => {
         if (banners.length <= 1) return;
         setSavingOrder(true);
         try {
-            const items = banners.map((b, idx) => ({
-                banner_id: b._id,
-                position: idx,
-            }));
-
+            const items = banners.map((b, idx) => ({ banner_id: b._id, position: idx }));
             const res = await API.patch("/admin/settings/banners/reorder", { items });
+
             const list: BannerItem[] = res.data?.data?.items || [];
             list.sort((a, b) => a.position - b.position);
             setBanners(list);
@@ -161,9 +159,7 @@ const BannerModal = ({ open, onClose }: BannerModalProps) => {
             message.success("Cập nhật thứ tự banner thành công");
         } catch (e: any) {
             console.error(e);
-            message.error(
-                e?.response?.data?.msg || "Không lưu được thứ tự banner"
-            );
+            message.error(e?.response?.data?.msg || "Không lưu được thứ tự banner");
         } finally {
             setSavingOrder(false);
         }
@@ -193,13 +189,16 @@ const BannerModal = ({ open, onClose }: BannerModalProps) => {
                     Lưu sắp xếp
                 </Button>,
             ]}
-            width={820}
+            width={isMobile ? "95vw" : 820}
+            style={isMobile ? { top: 12 } : undefined}
             maskClosable={false}
+            bodyStyle={isMobile ? { maxHeight: "75vh", overflowY: "auto" } : undefined}
         >
             <Spin spinning={loading}>
                 {/* LIST BANNER HIỆN CÓ + REORDER */}
                 <div className="mb-4">
                     <div className="mb-2 font-medium">Banner hiện có</div>
+
                     {banners.length === 0 ? (
                         <div className="text-xs text-slate-500">
                             Chưa có banner nào. Hãy tải banner lên.
@@ -209,45 +208,85 @@ const BannerModal = ({ open, onClose }: BannerModalProps) => {
                             {banners.map((b, index) => (
                                 <div
                                     key={b._id}
-                                    className="border rounded-md p-2 flex items-center gap-3"
+                                    className="border rounded-md p-2 flex items-center gap-3 min-w-0"
                                 >
-                                    <div className="w-16 text-center text-xs text-slate-500">
+                                    <div className="w-10 text-center text-xs text-slate-500 shrink-0">
                                         #{index + 1}
                                     </div>
+
                                     <img
                                         src={b.banner_url}
                                         alt=""
-                                        className="w-32 h-20 object-cover rounded"
+                                        className={`${isMobile ? "w-24 h-14" : "w-32 h-20"} object-cover rounded shrink-0`}
                                     />
-                                    <div className="flex-1 text-xs text-slate-500">
+
+                                    <div className="flex-1 text-xs text-slate-500 min-w-0">
                                         position: {b.position}
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            size="small"
-                                            onClick={() => moveBanner(index, -1)}
-                                            disabled={index === 0}
-                                        >
-                                            Lên
-                                        </Button>
-                                        <Button
-                                            size="small"
-                                            onClick={() => moveBanner(index, 1)}
-                                            disabled={index === banners.length - 1}
-                                        >
-                                            Xuống
-                                        </Button>
-                                        <Popconfirm
-                                            title="Xoá banner"
-                                            okText="Xoá"
-                                            cancelText="Huỷ"
-                                            okButtonProps={{ danger: true }}
-                                            onConfirm={() => handleDeleteBanner(b._id)}
-                                        >
-                                            <Button size="small" danger>
-                                                Xoá
-                                            </Button>
-                                        </Popconfirm>
+
+                                    {/* ACTIONS */}
+                                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                                        {isMobile ? (
+                                            <>
+                                                <Tooltip title="Lên">
+                                                    <Button
+                                                        size="small"
+                                                        icon={<ArrowUpOutlined />}
+                                                        onClick={() => moveBanner(index, -1)}
+                                                        disabled={index === 0}
+                                                    />
+                                                </Tooltip>
+
+                                                <Tooltip title="Xuống">
+                                                    <Button
+                                                        size="small"
+                                                        icon={<ArrowDownOutlined />}
+                                                        onClick={() => moveBanner(index, 1)}
+                                                        disabled={index === banners.length - 1}
+                                                    />
+                                                </Tooltip>
+
+                                                <Popconfirm
+                                                    title="Xoá banner"
+                                                    okText="Xoá"
+                                                    cancelText="Huỷ"
+                                                    okButtonProps={{ danger: true }}
+                                                    onConfirm={() => handleDeleteBanner(b._id)}
+                                                >
+                                                    <Tooltip title="Xoá">
+                                                        <Button size="small" danger icon={<DeleteOutlined />} />
+                                                    </Tooltip>
+                                                </Popconfirm>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Button
+                                                    size="small"
+                                                    onClick={() => moveBanner(index, -1)}
+                                                    disabled={index === 0}
+                                                >
+                                                    Lên
+                                                </Button>
+                                                <Button
+                                                    size="small"
+                                                    onClick={() => moveBanner(index, 1)}
+                                                    disabled={index === banners.length - 1}
+                                                >
+                                                    Xuống
+                                                </Button>
+                                                <Popconfirm
+                                                    title="Xoá banner"
+                                                    okText="Xoá"
+                                                    cancelText="Huỷ"
+                                                    okButtonProps={{ danger: true }}
+                                                    onConfirm={() => handleDeleteBanner(b._id)}
+                                                >
+                                                    <Button size="small" danger>
+                                                        Xoá
+                                                    </Button>
+                                                </Popconfirm>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -265,10 +304,9 @@ const BannerModal = ({ open, onClose }: BannerModalProps) => {
                         <p className="ant-upload-text">
                             Kéo thả hoặc bấm để chọn ảnh (tối đa 10 file)
                         </p>
-                        <p className="ant-upload-hint">
-                            JPG/PNG/WebP • Mỗi ảnh &lt; 5MB
-                        </p>
+                        <p className="ant-upload-hint">JPG/PNG/WebP • Mỗi ảnh &lt; 5MB</p>
                     </Dragger>
+
                     <div className="mt-3 flex justify-end">
                         <Button
                             type="primary"

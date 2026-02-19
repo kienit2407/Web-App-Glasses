@@ -1,8 +1,11 @@
 import express, { Router } from "express"
 import { adminReviewController } from "../../modules/admin/controllers/admin.review.controller"
+import { authMidleWares } from "../../middleware/authMiddleware";
 
 const router: Router = express.Router()
-
+router.use(
+    authMidleWares.protectUserRoute,
+);
 /**
  * @swagger
  * tags:
@@ -48,5 +51,8 @@ router.get("/", adminReviewController.list)
  *         description: Xóa thành công
  */
 router.delete("/:id", adminReviewController.remove)
+
+router.patch("/:id/reply", adminReviewController.upsertReply);
+router.delete("/:id/reply", adminReviewController.removeReply);
 
 export const ADMIN_REVIEWS_ROUTES = router

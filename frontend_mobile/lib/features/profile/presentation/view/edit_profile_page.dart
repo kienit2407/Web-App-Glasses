@@ -309,25 +309,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                         radius: 40,
                         backgroundColor: Colors.white,
                         backgroundImage: avatarProvider,
-                        child: isUploadingAvt
-                            ? Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.black45,
-                                ),
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child:
-                                        LoadingAnimationWidget.progressiveDots(
-                                          color: AppColor.buttonprimaryCol,
-                                          size: 20,
-                                        ),
-                                  ),
-                                ),
-                              )
-                            : (avatarProvider == null
+                        child: (avatarProvider == null
                                   ? Text(
                                       _initials(
                                         user?.displayName ?? user?.email ?? 'U',

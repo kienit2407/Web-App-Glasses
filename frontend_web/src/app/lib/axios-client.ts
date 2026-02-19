@@ -2,8 +2,15 @@ import { useAuth } from '@/hooks/use-auth'
 import { getDeviceId } from '@/utils/get_dv_id'
 import { message } from 'antd'
 import axios, { AxiosError } from 'axios'
+import NProgress from 'nprogress';
+import 'nprogress/nprogress.css'; // Quan trọng nhất để hiện thanh loading
 import { error } from 'console'
-
+NProgress.configure({
+  showSpinner: false,
+  speed: 400,
+  minimum: 0.05, // Để thấp thôi cho nó nhích từ từ từ đầu
+  easing: 'ease', // Hiệu ứng mượt
+});
 export const API = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "",
   withCredentials: true,
@@ -15,7 +22,10 @@ export const API = axios.create({
 })
 
 API.interceptors.request.use(
+
   (config) => {
+    // [MỚI] Bắt đầu chạy thanh loading khi gửi request
+    NProgress.start();
     const { accessToken } = useAuth.getState()
     // Gắn access token vào mỗi lần gọi
     if (accessToken) {
@@ -31,8 +41,14 @@ API.interceptors.request.use(
   }
 )
 API.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    // [MỚI] Khi nhận phản hồi thành công -> Kết thúc loading
+    NProgress.done();
+    return res;
+  },
   async (error) => {
+    // [MỚI] Khi có lỗi (401, 429, 500...) -> Cũng phải kết thúc loading
+    NProgress.done();
     const originalRequest = error.config
     const url = originalRequest?.url;
     // [MỚI] XỬ LÝ LỖI BẢO MẬT TỪ ARCJET (Global Handler)
@@ -72,6 +88,8 @@ API.interceptors.response.use(
       originalRequest._retry = true // gọi lại khi lấy được access token mới thành không
       try {
         console.log("tiến hành gọi refresh token")
+        // [MẸO] Khi refresh token, ní có thể gọi start lại nếu muốn thanh bar chạy tiếp
+        NProgress.start();
         const res = await API.post('/auth/refresh')
         const newAccessToken = res.data?.data.tokens.accessToken
         console.log("đã có accesstoken mới ", newAccessToken)
@@ -83,6 +101,9 @@ API.interceptors.response.use(
         return API(originalRequest)
       } catch (error) {
         return Promise.reject(error)
+      } finally {
+        // Đảm bảo kết thúc sau khi refresh xong
+        NProgress.done();
       }
     }
     return Promise.reject(error)

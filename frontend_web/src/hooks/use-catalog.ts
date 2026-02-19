@@ -95,9 +95,9 @@ export const useCatalog = create<ProductState>()((set, get) => ({
             });
         } catch (err: any) {
             console.error(err);
-            toast.error(
-                err?.response?.data?.msg ?? "Lỗi trong khi tải danh sách sản phẩm"
-            );
+            // toast.error(
+            //     err?.response?.data?.msg ?? "Lỗi trong khi tải danh sách sản phẩm"
+            // );
         } finally {
             set({ isLoading: false });
         }
@@ -114,7 +114,7 @@ export const useCatalog = create<ProductState>()((set, get) => ({
             return data; // để Products.tsx dùng map type->slug
         } catch (err: any) {
             console.error(err);
-            toast.error(err?.response?.data?.msg ?? "Lỗi khi tải danh mục");
+            // toast.error(err?.response?.data?.msg ?? "Lỗi khi tải danh mục");
             return [];
         }
     },
@@ -149,9 +149,9 @@ export const useCatalog = create<ProductState>()((set, get) => ({
             });
         } catch (err: any) {
             console.error(err);
-            toast.error(
-                err?.response?.data?.msg ?? "Lỗi khi tải sản phẩm trang chủ"
-            );
+            // toast.error(
+            //     err?.response?.data?.msg ?? "Lỗi khi tải sản phẩm trang chủ"
+            // );
         } finally {
             set({ isLoading: false });
         }
@@ -167,7 +167,7 @@ export const useCatalog = create<ProductState>()((set, get) => ({
             return brands;
         } catch (err: any) {
             console.error(err);
-            toast.error(err?.response?.data?.msg ?? "Lỗi khi tải thương hiệu");
+            // toast.error(err?.response?.data?.msg ?? "Lỗi khi tải thương hiệu");
             return [];
         }
     },

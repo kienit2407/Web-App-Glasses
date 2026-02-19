@@ -18,7 +18,7 @@ export const INITIALIZE_SOCKET_IO = (server: http.Server) => {
             origin: [
                 "http://localhost:5173",
                 "http://localhost:8017",
-                "http://localhost:8080",
+                "http://localhost:8081",
                 "https://localhost:5173",
                 "https://web-app-glasses.up.railway.app",
                 "https://web-app-glasses-x57x.vercel.app",

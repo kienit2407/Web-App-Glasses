@@ -51,9 +51,11 @@ const START_SERVER = () => {
             origin: [
                 'http://localhost:5173',
                 'http://localhost:8017',
-                'http://localhost:8080',
+                'http://localhost:8081',
                 'https://localhost:5173',
                 'https://web-app-glasses-x57x.vercel.app',
+                'https://web-app-glasses-x57x.vercel.app',
+                'https://web-app-glasses.onrender.com'
             ],
             allowedHeaders: ["Content-Type", "Authorization", "x-client-platform", "x-device-id"],
             credentials: true,

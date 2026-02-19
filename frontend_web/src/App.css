@@ -11,9 +11,11 @@
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
@@ -22,9 +24,18 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
+}
+
+#nprogress .bar {
+  background: #22c55e !important;
+  /* Màu xanh success giống nút của ní */
+  height: 3px !important;
+  z-index: 10000 !important;
+  /* Ép nó nổi lên trên cả Header và Modal */
 }
 
 @media (prefers-reduced-motion: no-preference) {

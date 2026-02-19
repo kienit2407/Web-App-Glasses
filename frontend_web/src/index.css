@@ -137,6 +137,14 @@
     background: var(--gradient-primary);
   }
 
+  #nprogress .bar {
+    background: #4677FF !important;
+    /* Đổi hẳn sang màu Cam cho dễ nhìn */
+    height: 3px !important;
+    z-index: 99999 !important;
+    /* Ép nó nổi lên trên cùng */
+  }
+
   .bg-gradient-hero {
     background: var(--gradient-hero);
   }

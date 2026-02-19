@@ -50,16 +50,10 @@ export const useAdminSocket = () => {
 
 
         const handleChatNewMessage = (payload: any) => {
-            console.log("Admin received chat message:", payload);
-            increaseChatUnread(1)
+            increaseChatUnread(1);
             playSoundChat();
 
-            // queryClient.invalidateQueries({ queryKey: ["admin-support-conversations"] });
-            // if (payload?.conversation_id) {
-            //     queryClient.invalidateQueries({
-            //         queryKey: ["admin-support-messages", payload.conversation_id],
-            //     });
-            // }
+            // update list conversations (bạn đang làm đúng)
             queryClient.setQueryData<SupportConversation[]>(
                 ["admin-support-conversations"],
                 (old) => {
@@ -76,6 +70,13 @@ export const useAdminSocket = () => {
                     );
                 }
             );
+
+            // ✅ QUAN TRỌNG: refetch messages để UI hiện tin nhắn ngay
+            if (payload?.conversation_id) {
+                queryClient.invalidateQueries({
+                    queryKey: ["admin-support-messages", String(payload.conversation_id)],
+                });
+            }
         };
 
         // đăng ký join room admins (nếu chưa)
@@ -92,5 +93,5 @@ export const useAdminSocket = () => {
             socket.off("admin:order:return_requested", handleReturnRequested);
             socket.off("admin:chat:new_message", handleChatNewMessage);
         };
-    }, [socket, user, increase, queryClient]);
+    }, [socket, user, increase, increaseChatUnread, queryClient]);
 };

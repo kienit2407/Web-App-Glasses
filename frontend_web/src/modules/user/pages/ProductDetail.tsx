@@ -260,7 +260,7 @@ const ProductDetail = () => {
 
     fetchDetail();
   }, [productId, fetchOfProduct]);
-  
+
   const handleCopyLink = () => {
     // 1. Lấy đường dẫn chi tiết sản phẩm
     // Thường là URL hiện tại của trình duyệt
@@ -820,6 +820,17 @@ const ProductDetail = () => {
                         </div>
 
                         <p className="text-sm">{rv.comment}</p>
+                        {rv.admin_reply?.content ? (
+                          <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3">
+                            <div className="flex items-center justify-between">
+                              <div className="text-xs font-semibold text-blue-700">
+                                Phản hồi từ Admin{rv.admin_reply.admin_id?.display_name ? ` · ${rv.admin_reply.admin_id.display_name}` : ""}
+                              </div>
+                              {rv.admin_reply.is_edited ? <span className="text-[10px] text-blue-600">(đã chỉnh sửa)</span> : null}
+                            </div>
+                            <div className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">{rv.admin_reply.content}</div>
+                          </div>
+                        ) : null}
 
                         {rv.images?.length > 0 && (
                           <div className="flex flex-wrap gap-2">
@@ -844,7 +855,9 @@ const ProductDetail = () => {
                         )}
                       </div>
                     </div>
+
                   ))}
+
                 </div>
               </Card>
             )}

@@ -10,9 +10,14 @@ import {
     Tabs,
     Badge,
     message,
+    List,
+    Pagination,
 } from "antd";
 import type { TableProps, TabsProps } from "antd";
 import { useNavigate } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { MobileActionSheet } from "../components/MobileActionSheet";
+import { MoreHorizontal } from "lucide-react";
 
 type AdminOrderStatus =
     | "pending"
@@ -38,12 +43,7 @@ interface AdminOrderRow {
 
 interface ListResponse {
     items: any[];
-    pagination: {
-        page: number;
-        limit: number;
-        total: number;
-        totalPages: number;
-    };
+    pagination: { page: number; limit: number; total: number; totalPages: number };
 }
 
 const STATUS_TABS: { key: string; label: string }[] = [
@@ -60,6 +60,9 @@ const STATUS_TABS: { key: string; label: string }[] = [
 ];
 
 const AdminOrders = () => {
+    const isMobile = useIsMobile();
+    const navigate = useNavigate();
+
     const [orders, setOrders] = useState<AdminOrderRow[]>([]);
     const [loading, setLoading] = useState(false);
     const [activeStatus, setActiveStatus] = useState<string>("all");
@@ -69,14 +72,12 @@ const AdminOrders = () => {
     const [total, setTotal] = useState(0);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
     const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
-    const navigate = useNavigate();
 
-    const fetchOrders = async (opts?: {
-        status?: string;
-        q?: string;
-        page?: number;
-        limit?: number;
-    }) => {
+    // action sheet
+    const [sheetOpen, setSheetOpen] = useState(false);
+    const [sheetItem, setSheetItem] = useState<AdminOrderRow | null>(null);
+
+    const fetchOrders = async (opts?: { status?: string; q?: string; page?: number; limit?: number }) => {
         const currentStatus = opts?.status ?? activeStatus;
         const currentQ = opts?.q ?? q;
         const currentPage = opts?.page ?? page;
@@ -86,7 +87,6 @@ const AdminOrders = () => {
         try {
             const res = await API.get("/admin/orders", {
                 params: {
-                    // BE xử lý đặc biệt với "cancel_requested" / "return_requested"
                     order_status: currentStatus === "all" ? undefined : currentStatus,
                     order_number: currentQ || undefined,
                     page: currentPage,
@@ -114,43 +114,41 @@ const AdminOrders = () => {
             setTotal(data.pagination.total);
         } catch (err: any) {
             console.error(err);
-            message.error(
-                err?.response?.data?.message || "Không tải được danh sách đơn hàng"
-            );
+            message.error(err?.response?.data?.message || "Không tải được danh sách đơn hàng");
         } finally {
             setLoading(false);
         }
     };
 
+    const fetchStats = async () => {
+        try {
+            const res = await API.get("/admin/orders/stats");
+            setStatusCounts(res.data?.data || {});
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     useEffect(() => {
-        fetchOrders()
-        fetchStats()
+        fetchOrders({ page: 1 });
+        fetchStats();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeStatus]);
 
     const handleSearch = (value: string) => {
         setQ(value);
+        setPage(1);
         fetchOrders({ q: value, page: 1 });
     };
 
     const onTabChange = (key: string) => {
         setActiveStatus(key);
         setPage(1);
-        fetchOrders({ status: key, page: 1 });
     };
 
-    const renderOrderStatusTag = (
-        status: AdminOrderStatus,
-        cancelRequested?: boolean,
-        returnRequested?: boolean
-    ) => {
-        // ưu tiên hiển thị theo flag
-        if (cancelRequested && status !== "cancelled") {
-            return <Tag color="red">Yêu cầu huỷ</Tag>;
-        }
-        if (returnRequested && status === "delivered") {
-            return <Tag color="purple">Yêu cầu trả hàng</Tag>;
-        }
+    const renderOrderStatusTag = (status: AdminOrderStatus, cancelRequested?: boolean, returnRequested?: boolean) => {
+        if (cancelRequested && status !== "cancelled") return <Tag color="red">Yêu cầu huỷ</Tag>;
+        if (returnRequested && status === "delivered") return <Tag color="purple">Yêu cầu trả hàng</Tag>;
 
         switch (status) {
             case "pending":
@@ -171,37 +169,35 @@ const AdminOrders = () => {
                 return <Tag>Khác</Tag>;
         }
     };
-    const fetchStats = async () => {
-        try {
-            const res = await API.get("/admin/orders/stats");
-            const data = res.data?.data || {};
-            setStatusCounts(data);
-        } catch (err) {
-            console.error(err);
+
+    const renderPaymentTag = (status: string) => {
+        switch (status) {
+            case "success":
+                return <Tag color="green">Đã thanh toán</Tag>;
+            case "pending":
+                return <Tag color="orange">Chờ thanh toán</Tag>;
+            case "failed":
+                return <Tag color="red">Thanh toán lỗi</Tag>;
+            default:
+                return <Tag>{status}</Tag>;
         }
-    }
-    const handleUpdateStatus = async (
-        orderId: string,
-        nextStatus: AdminOrderStatus
-    ) => {
+    };
+
+    const handleUpdateStatus = async (orderId: string, nextStatus: AdminOrderStatus) => {
         try {
             setUpdatingId(orderId);
-            await API.patch(`/admin/orders/${orderId}/status`, {
-                order_status: nextStatus,
-            });
+            await API.patch(`/admin/orders/${orderId}/status`, { order_status: nextStatus });
             message.success("Cập nhật trạng thái đơn hàng thành công");
-            // fetchOrders();
+            setSheetOpen(false);
             await Promise.all([fetchOrders(), fetchStats()]);
         } catch (err: any) {
             console.error(err);
-            message.error(
-                err?.response?.data?.message ||
-                "Không thể cập nhật trạng thái đơn hàng"
-            )
+            message.error(err?.response?.data?.message || "Không thể cập nhật trạng thái đơn hàng");
         } finally {
             setUpdatingId(null);
         }
     };
+
     const renderTabLabel = (key: string, label: string) => {
         const count = statusCounts[key] ?? 0;
         return (
@@ -209,7 +205,7 @@ const AdminOrders = () => {
                 {label}
                 {count > 0 && (
                     <span className="ml-1 text-xs text-slate-500">
-                        <Badge count={count} offset={[0, -20]}></Badge>
+                        <Badge count={count} offset={[0, -18]} />
                     </span>
                 )}
             </span>
@@ -220,17 +216,15 @@ const AdminOrders = () => {
         key: t.key,
         label: renderTabLabel(t.key, t.label),
     }));
+
     const columns: TableProps<AdminOrderRow>["columns"] = [
         {
             title: "Mã đơn",
             dataIndex: "order_number",
             key: "order_number",
-            width: "100px",
+            width: "120px",
             render: (text, record) => (
-                <Button
-                    type="link"
-                    onClick={() => navigate(`/admin/orders/${record._id}/${record.order_number}`)}
-                >
+                <Button type="link" onClick={() => navigate(`/admin/orders/${record._id}/${record.order_number}`)}>
                     {text}
                 </Button>
             ),
@@ -251,35 +245,19 @@ const AdminOrders = () => {
             dataIndex: "order_status",
             key: "order_status",
             render: (_: any, record) =>
-                renderOrderStatusTag(
-                    record.order_status,
-                    record.cancel_requested,
-                    record.return_requested
-                ),
+                renderOrderStatusTag(record.order_status, record.cancel_requested, record.return_requested),
         },
         {
             title: "Thanh toán",
             dataIndex: "payment_status",
             key: "payment_status",
-            render: (status: string) => {
-                switch (status) {
-                    case "success":
-                        return <Tag color="green">Đã thanh toán</Tag>;
-                    case "pending":
-                        return <Tag color="orange">Chờ thanh toán</Tag>;
-                    case "failed":
-                        return <Tag color="red">Thanh toán lỗi</Tag>;
-                    default:
-                        return <Tag>{status}</Tag>;
-                }
-            },
+            render: (status: string) => renderPaymentTag(status),
         },
         {
             title: "Tổng tiền",
             dataIndex: "total_amount",
             key: "total_amount",
-            render: (value: number) =>
-                value.toLocaleString("vi-VN", { style: "currency", currency: "VND" }),
+            render: (value: number) => value.toLocaleString("vi-VN", { style: "currency", currency: "VND" }),
         },
         {
             title: "Ngày tạo",
@@ -299,14 +277,10 @@ const AdminOrders = () => {
                 const status = record.order_status;
 
                 const viewBtn = (
-                    <Button
-                        size="small"
-                        onClick={() => navigate(`/admin/orders/${record._id}/${record.order_number}`)}
-                    >
+                    <Button size="small" onClick={() => navigate(`/admin/orders/${record._id}/${record.order_number}`)}>
                         Chi tiết
                     </Button>
                 );
-
 
                 if (record.return_requested && status === "delivered") {
                     return (
@@ -320,19 +294,12 @@ const AdminOrders = () => {
                             >
                                 Duyệt trả hàng
                             </Button>
-                            <Button
-                                size="small"
-                                loading={updatingId === record._id}
-                                onClick={() =>
-                                    handleUpdateStatus(record._id, record.order_status)
-                                }
-                            >
+                            <Button size="small" loading={updatingId === record._id} onClick={() => handleUpdateStatus(record._id, record.order_status)}>
                                 Từ chối trả hàng
                             </Button>
                         </Space>
                     );
                 }
-
 
                 if (record.cancel_requested && status !== "cancelled") {
                     return (
@@ -346,91 +313,167 @@ const AdminOrders = () => {
                             >
                                 Duyệt huỷ
                             </Button>
-                            <Button
-                                size="small"
-                                loading={updatingId === record._id}
-                                onClick={() =>
-                                    handleUpdateStatus(record._id, record.order_status)
-                                }
-                            >
+                            <Button size="small" loading={updatingId === record._id} onClick={() => handleUpdateStatus(record._id, record.order_status)}>
                                 Từ chối huỷ
                             </Button>
                         </Space>
                     );
                 }
 
-                // pending → processing
                 if (status === "pending") {
                     return (
                         <Space>
                             {viewBtn}
-                            <Button
-                                type="primary"
-                                size="small"
-                                loading={updatingId === record._id}
-                                onClick={() =>
-                                    handleUpdateStatus(record._id, "processing")
-                                }
-                            >
+                            <Button type="primary" size="small" loading={updatingId === record._id} onClick={() => handleUpdateStatus(record._id, "processing")}>
                                 Xác nhận đơn
                             </Button>
                         </Space>
                     );
                 }
 
-                // processing → shipping
                 if (status === "processing") {
                     return (
                         <Space>
                             {viewBtn}
-                            <Button
-                                size="small"
-                                loading={updatingId === record._id}
-                                onClick={() =>
-                                    handleUpdateStatus(record._id, "shipping")
-                                }
-                            >
-                                Bàn giao cho đơn vị vận chuyển
+                            <Button size="small" loading={updatingId === record._id} onClick={() => handleUpdateStatus(record._id, "shipping")}>
+                                Bàn giao vận chuyển
                             </Button>
                         </Space>
                     );
                 }
 
-                // shipping → delivering
                 if (status === "shipping") {
                     return (
                         <Space>
                             {viewBtn}
-                            <Button
-                                size="small"
-                                loading={updatingId === record._id}
-                                onClick={() =>
-                                    handleUpdateStatus(record._id, "delivering")
-                                }
-                            >
-                                Bắt đầu giao cho khách
+                            <Button size="small" loading={updatingId === record._id} onClick={() => handleUpdateStatus(record._id, "delivering")}>
+                                Bắt đầu giao
                             </Button>
                         </Space>
                     );
                 }
 
-                // các trạng thái khác: chỉ xem chi tiết
                 return <Space>{viewBtn}</Space>;
             },
         },
     ];
 
-    // const tabItems: TabsProps["items"] = STATUS_TABS.map((t) => ({
-    //     key: t.key,
-    //     label: t.label,
-    // }));
+    // ====== Action list cho MobileActionSheet (tái dùng logic table) ======
+    const renderSheetActions = (record: AdminOrderRow) => {
+        const status = record.order_status;
+
+        // common
+        const goDetail = () => {
+            navigate(`/admin/orders/${record._id}/${record.order_number}`);
+            setSheetOpen(false);
+        };
+
+        if (record.return_requested && status === "delivered") {
+            return (
+                <div className="space-y-2">
+                    <Button block onClick={goDetail}>Chi tiết</Button>
+                    <Button
+                        block
+                        danger
+                        loading={updatingId === record._id}
+                        onClick={() => handleUpdateStatus(record._id, "returned")}
+                    >
+                        Duyệt trả hàng
+                    </Button>
+                    <Button
+                        block
+                        loading={updatingId === record._id}
+                        onClick={() => handleUpdateStatus(record._id, record.order_status)}
+                    >
+                        Từ chối trả hàng
+                    </Button>
+                </div>
+            );
+        }
+
+        if (record.cancel_requested && status !== "cancelled") {
+            return (
+                <div className="space-y-2">
+                    <Button block onClick={goDetail}>Chi tiết</Button>
+                    <Button
+                        block
+                        danger
+                        loading={updatingId === record._id}
+                        onClick={() => handleUpdateStatus(record._id, "cancelled")}
+                    >
+                        Duyệt huỷ
+                    </Button>
+                    <Button
+                        block
+                        loading={updatingId === record._id}
+                        onClick={() => handleUpdateStatus(record._id, record.order_status)}
+                    >
+                        Từ chối huỷ
+                    </Button>
+                </div>
+            );
+        }
+
+        if (status === "pending") {
+            return (
+                <div className="space-y-2">
+                    <Button block onClick={goDetail}>Chi tiết</Button>
+                    <Button
+                        block
+                        type="primary"
+                        loading={updatingId === record._id}
+                        onClick={() => handleUpdateStatus(record._id, "processing")}
+                    >
+                        Xác nhận đơn
+                    </Button>
+                </div>
+            );
+        }
+
+        if (status === "processing") {
+            return (
+                <div className="space-y-2">
+                    <Button block onClick={goDetail}>Chi tiết</Button>
+                    <Button
+                        block
+                        loading={updatingId === record._id}
+                        onClick={() => handleUpdateStatus(record._id, "shipping")}
+                    >
+                        Bàn giao vận chuyển
+                    </Button>
+                </div>
+            );
+        }
+
+        if (status === "shipping") {
+            return (
+                <div className="space-y-2">
+                    <Button block onClick={goDetail}>Chi tiết</Button>
+                    <Button
+                        block
+                        loading={updatingId === record._id}
+                        onClick={() => handleUpdateStatus(record._id, "delivering")}
+                    >
+                        Bắt đầu giao
+                    </Button>
+                </div>
+            );
+        }
+
+        return (
+            <div className="space-y-2">
+                <Button block onClick={goDetail}>Chi tiết</Button>
+            </div>
+        );
+    };
 
     return (
         <div className="space-y-2">
             <h2 className="text-2xl font-semibold mb-4">Quản lý đơn hàng</h2>
 
+            {/* Search */}
             <div className="bg-white rounded-lg shadow p-4 mb-2">
-                <Space>
+                <div className={`flex ${isMobile ? "flex-col" : "items-center"} gap-3`}>
                     <Input.Search
                         placeholder="Tìm theo mã đơn..."
                         allowClear
@@ -438,30 +481,107 @@ const AdminOrders = () => {
                         onChange={(e) => {
                             if (!e.target.value) handleSearch("");
                         }}
-                        style={{ width: 260 }}
+                        className={isMobile ? "w-full" : ""}
+                        style={isMobile ? undefined : { width: 260 }}
                     />
-                </Space>
+                </div>
             </div>
 
             <div className="bg-white rounded-lg shadow p-4">
                 <Tabs items={tabItems} activeKey={activeStatus} onChange={onTabChange} />
 
-                <Table<AdminOrderRow>
-                    loading={loading}
-                    columns={columns}
-                    dataSource={orders}
-                    rowKey={(record) => record._id}
-                    pagination={{
-                        current: page,
-                        pageSize: limit,
-                        total,
-                        onChange: (p, l) => {
-                            setPage(p);
-                            setLimit(l);
-                            fetchOrders({ page: p, limit: l });
-                        },
-                    }}
-                />
+                {isMobile ? (
+                    <>
+                        <List
+                            loading={loading}
+                            dataSource={orders}
+                            renderItem={(item) => (
+                                <List.Item className="!px-0">
+                                    <div
+                                        className="w-full rounded-lg border bg-white p-3"
+                                        onClick={() => navigate(`/admin/orders/${item._id}/${item.order_number}`)}
+                                        role="button"
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <div className="font-semibold text-sm truncate">
+                                                        #{item.order_number}
+                                                    </div>
+                                                    <div className="text-[11px] text-slate-400">
+                                                        {new Date(item.createdAt).toLocaleString("vi-VN")}
+                                                    </div>
+                                                </div>
+
+                                                <div className="mt-1 text-xs text-slate-600">
+                                                    <span className="font-medium">{item.user_name}</span>
+                                                    {item.user_email ? <span className="text-slate-500"> · {item.user_email}</span> : null}
+                                                </div>
+
+                                                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                                    {renderOrderStatusTag(item.order_status, item.cancel_requested, item.return_requested)}
+                                                    {renderPaymentTag(item.payment_status)}
+                                                    <Tag color="geekblue">
+                                                        {item.total_amount.toLocaleString("vi-VN", { style: "currency", currency: "VND" })}
+                                                    </Tag>
+                                                </div>
+                                            </div>
+
+                                            <Button
+                                                type="text"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSheetItem(item);
+                                                    setSheetOpen(true);
+                                                }}
+                                            >
+                                                <MoreHorizontal className="w-5 h-5" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </List.Item>
+                            )}
+                        />
+
+                        <div className="pt-3 flex justify-end">
+                            <Pagination
+                                current={page}
+                                pageSize={limit}
+                                total={total}
+                                showSizeChanger={false}
+                                onChange={(p) => {
+                                    setPage(p);
+                                    fetchOrders({ page: p });
+                                }}
+                            />
+                        </div>
+
+                        <MobileActionSheet
+                            open={sheetOpen}
+                            onClose={() => setSheetOpen(false)}
+                            title={<span className="font-semibold">#{sheetItem?.order_number}</span>}
+                        >
+                            {sheetItem ? renderSheetActions(sheetItem) : null}
+                        </MobileActionSheet>
+                    </>
+                ) : (
+                    <Table<AdminOrderRow>
+                        loading={loading}
+                        columns={columns}
+                        dataSource={orders}
+                        rowKey={(record) => record._id}
+                        pagination={{
+                            current: page,
+                            pageSize: limit,
+                            total,
+                            onChange: (p, l) => {
+                                setPage(p);
+                                setLimit(l);
+                                fetchOrders({ page: p, limit: l });
+                            },
+                        }}
+                    />
+                )}
             </div>
         </div>
     );

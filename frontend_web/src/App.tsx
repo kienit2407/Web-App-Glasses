@@ -26,7 +26,6 @@ import { useAuth } from "./hooks/use-auth"
 import { RequireAdmin, RequireAuth, RequireGuest } from "./app/guard"
 import AdminCategories from "./modules/admin/pages/AdminCategories"
 import AdminBrands from "./modules/admin/pages/AdminBrands"
-import AdminProductDetail from "./modules/admin/pages/AdminVariant"
 import AccountPage from "./modules/user/pages/AccountPage"
 import Checkout from "./modules/user/pages/Checkout"
 import OrderDetail from "./modules/user/pages/OrderDetail"
@@ -45,6 +44,7 @@ import PaymentResult from "./modules/user/pages/PaymentResult"
 import { VirtualTryOnPage } from "./modules/user/pages/VirtualTryOn"
 import OAuthCallback from "./modules/user/pages/OAuthCallback"
 import ScrollToTop from "./modules/admin/components/ScrollToTop"
+import AdminVariants from "./modules/admin/pages/AdminVariant"
 
 const queryClient = new QueryClient() // dùng để quản lý cache dữ liệu api
 
@@ -171,7 +171,7 @@ const App = () => {
 
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="products" element={<AdminProducts />} />
-              <Route path="products/:id/:slug" element={<AdminProductDetail />} />
+              <Route path="products/:id/:slug" element={<AdminVariants />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="orders/:id/:orderNumber" element={<AdminOrderDetail />} />
               <Route path="users" element={<AdminUsers />} />

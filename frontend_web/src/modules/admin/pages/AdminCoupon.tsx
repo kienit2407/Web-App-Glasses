@@ -1,6 +1,6 @@
-// src/pages/admin/coupons/AdminCouponPage.tsx
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
+// src/pages/admin/coupons/AdminCouponPage.tsx
+import { useEffect, useMemo, useState } from "react";
 import { API } from "@/app/lib/axios-client";
 import {
     Table,
@@ -17,11 +17,16 @@ import {
     Popconfirm,
     message,
     Tabs,
+    List,
+    Pagination,
 } from "antd";
-import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
+import type { ColumnsType } from "antd/es/table";
 import type { TabsProps } from "antd";
 import dayjs, { Dayjs } from "dayjs";
 import { PlusOutlined } from "@ant-design/icons";
+import { MoreHorizontal } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { MobileActionSheet } from "../components/MobileActionSheet";
 
 type TCouponType = "percent" | "fixed";
 
@@ -39,20 +44,14 @@ interface Coupon {
     is_active: boolean;
     createdAt: string;
 
-    // các field thống kê thêm từ BE
-    used_count?: number;   // số lượt đã dùng (is_used=true)
-    saved_count?: number;  // tổng số user_coupons
-    user_count?: number;   // số user khác nhau đã lưu/dùng
+    used_count?: number;
+    saved_count?: number;
+    user_count?: number;
 }
 
 interface ListResponse {
     items: Coupon[];
-    pagination: {
-        page: number;
-        limit: number;
-        total: number;
-        totalPages: number;
-    };
+    pagination: { page: number; limit: number; total: number; totalPages: number };
 }
 
 type ActiveTab = "active" | "inactive" | "all";
@@ -76,15 +75,14 @@ interface FormValues {
 }
 
 const AdminCouponPage = () => {
+    const isMobile = useIsMobile();
+
     const [data, setData] = useState<Coupon[]>([]);
-    const [pagination, setPagination] = useState<TablePaginationConfig>({
-        current: 1,
-        pageSize: 10,
-        total: 0,
-    });
-    const [filters, setFilters] = useState<FilterState>({
-        type: "all",
-    });
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(10);
+    const [total, setTotal] = useState(0);
+
+    const [filters, setFilters] = useState<FilterState>({ type: "all" });
     const [activeTab, setActiveTab] = useState<ActiveTab>("all");
     const [loading, setLoading] = useState(false);
 
@@ -92,17 +90,17 @@ const AdminCouponPage = () => {
     const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
     const [form] = Form.useForm<FormValues>();
 
-    // ===== Fetch list =====
-    const fetchCoupons = async (
-        page = pagination.current || 1,
-        limit = pagination.pageSize || 10
-    ) => {
+    // action sheet
+    const [sheetOpen, setSheetOpen] = useState(false);
+    const [sheetItem, setSheetItem] = useState<Coupon | null>(null);
+
+    const fetchCoupons = async (opts?: { page?: number; limit?: number }) => {
         setLoading(true);
         try {
-            const params: any = {
-                page,
-                limit,
-            };
+            const currentPage = opts?.page ?? page;
+            const currentLimit = opts?.limit ?? limit;
+
+            const params: any = { page: currentPage, limit: currentLimit };
 
             if (filters.code) params.code = filters.code;
             if (filters.type && filters.type !== "all") params.type = filters.type;
@@ -114,182 +112,27 @@ const AdminCouponPage = () => {
             const payload = res.data?.data as ListResponse;
 
             setData(payload.items);
-            setPagination({
-                current: payload.pagination.page,
-                pageSize: payload.pagination.limit,
-                total: payload.pagination.total,
-            });
+            setPage(payload.pagination.page);
+            setLimit(payload.pagination.limit);
+            setTotal(payload.pagination.total);
         } catch (err: any) {
             console.error(err);
-            message.error(
-                err?.response?.data?.message || "Không tải được danh sách coupon"
-            );
+            message.error(err?.response?.data?.message || "Không tải được danh sách coupon");
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchCoupons(1, pagination.pageSize || 10);
+        setPage(1);
+        fetchCoupons({ page: 1, limit });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filters, activeTab]);
 
-    // ===== Table columns =====
-    const columns: ColumnsType<Coupon> = [
-        {
-            title: "Mã",
-            dataIndex: "code",
-            key: "code",
-            render: (code: string) => <span className="font-semibold">
-                <Tag color="orange">
-                    {code}
-                </Tag>
-            </span>,
-        },
-        {
-            title: "Loại",
-            dataIndex: "type",
-            key: "type",
-            render: (type: TCouponType) =>
-                type === "percent" ? (
-                    <Tag color="blue">Phần trăm</Tag>
-                ) : (
-                    <Tag color="geekblue">Cố định</Tag>
-                ),
-        },
-        {
-            title: "Giá trị",
-            dataIndex: "value",
-            key: "value",
-            render: (value: number, record) =>
-                record.type === "percent"
-                    ? `${value}%`
-                    : `${value.toLocaleString("vi-VN")} đ`,
-        },
-        {
-            title: "Đơn tối thiểu",
-            dataIndex: "min_order",
-            key: "min_order",
-            render: (v?: number | null) =>
-                v ? (
-                    `${v.toLocaleString("vi-VN")} đ`
-                ) : (
-                    <span className="text-slate-400">Không</span>
-                ),
-        },
-        {
-            title: "Giảm tối đa",
-            dataIndex: "max_discount",
-            key: "max_discount",
-            render: (v?: number | null) =>
-                v ? (
-                    `${v.toLocaleString("vi-VN")} đ`
-                ) : (
-                    <span className="text-slate-400">Không</span>
-                ),
-        },
-        {
-            title: "Hiệu lực",
-            key: "date",
-            render: (_, record) => (
-                <div className="text-xs">
-                    <div>Từ: {dayjs(record.start_date).format("DD/MM/YYYY")}</div>
-                    <div>
-                        Đến:{" "}
-                        {record.end_date
-                            ? dayjs(record.end_date).format("DD/MM/YYYY")
-                            : "Không giới hạn"}
-                    </div>
-                </div>
-            ),
-        },
-        {
-            title: "Lượt sử dụng",
-            key: "usage",
-            render: (_, record) => {
-                const used = record.used_count ?? 0;
-                const limit = record.usage_limit ?? null;
-                const users = record.user_count ?? 0;
-                return (
-                    <div className="text-xs">
-                        <div>
-                            Đã dùng: {used}
-                            {limit != null ? ` / ${limit}` : ""}
-                        </div>
-                        <div>Người dùng: {users}</div>
-                    </div>
-                );
-            },
-        },
-        {
-            title: "Trạng thái",
-            dataIndex: "is_active",
-            key: "is_active",
-            render: (is_active: boolean) =>
-                is_active ? (
-                    <Tag color="green">Đang hoạt động</Tag>
-                ) : (
-                    <Tag color="red">Đã tắt</Tag>
-                ),
-        },
-        {
-            title: "Thao tác",
-            key: "actions",
-            render: (_, record) => (
-                <Space>
-                    <Button
-                        size="middle"
-                        variant="filled"
-                        color="blue"
-                        type="link"
-                        onClick={() => openEditModal(record)}
-                    >
-                        Sửa
-                    </Button>
-
-                    {record.is_active ? (
-                        // Vô hiệu (soft delete)
-                        <Popconfirm
-                            trigger={"click"}
-                            title="Vô hiệu hoá coupon này?"
-                            description="Coupon sẽ được tắt."
-                            okText="Đồng ý"
-                            cancelText="Huỷ"
-                            onConfirm={() => handleSoftDelete(record._id)}
-                        >
-                            <Button size="middle" type="link" variant="filled"
-                                color="danger">
-                                Tạm dừng
-                            </Button>
-                        </Popconfirm>
-                    ) : (
-                        // Xoá cứng (hard delete) – chỉ áp dụng với coupon đã tắt
-                        <Popconfirm
-                            title="Xoá vĩnh viễn coupon này?"
-                            description="Hành động này sẽ xoá coupon và các bản ghi liên quan. Bạn chắc chứ?"
-                            okText="Xoá"
-                            cancelText="Huỷ"
-                            okButtonProps={{ danger: true }}
-                            onConfirm={() => handleHardDelete(record._id)}
-                        >
-                            <Button size="small" type="link" danger>
-                                Xoá vĩnh viễn
-                            </Button>
-                        </Popconfirm>
-                    )}
-                </Space>
-            ),
-        },
-    ];
-
-    // ===== Modal create / edit =====
     const openCreateModal = () => {
         setEditingCoupon(null);
         form.resetFields();
-        form.setFieldsValue({
-            type: "percent",
-            is_active: true,
-        } as any);
+        form.setFieldsValue({ type: "percent", is_active: true } as any);
         setModalVisible(true);
     };
 
@@ -330,7 +173,7 @@ const AdminCouponPage = () => {
             setModalVisible(false);
             fetchCoupons();
         } catch (err: any) {
-            if (err?.errorFields) return; // lỗi validate form
+            if (err?.errorFields) return;
             console.error(err);
             message.error(err?.response?.data?.message || "Có lỗi xảy ra");
         }
@@ -340,6 +183,7 @@ const AdminCouponPage = () => {
         try {
             await API.delete(`/admin/coupons/${id}`);
             message.success("Đã vô hiệu hoá coupon");
+            setSheetOpen(false);
             fetchCoupons();
         } catch (err: any) {
             console.error(err);
@@ -349,10 +193,9 @@ const AdminCouponPage = () => {
 
     const handleHardDelete = async (id: string) => {
         try {
-            await API.delete(`/admin/coupons/${id}`, {
-                params: { force: "true" },
-            });
+            await API.delete(`/admin/coupons/${id}`, { params: { force: "true" } });
             message.success("Đã xoá vĩnh viễn coupon");
+            setSheetOpen(false);
             fetchCoupons();
         } catch (err: any) {
             console.error(err);
@@ -360,9 +203,117 @@ const AdminCouponPage = () => {
         }
     };
 
-    const handleTableChange = (p: TablePaginationConfig) => {
-        fetchCoupons(p.current, p.pageSize);
-    };
+    const columns: ColumnsType<Coupon> = useMemo(
+        () => [
+            {
+                title: "Mã",
+                dataIndex: "code",
+                key: "code",
+                render: (code: string) => (
+                    <Tag color="orange" className="font-semibold">
+                        {code}
+                    </Tag>
+                ),
+            },
+            {
+                title: "Loại",
+                dataIndex: "type",
+                key: "type",
+                render: (type: TCouponType) =>
+                    type === "percent" ? <Tag color="blue">Phần trăm</Tag> : <Tag color="geekblue">Cố định</Tag>,
+            },
+            {
+                title: "Giá trị",
+                dataIndex: "value",
+                key: "value",
+                render: (value: number, record) =>
+                    record.type === "percent" ? `${value}%` : `${value.toLocaleString("vi-VN")} đ`,
+            },
+            {
+                title: "Hiệu lực",
+                key: "date",
+                render: (_, record) => (
+                    <div className="text-xs">
+                        <div>Từ: {dayjs(record.start_date).format("DD/MM/YYYY")}</div>
+                        <div>
+                            Đến: {record.end_date ? dayjs(record.end_date).format("DD/MM/YYYY") : "Không giới hạn"}
+                        </div>
+                    </div>
+                ),
+            },
+            {
+                title: "Lượt sử dụng",
+                key: "usage",
+                render: (_, record) => {
+                    const used = record.used_count ?? 0;
+                    const lim = record.usage_limit ?? null;
+                    const users = record.user_count ?? 0;
+                    return (
+                        <div className="text-xs">
+                            <div>
+                                Đã dùng: {used}
+                                {lim != null ? ` / ${lim}` : ""}
+                            </div>
+                            <div>Người dùng: {users}</div>
+                        </div>
+                    );
+                },
+            },
+            {
+                title: "Trạng thái",
+                dataIndex: "is_active",
+                key: "is_active",
+                render: (is_active: boolean) =>
+                    is_active ? <Tag color="green">Đang hoạt động</Tag> : <Tag color="red">Đã tắt</Tag>,
+            },
+            {
+                title: "Thao tác",
+                key: "actions",
+                render: (_, record) => (
+                    <Space>
+                        <Button
+                            size="middle"
+                            variant="filled"
+                            color="blue"
+                            type="link"
+                            onClick={() => openEditModal(record)}
+                        >
+                            Sửa
+                        </Button>
+
+                        {record.is_active ? (
+                            <Popconfirm
+                                trigger={"click"}
+                                title="Vô hiệu hoá coupon này?"
+                                description="Coupon sẽ được tắt."
+                                okText="Đồng ý"
+                                cancelText="Huỷ"
+                                onConfirm={() => handleSoftDelete(record._id)}
+                            >
+                                <Button size="middle" type="link" variant="filled" color="danger">
+                                    Tạm dừng
+                                </Button>
+                            </Popconfirm>
+                        ) : (
+                            <Popconfirm
+                                title="Xoá vĩnh viễn coupon này?"
+                                description="Hành động này sẽ xoá coupon và các bản ghi liên quan. Bạn chắc chứ?"
+                                okText="Xoá"
+                                cancelText="Huỷ"
+                                okButtonProps={{ danger: true }}
+                                onConfirm={() => handleHardDelete(record._id)}
+                            >
+                                <Button size="small" type="link" danger>
+                                    Xoá vĩnh viễn
+                                </Button>
+                            </Popconfirm>
+                        )}
+                    </Space>
+                ),
+            },
+        ],
+        []
+    );
 
     const tabItems: TabsProps["items"] = [
         { key: "all", label: "Tất cả" },
@@ -372,88 +323,223 @@ const AdminCouponPage = () => {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            {/* Header */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 className="text-2xl font-semibold">Quản lý Coupon</h2>
-                    <p className="text-xs text-slate-500">
-                        Tạo, chỉnh sửa và quản lý các mã giảm giá.
-                    </p>
+                    <p className="text-xs text-slate-500">Tạo, chỉnh sửa và quản lý các mã giảm giá.</p>
                 </div>
+
+                <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    className={isMobile ? "w-full" : ""}
+                    onClick={openCreateModal}
+                >
+                    Tạo coupon
+                </Button>
             </div>
 
+            {/* Tabs */}
             <div className="bg-white rounded-lg shadow p-4">
                 <Tabs
                     activeKey={activeTab}
                     items={tabItems}
                     onChange={(k) => {
                         setActiveTab(k as ActiveTab);
-                        setPagination((p) => ({ ...p, current: 1 }));
+                        setPage(1);
                     }}
                 />
-
-            </div>
-            {/* Bộ lọc */}
-            <div className="rounded-lg border bg-white p-3 flex flex-wrap gap-4 items-end">
-                <div>
-                    <div className="text-xs mb-1 font-medium text-slate-600">
-                        Mã coupon
-                    </div>
-                    <Input
-                        placeholder="Nhập mã..."
-                        allowClear
-                        style={{ width: 180 }}
-                        value={filters.code}
-                        onChange={(e) =>
-                            setFilters((f) => ({
-                                ...f,
-                                code: e.target.value || undefined,
-                            }))
-                        }
-                    />
-                    <Button
-                        className="ml-10"
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={openCreateModal}
-                    >
-                        Tạo coupon
-                    </Button>
-                </div>
-
-                <div>
-                    <div className="text-xs mb-1 font-medium text-slate-600">Loại</div>
-                    <Select
-                        style={{ width: 160 }}
-                        value={filters.type}
-                        onChange={(val) =>
-                            setFilters((f) => ({ ...f, type: val as any }))
-                        }
-                        options={[
-                            { label: "Tất cả", value: "all" },
-                            { label: "Phần trăm", value: "percent" },
-                            { label: "Cố định", value: "fixed" },
-                        ]}
-                    />
-                </div>
-
-                <Button onClick={() => fetchCoupons()} disabled={loading}>
-                    Làm mới
-                </Button>
             </div>
 
-            {/* Bảng */}
+            {/* Filters */}
             <div className="rounded-lg border bg-white p-3">
-                <Table<Coupon>
-                    rowKey="_id"
-                    loading={loading}
-                    columns={columns}
-                    dataSource={data}
-                    pagination={pagination}
-                    onChange={handleTableChange}
-                />
+                <div className={`flex ${isMobile ? "flex-col" : "items-end"} gap-3 flex-wrap`}>
+                    <div className={isMobile ? "w-full" : ""}>
+                        <div className="text-xs mb-1 font-medium text-slate-600">Mã coupon</div>
+                        <Input
+                            placeholder="Nhập mã..."
+                            allowClear
+                            style={{ width: isMobile ? "100%" : 180 }}
+                            value={filters.code}
+                            onChange={(e) =>
+                                setFilters((f) => ({ ...f, code: e.target.value || undefined }))
+                            }
+                        />
+                    </div>
+
+                    <div className={isMobile ? "w-full" : ""}>
+                        <div className="text-xs mb-1 font-medium text-slate-600">Loại</div>
+                        <Select
+                            style={{ width: isMobile ? "100%" : 160 }}
+                            value={filters.type}
+                            onChange={(val) => setFilters((f) => ({ ...f, type: val as any }))}
+                            options={[
+                                { label: "Tất cả", value: "all" },
+                                { label: "Phần trăm", value: "percent" },
+                                { label: "Cố định", value: "fixed" },
+                            ]}
+                        />
+                    </div>
+
+                    <div className={`flex gap-2 ${isMobile ? "w-full" : ""}`}>
+                        <Button
+                            onClick={() => fetchCoupons()}
+                            disabled={loading}
+                            className={isMobile ? "w-full" : ""}
+                        >
+                            Làm mới
+                        </Button>
+                    </div>
+                </div>
             </div>
 
-            {/* Modal tạo / sửa */}
+            {/* Content */}
+            <div className="rounded-lg border bg-white p-3">
+                {isMobile ? (
+                    <>
+                        <List
+                            loading={loading}
+                            dataSource={data}
+                            renderItem={(item) => {
+                                const valueText =
+                                    item.type === "percent"
+                                        ? `${item.value}%`
+                                        : `${item.value.toLocaleString("vi-VN")} đ`;
+
+                                return (
+                                    <List.Item className="!px-0">
+                                        <div className="w-full rounded-lg border bg-white p-3">
+                                            <div className="flex items-start gap-3">
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <Tag color="orange" className="font-semibold">
+                                                            {item.code}
+                                                        </Tag>
+                                                        {item.type === "percent" ? (
+                                                            <Tag color="blue">%</Tag>
+                                                        ) : (
+                                                            <Tag color="geekblue">VNĐ</Tag>
+                                                        )}
+                                                        {item.is_active ? (
+                                                            <Tag color="green">Đang hoạt động</Tag>
+                                                        ) : (
+                                                            <Tag color="red">Đã tắt</Tag>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="mt-1 text-xs text-slate-600">
+                                                        Giá trị: <b>{valueText}</b>
+                                                    </div>
+
+                                                    <div className="mt-1 text-xs text-slate-500">
+                                                        {dayjs(item.start_date).format("DD/MM/YYYY")} →{" "}
+                                                        {item.end_date ? dayjs(item.end_date).format("DD/MM/YYYY") : "Không giới hạn"}
+                                                    </div>
+
+                                                    <div className="mt-2 text-xs text-slate-500">
+                                                        Đã dùng: <b>{item.used_count ?? 0}</b>
+                                                        {item.usage_limit != null ? ` / ${item.usage_limit}` : ""}{" "}
+                                                        · Người dùng: <b>{item.user_count ?? 0}</b>
+                                                    </div>
+                                                </div>
+
+                                                <Button
+                                                    type="text"
+                                                    onClick={() => {
+                                                        setSheetItem(item);
+                                                        setSheetOpen(true);
+                                                    }}
+                                                >
+                                                    <MoreHorizontal className="w-5 h-5" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </List.Item>
+                                );
+                            }}
+                        />
+
+                        <div className="pt-3 flex justify-end">
+                            <Pagination
+                                current={page}
+                                pageSize={limit}
+                                total={total}
+                                showSizeChanger={false}
+                                onChange={(p) => {
+                                    setPage(p);
+                                    fetchCoupons({ page: p });
+                                }}
+                            />
+                        </div>
+
+                        <MobileActionSheet
+                            open={sheetOpen}
+                            onClose={() => setSheetOpen(false)}
+                            title={<span className="font-semibold">{sheetItem?.code}</span>}
+                        >
+                            <div className="space-y-2">
+                                <Button
+                                    block
+                                    onClick={() => {
+                                        if (!sheetItem) return;
+                                        openEditModal(sheetItem);
+                                        setSheetOpen(false);
+                                    }}
+                                >
+                                    Sửa
+                                </Button>
+
+                                {sheetItem?.is_active ? (
+                                    <Popconfirm
+                                        title="Vô hiệu hoá coupon này?"
+                                        description="Coupon sẽ được tắt."
+                                        okText="Đồng ý"
+                                        cancelText="Huỷ"
+                                        onConfirm={() => sheetItem?._id && handleSoftDelete(sheetItem._id)}
+                                    >
+                                        <Button block danger>
+                                            Tạm dừng
+                                        </Button>
+                                    </Popconfirm>
+                                ) : (
+                                    <Popconfirm
+                                        title="Xoá vĩnh viễn coupon này?"
+                                        description="Hành động này sẽ xoá coupon và các bản ghi liên quan. Bạn chắc chứ?"
+                                        okText="Xoá"
+                                        cancelText="Huỷ"
+                                        okButtonProps={{ danger: true }}
+                                        onConfirm={() => sheetItem?._id && handleHardDelete(sheetItem._id)}
+                                    >
+                                        <Button block danger>
+                                            Xoá vĩnh viễn
+                                        </Button>
+                                    </Popconfirm>
+                                )}
+                            </div>
+                        </MobileActionSheet>
+                    </>
+                ) : (
+                    <Table<Coupon>
+                        rowKey="_id"
+                        loading={loading}
+                        columns={columns}
+                        dataSource={data}
+                        pagination={{
+                            current: page,
+                            pageSize: limit,
+                            total,
+                            onChange: (p, l) => {
+                                setPage(p);
+                                setLimit(l || 10);
+                                fetchCoupons({ page: p, limit: l || 10 });
+                            },
+                        }}
+                    />
+                )}
+            </div>
+
+            {/* Modal create / edit (giữ nguyên) */}
             <Modal
                 title={editingCoupon ? "Chỉnh sửa coupon" : "Tạo coupon mới"}
                 open={modalVisible}
@@ -465,10 +551,7 @@ const AdminCouponPage = () => {
                 <Form<FormValues>
                     form={form}
                     layout="vertical"
-                    initialValues={{
-                        type: "percent",
-                        is_active: true,
-                    }}
+                    initialValues={{ type: "percent", is_active: true }}
                 >
                     <Form.Item
                         label="Mã coupon"
@@ -496,68 +579,38 @@ const AdminCouponPage = () => {
                         name="value"
                         rules={[{ required: true, message: "Vui lòng nhập giá trị" }]}
                     >
-                        <InputNumber
-                            style={{ width: "100%" }}
-                            min={0}
-                            placeholder="10 (nếu %), 50000 (nếu VNĐ)"
-                        />
+                        <InputNumber style={{ width: "100%" }} min={0} placeholder="10 hoặc 50000" />
                     </Form.Item>
 
                     <Form.Item label="Giảm tối đa (VNĐ)" name="max_discount">
-                        <InputNumber
-                            style={{ width: "100%" }}
-                            min={0}
-                            placeholder="Không nhập = không giới hạn"
-                        />
+                        <InputNumber style={{ width: "100%" }} min={0} placeholder="Không nhập = không giới hạn" />
                     </Form.Item>
 
                     <Form.Item label="Đơn tối thiểu (VNĐ)" name="min_order">
-                        <InputNumber
-                            style={{ width: "100%" }}
-                            min={0}
-                            placeholder="Không nhập = không giới hạn"
-                        />
+                        <InputNumber style={{ width: "100%" }} min={0} placeholder="Không nhập = không giới hạn" />
                     </Form.Item>
 
                     <Form.Item label="Giới hạn tổng số lượt dùng" name="usage_limit">
-                        <InputNumber
-                            style={{ width: "100%" }}
-                            min={0}
-                            placeholder="Không nhập = không giới hạn"
-                        />
+                        <InputNumber style={{ width: "100%" }} min={0} placeholder="Không nhập = không giới hạn" />
                     </Form.Item>
 
                     <Form.Item label="Giới hạn mỗi user" name="per_user_limit">
-                        <InputNumber
-                            style={{ width: "100%" }}
-                            min={0}
-                            placeholder="Không nhập = không giới hạn"
-                        />
+                        <InputNumber style={{ width: "100%" }} min={0} placeholder="Không nhập = không giới hạn" />
                     </Form.Item>
 
                     <Form.Item
                         label="Ngày bắt đầu"
                         name="start_date"
-                        rules={[
-                            { required: true, message: "Vui lòng chọn ngày bắt đầu" },
-                        ]}
+                        rules={[{ required: true, message: "Vui lòng chọn ngày bắt đầu" }]}
                     >
                         <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
                     </Form.Item>
 
                     <Form.Item label="Ngày kết thúc" name="end_date">
-                        <DatePicker
-                            style={{ width: "100%" }}
-                            format="DD/MM/YYYY"
-                            allowClear
-                        />
+                        <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" allowClear />
                     </Form.Item>
 
-                    <Form.Item
-                        label="Trạng thái"
-                        name="is_active"
-                        valuePropName="checked"
-                    >
+                    <Form.Item label="Trạng thái" name="is_active" valuePropName="checked">
                         <Switch checkedChildren="Hoạt động" unCheckedChildren="Tắt" />
                     </Form.Item>
                 </Form>

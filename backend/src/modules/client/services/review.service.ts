@@ -67,6 +67,7 @@ export const reviewService = {
                 .skip(skip)
                 .limit(limitNum)
                 .populate("user_id", "display_name avatar_url images video_url is_edited")
+                .populate("admin_reply.admin_id", "display_name") // ✅ nếu muốn show tên admin
                 .lean(),
             Review.countDocuments(filter),
             Review.aggregate([

@@ -14,17 +14,13 @@ import {
     Button,
     Col,
     Row,
-    Breadcrumb
+    Breadcrumb,
+    List,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { Spinner } from "@/components/ui/spinner";
-import {
-    ShoppingCart,
-    DollarSign,
-    User,
-    MapPin,
-    ArrowLeft,
-} from "lucide-react";
+import { ShoppingCart, User, MapPin, ArrowLeft } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 
 const { Title, Text } = Typography;
 
@@ -36,6 +32,7 @@ type AdminOrderStatus =
     | "delivered"
     | "cancelled"
     | "returned";
+
 interface Province {
     code: string;
     name: string;
@@ -48,6 +45,7 @@ interface Ward {
     code: string;
     name: string;
 }
+
 interface OrderItemRow {
     _id: string;
     product_id: string;
@@ -60,7 +58,7 @@ interface OrderItemRow {
     total: number;
 }
 
-interface AdminOrderDetail {
+interface AdminOrderDetailType {
     _id: string;
     order_number: string;
     order_status: AdminOrderStatus;
@@ -84,11 +82,9 @@ interface AdminOrderDetail {
     shipping_address?: {
         recipient_name?: string;
         phone?: string;
-        // code từ DB
         province_code?: string;
         district_code?: string;
         ward_code?: string;
-        // tên sau khi map (nếu sau này bạn muốn lưu riêng)
         province?: string;
         district?: string;
         ward?: string;
@@ -97,7 +93,7 @@ interface AdminOrderDetail {
 }
 
 interface DetailResponse {
-    order: AdminOrderDetail;
+    order: AdminOrderDetailType;
     items: OrderItemRow[];
 }
 
@@ -107,15 +103,16 @@ const currencyFormatter = new Intl.NumberFormat("vi-VN", {
 });
 
 const AdminOrderDetail = () => {
-    const { id, order_num } = useParams<{ id: string, order_num: string }>();
+    const isMobile = useIsMobile();
+    const { id } = useParams<{ id: string; order_num: string }>();
     const navigate = useNavigate();
 
     const [data, setData] = useState<DetailResponse | null>(null);
     const [loading, setLoading] = useState(false);
+
     const [provinces, setProvinces] = useState<Province[]>([]);
     const [districts, setDistricts] = useState<District[]>([]);
     const [wards, setWards] = useState<Ward[]>([]);
-
 
     const fetchDetail = async () => {
         if (!id) return;
@@ -132,7 +129,7 @@ const AdminOrderDetail = () => {
                     order_number: o.order_number,
                     order_status: o.order_status,
                     payment_status: o.payment_status,
-                    payment_method: o.payment_method, // nếu BE có field này
+                    payment_method: o.payment_method,
                     subtotal: o.subtotal,
                     discount_amount: o.discount_amount,
                     shipping_fee: o.shipping_fee,
@@ -142,12 +139,10 @@ const AdminOrderDetail = () => {
                     updatedAt: o.updatedAt,
                     cancel_requested: o.cancel_requested,
                     return_requested: o.return_requested,
-
                     user: o.user_id
                         ? {
                             display_name: o.user_id.display_name,
                             email: o.user_id.email,
-
                             phone: o.user_id.phone,
                         }
                         : undefined,
@@ -156,11 +151,9 @@ const AdminOrderDetail = () => {
                             recipient_name: o.shipping_address.recipient_name,
                             phone: o.shipping_address.phone,
                             specific_address: o.shipping_address.specific_address,
-
                             province_code: o.shipping_address.province_code,
                             district_code: o.shipping_address.district_code,
                             ward_code: o.shipping_address.ward_code,
-
                             province: o.shipping_address.province_code,
                             district: o.shipping_address.district_code,
                             ward: o.shipping_address.ward_code,
@@ -173,9 +166,7 @@ const AdminOrderDetail = () => {
             setData(mapped);
         } catch (err: any) {
             console.error(err);
-            message.error(
-                err?.response?.data?.message || "Không tải được chi tiết đơn hàng"
-            );
+            message.error(err?.response?.data?.message || "Không tải được chi tiết đơn hàng");
         } finally {
             setLoading(false);
         }
@@ -185,6 +176,7 @@ const AdminOrderDetail = () => {
         fetchDetail();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
+
     useEffect(() => {
         if (!data?.order?.shipping_address) return;
 
@@ -207,10 +199,8 @@ const AdminOrderDetail = () => {
         };
 
         run();
-    }, [
-        data?.order?.shipping_address?.province_code,
-        data?.order?.shipping_address?.district_code,
-    ]);
+    }, [data?.order?.shipping_address?.province_code, data?.order?.shipping_address?.district_code]);
+
     const renderStatusTag = (status: AdminOrderStatus) => {
         switch (status) {
             case "pending":
@@ -267,9 +257,7 @@ const AdminOrderDetail = () => {
                                 .join(" • ")}
                         </span>
                     )}
-                    {record.sku && (
-                        <span className="text-xs text-slate-400">SKU: {record.sku}</span>
-                    )}
+                    {record.sku && <span className="text-xs text-slate-400">SKU: {record.sku}</span>}
                 </div>
             ),
         },
@@ -280,21 +268,14 @@ const AdminOrderDetail = () => {
             width: 120,
             render: (v: number) => currencyFormatter.format(v),
         },
-        {
-            title: "Số lượng",
-            dataIndex: "quantity",
-            key: "quantity",
-            width: 90,
-        },
+        { title: "Số lượng", dataIndex: "quantity", key: "quantity", width: 90 },
         {
             title: "Thành tiền",
             dataIndex: "total",
             key: "total",
             width: 140,
             render: (v: number) => (
-                <span className="font-semibold text-red-500">
-                    {currencyFormatter.format(v)}
-                </span>
+                <span className="font-semibold text-red-500">{currencyFormatter.format(v)}</span>
             ),
         },
     ];
@@ -309,51 +290,50 @@ const AdminOrderDetail = () => {
 
     const { order, items } = data;
     const addr = order.shipping_address || {};
-    const provinceName =
-        provinces.find((p) => p.code === addr.province_code)?.name ??
-        addr.province_code;
 
-    const districtName =
-        districts.find((d) => d.code === addr.district_code)?.name ??
-        addr.district_code;
+    const provinceName = provinces.find((p) => p.code === addr.province_code)?.name ?? addr.province_code;
+    const districtName = districts.find((d) => d.code === addr.district_code)?.name ?? addr.district_code;
+    const wardName = wards.find((w) => w.code === addr.ward_code)?.name ?? addr.ward_code;
 
-    const wardName =
-        wards.find((w) => w.code === addr.ward_code)?.name ??
-        addr.ward_code;
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
+            {/* Header */}
+            <div className={`flex ${isMobile ? "flex-col items-stretch" : "items-center justify-between"} gap-3`}>
+                <div className={`flex ${isMobile ? "flex-col" : "items-center"} gap-3`}>
                     <Button
                         variant="filled"
                         color="blue"
+                        className={isMobile ? "w-full" : ""}
                         onClick={() => navigate("/admin/orders")}
                     >
                         <ArrowLeft size={16} /> Quay lại
                     </Button>
-                    <div>
+
+                    <div className="min-w-0">
                         <Title level={4} className="!mb-0">
-                            Đơn hàng #<Text copyable className="font-medium text-xl text-blue-500">{order.order_number}</Text>
+                            Đơn hàng #
+                            <Text copyable className="font-medium text-xl text-blue-500">
+                                {order.order_number}
+                            </Text>
                         </Title>
-                        <Text type="secondary">
-                            Tạo lúc{" "}
-                            {new Date(order.createdAt).toLocaleString("vi-VN")}
-                        </Text>
+                        <Text type="secondary">Tạo lúc {new Date(order.createdAt).toLocaleString("vi-VN")}</Text>
                     </div>
                 </div>
-                <Space>
+
+                <Space wrap className={isMobile ? "justify-start" : ""}>
                     {renderStatusTag(order.order_status)}
                     {renderPaymentStatus(order.payment_status)}
                 </Space>
             </div>
+
             <Breadcrumb
-                className="my-5 [&_a]:text-blue-600"
+                className="my-2 [&_a]:text-blue-600"
                 items={[
                     { title: <Link to="/admin/orders" className="hover:text-blue text-black">Quản lý đơn hàng</Link> },
                     { title: "Chi tiết đơn hàng" },
                 ]}
-
             />
+
             {/* Thông tin tổng quan */}
             <Card>
                 <Descriptions
@@ -363,39 +343,27 @@ const AdminOrderDetail = () => {
                             Thông tin đơn hàng
                         </span>
                     }
-                    column={3}
+                    column={isMobile ? 1 : 3}
                     bordered
                     size="small"
                 >
-                    <Descriptions.Item label="Mã đơn">
-                        {order.order_number}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Trạng thái">
-                        {renderStatusTag(order.order_status)}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Thanh toán">
-                        {renderPaymentStatus(order.payment_status)}
-                    </Descriptions.Item>
+                    <Descriptions.Item label="Mã đơn">{order.order_number}</Descriptions.Item>
+                    <Descriptions.Item label="Trạng thái">{renderStatusTag(order.order_status)}</Descriptions.Item>
+                    <Descriptions.Item label="Thanh toán">{renderPaymentStatus(order.payment_status)}</Descriptions.Item>
 
                     <Descriptions.Item label="Phương thức thanh toán">
                         {renderPaymentMethod(order.payment_method)}
                     </Descriptions.Item>
+
                     <Descriptions.Item label="Yêu cầu huỷ">
-                        {order.cancel_requested ? (
-                            <Tag color="red">Có yêu cầu huỷ</Tag>
-                        ) : (
-                            <Tag>Không</Tag>
-                        )}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Yêu cầu trả hàng">
-                        {order.return_requested ? (
-                            <Tag color="purple">Có yêu cầu trả</Tag>
-                        ) : (
-                            <Tag>Không</Tag>
-                        )}
+                        {order.cancel_requested ? <Tag color="red">Có yêu cầu huỷ</Tag> : <Tag>Không</Tag>}
                     </Descriptions.Item>
 
-                    <Descriptions.Item label="Ghi chú" span={3}>
+                    <Descriptions.Item label="Yêu cầu trả hàng">
+                        {order.return_requested ? <Tag color="purple">Có yêu cầu trả</Tag> : <Tag>Không</Tag>}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Ghi chú" span={isMobile ? 1 : 3}>
                         {order.note || "-"}
                     </Descriptions.Item>
                 </Descriptions>
@@ -416,15 +384,9 @@ const AdminOrderDetail = () => {
                             size="small"
                             bordered
                         >
-                            <Descriptions.Item label="Họ tên">
-                                {order.user?.display_name || "-"}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="Email">
-                                {order.user?.email || "-"}
-                            </Descriptions.Item>
-                            <Descriptions.Item label="Số điện thoại">
-                                {order.user?.phone || addr.phone || "-"}
-                            </Descriptions.Item>
+                            <Descriptions.Item label="Họ tên">{order.user?.display_name || "-"}</Descriptions.Item>
+                            <Descriptions.Item label="Email">{order.user?.email || "-"}</Descriptions.Item>
+                            <Descriptions.Item label="Số điện thoại">{order.user?.phone || addr.phone || "-"}</Descriptions.Item>
                         </Descriptions>
                     </Card>
                 </Col>
@@ -443,16 +405,11 @@ const AdminOrderDetail = () => {
                             bordered
                         >
                             <Descriptions.Item label="Người nhận">
-                                {addr.recipient_name || "-"}{" "}
-                                {addr.phone && <span>({addr.phone})</span>}
+                                {addr.recipient_name || "-"} {addr.phone && <span>({addr.phone})</span>}
                             </Descriptions.Item>
-                            <Descriptions.Item label="Địa chỉ chi tiết">
-                                {addr.specific_address || "-"}
-                            </Descriptions.Item>
+                            <Descriptions.Item label="Địa chỉ chi tiết">{addr.specific_address || "-"}</Descriptions.Item>
                             <Descriptions.Item label="Khu vực">
-                                {[wardName, districtName, provinceName]
-                                    .filter(Boolean)
-                                    .join(", ") || "-"}
+                                {[wardName, districtName, provinceName].filter(Boolean).join(", ") || "-"}
                             </Descriptions.Item>
                         </Descriptions>
                     </Card>
@@ -462,19 +419,50 @@ const AdminOrderDetail = () => {
             {/* Sản phẩm */}
             <Card
                 title="Sản phẩm trong đơn"
-                extra={
-                    <Text type="secondary">
-                        Tổng {items.length} dòng sản phẩm
-                    </Text>
-                }
+                extra={<Text type="secondary">Tổng {items.length} dòng sản phẩm</Text>}
             >
-                <Table<OrderItemRow>
-                    dataSource={items}
-                    columns={columns}
-                    rowKey={(r) => r._id}
-                    pagination={false}
-                    size="small"
-                />
+                {isMobile ? (
+                    <List
+                        dataSource={items}
+                        renderItem={(it) => (
+                            <List.Item className="!px-0">
+                                <div className="w-full rounded-lg border bg-white p-3">
+                                    <div className="font-semibold text-sm">{it.name}</div>
+
+                                    {it.attributes && (
+                                        <div className="text-xs text-slate-500 mt-1">
+                                            {Object.entries(it.attributes)
+                                                .map(([k, v]) => `${k}: ${String(v)}`)
+                                                .join(" • ")}
+                                        </div>
+                                    )}
+
+                                    {it.sku && <div className="text-xs text-slate-400 mt-1">SKU: {it.sku}</div>}
+
+                                    <div className="mt-2 text-xs text-slate-600 flex flex-wrap gap-2">
+                                        <span>Đơn giá: <b>{currencyFormatter.format(it.unit_price)}</b></span>
+                                        <span>Số lượng: <b>{it.quantity}</b></span>
+                                    </div>
+
+                                    <div className="mt-2 flex justify-between items-center">
+                                        <span className="text-xs text-slate-500">Thành tiền</span>
+                                        <span className="font-semibold text-red-500">
+                                            {currencyFormatter.format(it.total)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </List.Item>
+                        )}
+                    />
+                ) : (
+                    <Table<OrderItemRow>
+                        dataSource={items}
+                        columns={columns}
+                        rowKey={(r) => r._id}
+                        pagination={false}
+                        size="small"
+                    />
+                )}
             </Card>
 
             {/* Tổng tiền */}
@@ -482,23 +470,21 @@ const AdminOrderDetail = () => {
                 <div className="flex flex-col items-end gap-1">
                     <div className="flex justify-between w-full max-w-md">
                         <Text>Tổng tiền hàng</Text>
-                        <Text>
-                            {currencyFormatter.format(order.subtotal || 0)}
-                        </Text>
+                        <Text>{currencyFormatter.format(order.subtotal || 0)}</Text>
                     </div>
+
                     <div className="flex justify-between w-full max-w-md">
                         <Text>Giảm giá</Text>
-                        <Text type="success">
-                            -{currencyFormatter.format(order.discount_amount || 0)}
-                        </Text>
+                        <Text type="success">-{currencyFormatter.format(order.discount_amount || 0)}</Text>
                     </div>
+
                     <div className="flex justify-between w-full max-w-md">
                         <Text>Phí vận chuyển</Text>
-                        <Text>
-                            {currencyFormatter.format(order.shipping_fee || 0)}
-                        </Text>
+                        <Text>{currencyFormatter.format(order.shipping_fee || 0)}</Text>
                     </div>
+
                     <Divider style={{ margin: "8px 0" }} />
+
                     <div className="flex justify-between w-full max-w-md">
                         <Text strong>Tổng thanh toán</Text>
                         <Text strong className="text-lg text-red-500">

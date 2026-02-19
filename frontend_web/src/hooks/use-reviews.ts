@@ -17,6 +17,15 @@ export interface ReviewItem {
     video_url?: string | null;
     is_edited: boolean;
     createdAt: string;
+
+    admin_reply?: null | {
+        content: string;
+        is_edited?: boolean;
+        createdAt?: string;
+        updatedAt?: string;
+        admin_id?: { _id: string; display_name: string };
+    };
+
     user_id: {
         id: string;
         display_name: string;
@@ -61,19 +70,28 @@ export const useReviews = create<ReviewState>()((set, get) => ({
                 product_id: String(item.product_id),
                 rating: item.rating,
                 comment: item.comment,
-                images: (item.images ?? []).map((img: any) => ({
-                    url: img.url,
-                    url_id: img.url_id,
-                })),
+                images: (item.images ?? []).map((img: any) => ({ url: img.url, url_id: img.url_id })),
                 video_url: item.video_url,
                 is_edited: item.is_edited,
                 createdAt: item.createdAt,
+                admin_reply: item.admin_reply
+                    ? {
+                        content: item.admin_reply.content,
+                        is_edited: item.admin_reply.is_edited,
+                        createdAt: item.admin_reply.createdAt,
+                        updatedAt: item.admin_reply.updatedAt,
+                        admin_id: item.admin_reply.admin_id
+                            ? { _id: String(item.admin_reply.admin_id._id), display_name: item.admin_reply.admin_id.display_name }
+                            : undefined,
+                    }
+                    : null,
                 user_id: {
                     id: String(item.user_id?._id),
                     display_name: item.user_id?.display_name,
                     avatar_url: item.user_id?.avatar_url,
                 },
             }));
+
 
             set({
                 items: mapped,
