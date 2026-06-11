@@ -151,6 +151,7 @@ class _SigninPageState extends ConsumerState<SigninPage> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
+        extendBodyBehindAppBar: true,
         backgroundColor: const Color(0xffF2F4F8),
         appBar: AppBar(
           backgroundColor: Colors.transparent, // Nền trong suốt
