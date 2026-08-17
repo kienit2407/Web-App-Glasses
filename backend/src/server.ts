@@ -55,7 +55,7 @@ const START_SERVER = () => {
                 'https://localhost:5173',
                 'https://web-app-glasses-x57x.vercel.app',
                 'https://web-app-glasses-x57x.vercel.app',
-                'https://web-app-glasses.onrender.com'
+                'https://web-app-glasses.liquid-phim.workers.dev'
             ],
             allowedHeaders: ["Content-Type", "Authorization", "x-client-platform", "x-device-id"],
             credentials: true,
