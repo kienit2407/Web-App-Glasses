@@ -13,7 +13,7 @@
 ---
 ## 🔐 Test Account (Admin)
 
-- 📧 `admin1234@gmail.com`
+- 📧 `admin123456@gmail.com`
 - 🔑 `Admin123456`
 
 ---
